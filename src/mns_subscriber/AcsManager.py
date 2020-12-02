@@ -156,12 +156,12 @@ class AcsManager(object):
                 rds_conn.delete(k)
 
     @db.transaction(is_commit=True)
-    def device_open(self, mysql_cur, device_name, lastTime):
-        mysql_db = db.PgsqlDbUtil(mysql_cur)
+    def device_open(self, pgsql_cur, device_name, lastTime):
+        pgsql_db = db.PgsqlDbUtil
         sql = "SELECT `id`,`status`,`version`,`car_no`," \
               "`modify_status_timestamp`,`cur_volume` FROM `device` " \
               "WHERE `device_name`='{}'"
-        devices = mysql_db.query(sql.format(device_name))
+        devices = pgsql_db.query(pgsql_cur, sql.format(device_name))
         if devices:
             device = devices[0]
             if device:
@@ -175,17 +175,17 @@ class AcsManager(object):
                                    "".format(lastTime),
                     '`is_open`': 1
                 }
-                mysql_db.update(d, table_name='`device`')
+                pgsql_db.update(pgsql_cur, d, table_name='`device`')
                 self._set_device_work_mode(
                     device_name, car_no, cur_volume)
 
     @db.transaction(is_commit=True)
-    def device_close(self, mysql_cur, device_name, lastTime):
-        mysql_db = db.PgsqlDbUtil(mysql_cur)
+    def device_close(self, pgsql_cur, device_name, lastTime):
+        pgsql_db = db.PgsqlDbUtil
         rds_conn = db.rds_conn
         sql = "SELECT `id`,`open_time` FROM `device` " \
               "WHERE `device_name`='{}'"
-        devices = mysql_db.query(sql.format(device_name))
+        devices = pgsql_db.query(pgsql_cur, sql.format(device_name))
         if devices:
             device = devices[0]
             if device:
@@ -199,21 +199,21 @@ class AcsManager(object):
                     '`id`': pk,
                     '`is_open`': 0
                 }
-                mysql_db.update(d, table_name='`device`')
+                pgsql_db.update(pgsql_cur, d, table_name='`device`')
 
     @db.transaction(is_commit=True)
-    def update_device_last_time(self, mysql_cur, device_name,
+    def update_device_last_time(self, pgsql_cur, device_name,
                                 devtime, gps_str, device_iid):
         """
         更新设备最后在线时间
         :return:
         """
-        mysql_db = db.PgsqlDbUtil(mysql_cur)
+        pgsql_db = db.PgsqlDbUtil
         rds_conn = db.rds_conn
 
         sql = "SELECT `id`,`last_time` FROM `device` " \
               "WHERE `device_name`='{}' LIMIT 1"
-        obj = mysql_db.get(sql.format(device_name))
+        obj = pgsql_db.get(pgsql_cur, sql.format(device_name))
         pk = obj[0]
         last_time = obj[1]
         cur_time = datetime.now()
@@ -229,7 +229,7 @@ class AcsManager(object):
                         '`id`': pk,
                         '`last_time`': 'now()'
                     }
-                    mysql_db.update(d, table_name='`device`')
+                    pgsql_db.update(pgsql_cur, d, table_name='`device`')
                     jdata = {
                         "cmd": "devwhitelist",
                         "pkt_inx": -1
@@ -265,15 +265,15 @@ class AcsManager(object):
                 '`cur_gps`': cur_gps,
                 '`device_iid`': device_iid
             }
-            mysql_db.update(d, table_name='device')
+            pgsql_db.update(pgsql_cur, d, table_name='device')
 
     @db.transaction(is_commit=True)
-    def add_order(self, mysql_cur, fid, gps_str, add_time, dev_name):
+    def add_order(self, pgsql_cur, fid, gps_str, add_time, dev_name):
         """
         添加订单
         """
         redis_db = db.rds_conn
-        mysql_db = db.PgsqlDbUtil(mysql_cur)
+        pgsql_db = db.PgsqlDbUtil
         arr = gps_str.split(',')
         longitude = arr[0]
         latitude = arr[1]
@@ -284,7 +284,7 @@ class AcsManager(object):
                    "FROM `user_profile` AS UP " \
                    "INNER JOIN `face` " \
                    "AS F ON F.`user_id`=UP.`id` WHERE F.`id`={} LIMIT 1"
-        user = mysql_db.get(user_sql.format(fid))
+        user = pgsql_db.get(pgsql_cur, user_sql.format(fid))
         print "-------------------add_order-------------------"
         print user
         if not user:
@@ -307,7 +307,7 @@ class AcsManager(object):
 
                 sql = 'SELECT S.`id`,S.`longitude`,S.`latitude`,S.`name` ' \
                       'FROM `station` AS S WHERE S.`status`=1 '
-                results = mysql_db.query(sql)
+                results = pgsql_db.query(pgsql_cur, sql)
 
                 for row in results:
                     t_d[str(row[0])] = dict(station_id=row[0],
@@ -333,7 +333,7 @@ class AcsManager(object):
         is_internal_staff = user[3]
 
         special_station_sql = 'SELECT `station_id` FROM `special_station`'
-        special_results = mysql_db.query(special_station_sql)
+        special_results = pgsql_db.query(pgsql_cur, special_station_sql)
         special_ids = [row[0] for row in special_results]
         target_station_ids = list(set(special_ids) - set([user[4]]))    # 异常站点集合
         print target_station_ids
@@ -347,7 +347,7 @@ INNER JOIN `enterprise` AS E1 ON E1.id=E2.`parent_id`
 INNER JOIN `user_department_relation` as UDR ON UDR.`department_id`=D.`id` 
 WHERE UDR.`user_id` = {}
         """
-        result = mysql_db.get(desc_sql.format(user_pk))
+        result = pgsql_db.get(pgsql_cur, desc_sql.format(user_pk))
         parent_company_id = result[0]
         child_company_id = result[1]
         department_id = result[2]
@@ -385,12 +385,12 @@ WHERE UDR.`user_id` = {}
             fid, add_time)
         device_sql = "SELECT `car_no` FROM `device` " \
                      "WHERE `device_name`='{}' LIMIT 1"
-        car_no = mysql_db.get(device_sql.format(dev_name))[0]
+        car_no = pgsql_db.get(pgsql_cur, device_sql.format(dev_name))[0]
         d['`car_no`'] = car_no.encode('utf8') if car_no else ""
         d['`mobile`'] = mobile
         d['`deadline`'] = "STR_TO_DATE('{}', '%Y-%m-%d %H:%i:%s')".format(
                 datetime.fromtimestamp(deadline).strftime('%Y-%m-%d %H:%M:%S'))
-        mysql_db.insert(d, table_name='`order`')
+        pgsql_db.insert(pgsql_cur, d, table_name='`order`')
 
     def add_redis_queue(self, device_name, data, pkt_cnt):
         """添加到redis queue"""
@@ -416,14 +416,14 @@ WHERE UDR.`user_id` = {}
                 self.check_people_list(people_list, device_name)
 
     @db.transaction(is_commit=True)
-    def check_people_list(self, mysql_cur, people_list, device_name):
+    def check_people_list(self, pgsql_cur, people_list, device_name):
         """
         检查人员列表
         (单设备检查人员是否需要更新)
         :return:
         """
         rds_conn = db.rds_conn
-        mysql_db = db.PgsqlDbUtil(mysql_cur)
+        pgsql_db = db.PgsqlDbUtil
         fid_dict = {}
         for row in people_list:
             data = base64.b64decode(row)
@@ -451,7 +451,7 @@ WHERE UDR.`user_id` = {}
         ) AND `status`=1 AND `feature` IS NOT NULL
         """
         device_fid_set = set(fid_dict.keys())
-        results = mysql_db.query(sql.format(device_name))
+        results = pgsql_db.query(pgsql_cur, sql.format(device_name))
         face_ids = [str(row[0]) for row in results]
 
         add_list = list(set(face_ids) - set(device_fid_set))
@@ -480,31 +480,26 @@ WHERE UDR.`user_id` = {}
                 add_list, del_list, update_list, device_name)
 
     @db.transaction(is_commit=True)
-    def create_device(self, mysql_cur, mac):
+    def create_device(self, pgsql_cur, mac):
         """
         创建设备
         """
         rds_conn = db.rds_conn
-        mysql_db = db.PgsqlDbUtil(mysql_cur)
+        pgsql_db = db.PgsqlDbUtil
+        # 创建设备只能顺序执行,无需使用自旋锁
         setnx_key = rds_conn.setnx('create_device', 1)
         if setnx_key:
             try:
-                # 控制设备数量
-                # count_sql = "SELECT COUNT(`id`) FROM `device` " \
-                #             "WHERE `status`!=10"
-                # device_count = mysql_db.get(count_sql)
-                # if device_count and device_count[0] > 61:
-                #     return None
 
                 dev_sql = "SELECT `id` FROM `device` WHERE `mac`='{}' LIMIT 1"
 
-                obj = mysql_db.get(dev_sql.format(mac))
+                obj = pgsql_db.get(pgsql_cur, dev_sql.format(mac))
                 if obj:
                     return None
 
                 sql = 'SELECT `id`,`device_name` FROM `device` ' \
                       'ORDER BY `id` DESC LIMIT 1'
-                obj = mysql_db.get(sql)
+                obj = pgsql_db.get(pgsql_cur, sql)
                 if not obj:
                     dev_name = 'dev_1'
                 else:
@@ -532,7 +527,7 @@ WHERE UDR.`user_id` = {}
                     'device_secret': response['Data']['DeviceSecret'],
                     'last_time': 'now()'
                 }
-                mysql_db.insert(d, table_name='device')
+                pgsql_db.insert(pgsql_cur, d, table_name='device')
 
                 # 发布消息注册
                 msg = {
@@ -554,7 +549,7 @@ WHERE UDR.`user_id` = {}
         self._set_workmode(dev_name, 0, car_no, cur_volume)
 
     @staticmethod
-    def _init_people(people_list, device_name, mysql_db):
+    def _init_people(people_list, device_name, pgsql_db, pgsql_cur):
         fid_dict = {}
         for row in people_list:
             data = base64.b64decode(row)
@@ -582,7 +577,7 @@ WHERE UDR.`user_id` = {}
         ) AND `status`=1 AND `feature` IS NOT NULL
         """
         device_fid_set = set(fid_dict.keys())
-        results = mysql_db.query(sql.format(device_name))
+        results = pgsql_db.query(pgsql_cur, sql.format(device_name))
         face_ids = [str(row[0]) for row in results]
 
         add_list = list(set(face_ids) - set(device_fid_set))
@@ -592,11 +587,12 @@ WHERE UDR.`user_id` = {}
             add_list, [], [], device_name)
 
     @db.transaction(is_commit=True)
-    def check_version(self, mysql_cur, device_name, cur_version, dev_time):
+    def check_version(self, pgsql_cur, device_name, cur_version, dev_time):
         """检查版本号"""
-        mysql_db = db.PgsqlDbUtil(mysql_cur)
+        pgsql_db = db.PgsqlDbUtil
         rds_conn = db.rds_conn
         cur_time = datetime.now()
+        # 当前时间和设备时间相差40s以上就不需要检查版本号
         dev_time_timestamp = datetime.fromtimestamp(int(dev_time))
         if (cur_time - dev_time_timestamp) > timedelta(seconds=40):
             return
@@ -606,12 +602,13 @@ WHERE UDR.`user_id` = {}
         elif cur_version >= 232:
             device_cur_status = "DEVICE_CUR_STATUS"
             device_status = rds_conn.hget(device_cur_status, device_name)
+            # 6表示已初始化人员
             if device_status and int(device_status) == 6:
                 return
             sql = "SELECT `id`,`status`,`version`,`car_no`," \
                   "`modify_status_timestamp`,`cur_volume` FROM `device` " \
                   "WHERE `device_name`='{}'"
-            devices = mysql_db.query(sql.format(device_name))
+            devices = pgsql_db.query(pgsql_cur, sql.format(device_name))
             if devices:
                 device = devices[0]
                 pk = device[0]
@@ -643,7 +640,7 @@ WHERE UDR.`user_id` = {}
                         long(dev_time): # 状态为5,初始化人员
                     d['`status`'] = 6   # 已初始化人员
                     rds_conn.hset(device_cur_status, device_name, 6)
-                    AcsManager._init_people([], device_name, mysql_db)
+                    AcsManager._init_people([], device_name, pgsql_db, pgsql_cur)
                     #print u"6.初始化人员"
                 elif status == 6 and \
                         not device_status:
@@ -655,16 +652,16 @@ WHERE UDR.`user_id` = {}
                 if d:
                     d['`id`'] = pk
                     d['`modify_status_timestamp`'] = int(dev_time)
-                    mysql_db.update(d, table_name='`device`')
+                    pgsql_db.update(pgsql_cur, d, table_name='`device`')
 
     @db.transaction(is_commit=True)
-    def save_imei(self, mysql_cur, device_name, imei):
-        mysql_db = db.PgsqlDbUtil(mysql_cur)
+    def save_imei(self, pgsql_cur, device_name, imei):
+        pgsql_db = db.PgsqlDbUtil
         sql = "SELECT `id` FROM `device` WHERE `device_name`='{}' LIMIT 1"
-        obj = mysql_db.get(sql.format(device_name))
+        obj = pgsql_db.get(pgsql_cur, sql.format(device_name))
         if obj:
             d = {
                 '`id`': obj[0],
                 '`imei`': imei
             }
-            mysql_db.update(d, table_name='`device`')
+            pgsql_db.update(pgsql_cur, d, table_name='`device`')

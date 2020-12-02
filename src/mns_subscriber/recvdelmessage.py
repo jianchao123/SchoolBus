@@ -4,18 +4,12 @@ import sys
 reload(sys)
 sys.setdefaultencoding('utf8')
 
-import os
-
-# sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/..")
-
-import time
 import json
 import base64
 from mns.queue import *
 from mns.account import Account
 from AcsManager import AcsManager
 import config
-import db_conf
 from utils import get_logger
 
 
@@ -45,11 +39,11 @@ class ReceiveMessage(object):
         body = json.loads(recv_msg.message_body)
         dev_name = body['topic'].split('/')[2]
         jdata = json.loads(base64.b64decode(body["payload"]))
-        if 'status' in jdata:
-            if jdata['status'] == "online":
-                acs_manager.device_open(jdata['deviceName'], jdata['lastTime'])
-            if jdata['status'] == "offline":
-                acs_manager.device_close(jdata['deviceName'], jdata['lastTime'])
+        # if 'status' in jdata:
+        #     if jdata['status'] == "online":
+        #         acs_manager.device_open(jdata['deviceName'], jdata['lastTime'])
+        #     if jdata['status'] == "offline":
+        #         acs_manager.device_close(jdata['deviceName'], jdata['lastTime'])
 
         acs_manager.check_cur_stream_no(dev_name, jdata)
         print jdata
@@ -126,7 +120,7 @@ class ReceiveMessage(object):
               "%s\nWaitSeconds:%s\n" % (10 * "=", 10 * "=", self.queue_name,
                                         self.wait_seconds))
 
-        logger = get_logger(db_conf.log_path)
+        logger = get_logger(config.log_path)
         acs_manager = AcsManager(
             self.product_key, self.mns_access_key_id,
             self.mns_access_key_secret, config.OSSDomain,
