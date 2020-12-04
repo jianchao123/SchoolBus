@@ -18,4 +18,5 @@ class Order(db.Model):
     gps = db.Column(db.String(32))      # 经纬度 逗号分割
     car_id = db.Column(db.Integer)      # 车辆Id
     license_plate_number = db.Column(db.String(16)) # 车牌
+    device_id = db.Column(db.Integer)
 

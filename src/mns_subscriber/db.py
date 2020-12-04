@@ -98,7 +98,7 @@ class PgsqlDbUtil(object):
     def update(pgsql_cur, data, table_name=None):
         sql = "UPDATE {} SET ".format(table_name)
         for k, v in data.items():
-            if k != '`id`':
+            if k != 'id':
                 if isinstance(v, (int, float, Decimal, long)):
                     sql += k + "=" + str(v) + ","
                 elif v in ["now()", "NOW()", "current_timestamp",
@@ -108,15 +108,15 @@ class PgsqlDbUtil(object):
                     sql += k + "=" + v + ","
                 else:
                     sql += k + "=" + "'" + v + "'" + ","
-        if isinstance(data["`id`"], list):
-            sql = sql[:-1] + " WHERE `id` in ({})".format(",".join(data["`id`"]))
+        if isinstance(data["id"], list):
+            sql = sql[:-1] + " WHERE id in ({})".format(",".join(data["id"]))
         else:
-            sql = sql[:-1] + " WHERE `id` = {}".format(data["`id`"])
+            sql = sql[:-1] + " WHERE id = {}".format(data["id"])
         pgsql_cur.execute(sql)
 
     @staticmethod
     def delete_all(pgsql_cur, table_name=None):
-        pgsql_cur.execute("DELETE FROM `{}` WHERE 1=1".format(table_name))
+        pgsql_cur.execute("DELETE FROM {} WHERE 1=1".format(table_name))
 
     @staticmethod
     def execute_sql(pgsql_cur, sql):

@@ -62,25 +62,6 @@ def device_people_update_msg(add_list, del_list, update_list, device_name):
     _publish_msg('device_exchange', 'device.list', json.dumps(data))
 
 
-def device_people_add_msg(fid, feature, parent_enterprise_id):
-    """设备人员添加"""
-    data = {
-        "fid": fid,
-        "feature": feature,
-        "parent_enterprise_id": parent_enterprise_id
-    }
-    _publish_msg('device_exchange', 'device.add', json.dumps(data))
-
-
-def device_people_delete_msg(fid, parent_enterprise_id):
-    """设备人员删除"""
-    data = {
-        "fid": fid,
-        "parent_enterprise_id": parent_enterprise_id
-    }
-    _publish_msg('device_exchange', 'device.delete', json.dumps(data))
-
-
 def export_order_excel_msg(parent_company_id, child_company_id,
                            department_id, year, month, task_id):
     """导出订单excel消息"""

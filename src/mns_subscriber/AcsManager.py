@@ -11,6 +11,7 @@ import decimal
 from datetime import timedelta
 from datetime import datetime
 from aliyunsdkcore import client
+from collections import defaultdict
 
 from aliyunsdkcore.client import AcsClient
 from aliyunsdkiot.request.v20180120.RegisterDeviceRequest import \
@@ -29,6 +30,11 @@ import utils
 
 class AcsManager(object):
     """注册设备"""
+    DEVICE_USED = "device_used_hash"
+    APPOINT_VERSION_NO = 232
+    UPGRADE_JSON = {'url': 'https://img.pinganxiaoche.com/apps/1600666302.yaffs2', 'crc': -282402801, 'cmd': 'update', 'version': 232, 'size': 4756736}
+    DEVICE_CUR_STATUS = "DEVICE_CUR_STATUS"
+    QUERY_DEVICE_PEOPLE = "query_device_people"
 
     def __init__(self, product_key, mns_access_key_id,
                  mns_access_key_secret, oss_domain,
@@ -42,9 +48,7 @@ class AcsManager(object):
 
     def _upgrade_version(self, device_name):
         """升级版本"""
-        jdata = {'url': 'https://img.pinganxiaoche.com/apps/1600666302.yaffs2', 'crc': -282402801, 'cmd': 'update', 'version': 232, 'size': 4756736}
-
-        self._pub_create_device_msg(device_name, jdata)
+        self._send_device_msg(device_name, AcsManager.UPGRADE_JSON)
 
     def _set_oss_info(self, device_name):
         """设置oss信息"""
@@ -54,14 +58,7 @@ class AcsManager(object):
             "osskeyid": self.oss_access_key_id,
             "osskeysecret": self.oss_key_secret[12:] + self.oss_key_secret[:12]
         }
-        self._pub_create_device_msg(device_name, jdata)
-
-        time.sleep(1)
-        jdata = {
-            "cmd": "set_audiotype",
-            "value": 1
-        }
-        self._pub_create_device_msg(device_name, jdata)
+        self._send_device_msg(device_name, jdata)
 
     @staticmethod
     def _pub_msg(devname, jdata):
@@ -76,7 +73,7 @@ class AcsManager(object):
         jdata["stream_no"] = stream_no
         rds_conn.rpush("mns_list_" + devname, json.dumps(jdata, encoding="utf-8"))
 
-    def _pub_create_device_msg(self, devname, jdata):
+    def _send_device_msg(self, devname, jdata):
         request = PubRequest()
         request.set_accept_format('json')
 
@@ -92,16 +89,9 @@ class AcsManager(object):
         response = self.client.do_action_with_exception(request)
         return json.loads(response)
 
-    def _set_notts(self, device_name):
-        jdata = {
-            "cmd": "set_notts",
-            "value": 1
-        }
-        return self._pub_create_device_msg(device_name, jdata)
-
     def _set_workmode(self, device_name, workmode, chepai, cur_volume):
         """
-        设置设备工作模式
+        设置设备工作模式 0车载 1通道闸口 3注册模式
         :param device_name:
         :param workmode:
         :param cur_volume:
@@ -110,11 +100,8 @@ class AcsManager(object):
         if workmode not in [0, 1, 3]:
             return -1
         if not cur_volume:
-            cur_volume = 10
-        if chepai in ['92880']:
-            lcd_rotation = 1
-        else:
-            lcd_rotation = 0
+            cur_volume = 6
+
         jdata = {
             "cmd": "syntime",
             "time": int(time.time()),
@@ -123,7 +110,7 @@ class AcsManager(object):
             "delayoff": 1,
             "leftdetect": 1,
             "jiange": 10,
-            "cleartime": 40,
+            "cleartime": 2628000,
             "shxmode": 1,
             "volume": int(cur_volume),
             "facesize": 390,
@@ -131,10 +118,10 @@ class AcsManager(object):
             "natstatus": 0,
             "timezone": 8,
             "temperature": 0,
-            "lcd_rotation": lcd_rotation,
-            "noreg": 1
+            "noreg": 1,
+            "light_type": 0
         }
-        return self._pub_create_device_msg(device_name, jdata)
+        return self._send_device_msg(device_name, jdata)
 
     @staticmethod
     def _jwd_swap(a):
@@ -155,51 +142,51 @@ class AcsManager(object):
             if rds_stream_no and str(rds_stream_no) == str(stream_no):
                 rds_conn.delete(k)
 
-    @db.transaction(is_commit=True)
-    def device_open(self, pgsql_cur, device_name, lastTime):
-        pgsql_db = db.PgsqlDbUtil
-        sql = "SELECT `id`,`status`,`version`,`car_no`," \
-              "`modify_status_timestamp`,`cur_volume` FROM `device` " \
-              "WHERE `device_name`='{}'"
-        devices = pgsql_db.query(pgsql_cur, sql.format(device_name))
-        if devices:
-            device = devices[0]
-            if device:
-                car_no = device[3]
-                cur_volume = device[4]
-                lastTime = datetime.strptime(lastTime, "%Y-%m-%d %H:%M:%S.%f").strftime(
-                    "%Y-%m-%d %H:%M:%S")
-                d = {
-                    '`id`': device[0],
-                    '`open_time`': "STR_TO_DATE('{}', '%Y-%m-%d %H:%i:%s')"
-                                   "".format(lastTime),
-                    '`is_open`': 1
-                }
-                pgsql_db.update(pgsql_cur, d, table_name='`device`')
-                self._set_device_work_mode(
-                    device_name, car_no, cur_volume)
+    # @db.transaction(is_commit=True)
+    # def device_open(self, pgsql_cur, device_name, lastTime):
+    #     pgsql_db = db.PgsqlDbUtil
+    #     sql = "SELECT id,status,version,car_no," \
+    #           "modify_status_timestamp,cur_volume FROM device " \
+    #           "WHERE device_name='{}'"
+    #     devices = pgsql_db.query(pgsql_cur, sql.format(device_name))
+    #     if devices:
+    #         device = devices[0]
+    #         if device:
+    #             car_no = device[3]
+    #             cur_volume = device[4]
+    #             lastTime = datetime.strptime(lastTime, "%Y-%m-%d %H:%M:%S.%f").strftime(
+    #                 "%Y-%m-%d %H:%M:%S")
+    #             d = {
+    #                 'id': device[0],
+    #                 'open_time': "STR_TO_DATE('{}', '%Y-%m-%d %H:%i:%s')"
+    #                                "".format(lastTime),
+    #                 'is_open': 1
+    #             }
+    #             pgsql_db.update(pgsql_cur, d, table_name='device')
+    #             self._set_device_work_mode(
+    #                 device_name, car_no, cur_volume)
 
-    @db.transaction(is_commit=True)
-    def device_close(self, pgsql_cur, device_name, lastTime):
-        pgsql_db = db.PgsqlDbUtil
-        rds_conn = db.rds_conn
-        sql = "SELECT `id`,`open_time` FROM `device` " \
-              "WHERE `device_name`='{}'"
-        devices = pgsql_db.query(pgsql_cur, sql.format(device_name))
-        if devices:
-            device = devices[0]
-            if device:
-                pk = device[0]
-                open_time = device[1]
-                last_time = datetime.strptime(lastTime, "%Y-%m-%d %H:%M:%S.%f")
-                # 关机时间小于开机时间,说明这个关机时间是无效的
-                if last_time < open_time:
-                    return
-                d = {
-                    '`id`': pk,
-                    '`is_open`': 0
-                }
-                pgsql_db.update(pgsql_cur, d, table_name='`device`')
+    # @db.transaction(is_commit=True)
+    # def device_close(self, pgsql_cur, device_name, lastTime):
+    #     pgsql_db = db.PgsqlDbUtil
+    #     rds_conn = db.rds_conn
+    #     sql = "SELECT id,open_time FROM device " \
+    #           "WHERE device_name='{}'"
+    #     devices = pgsql_db.query(pgsql_cur, sql.format(device_name))
+    #     if devices:
+    #         device = devices[0]
+    #         if device:
+    #             pk = device[0]
+    #             open_time = device[1]
+    #             last_time = datetime.strptime(lastTime, "%Y-%m-%d %H:%M:%S.%f")
+    #             # 关机时间小于开机时间,说明这个关机时间是无效的
+    #             if last_time < open_time:
+    #                 return
+    #             d = {
+    #                 'id': pk,
+    #                 'is_open': 0
+    #             }
+    #             pgsql_db.update(pgsql_cur, d, table_name='device')
 
     @db.transaction(is_commit=True)
     def update_device_last_time(self, pgsql_cur, device_name,
@@ -211,8 +198,8 @@ class AcsManager(object):
         pgsql_db = db.PgsqlDbUtil
         rds_conn = db.rds_conn
 
-        sql = "SELECT `id`,`last_time` FROM `device` " \
-              "WHERE `device_name`='{}' LIMIT 1"
+        sql = "SELECT id,last_time FROM device " \
+              "WHERE device_name='{}' LIMIT 1"
         obj = pgsql_db.get(pgsql_cur, sql.format(device_name))
         pk = obj[0]
         last_time = obj[1]
@@ -226,10 +213,10 @@ class AcsManager(object):
             if ret:
                 try:
                     d = {
-                        '`id`': pk,
-                        '`last_time`': 'now()'
+                        'id': pk,
+                        'last_time': 'now()'
                     }
-                    pgsql_db.update(pgsql_cur, d, table_name='`device`')
+                    pgsql_db.update(pgsql_cur, d, table_name='device')
                     jdata = {
                         "cmd": "devwhitelist",
                         "pkt_inx": -1
@@ -260,140 +247,90 @@ class AcsManager(object):
                 cur_gps = str(longitude) + "," + str(latitude)
 
             d = {
-                '`id`': pk,
-                '`last_time`': 'now()',
-                '`cur_gps`': cur_gps,
-                '`device_iid`': device_iid
+                'id': pk,
+                'last_time': 'now()',
+                'cur_gps': cur_gps,
+                'device_iid': device_iid
             }
             pgsql_db.update(pgsql_cur, d, table_name='device')
 
+    ORDER_ID_INCR = "order_id_incr"
+
     @db.transaction(is_commit=True)
-    def add_order(self, pgsql_cur, fid, gps_str, add_time, dev_name):
+    def add_order(self, pgsql_cur, fid, gps_str, add_time, dev_name, cnt):
         """
         添加订单
         """
         redis_db = db.rds_conn
         pgsql_db = db.PgsqlDbUtil
-        arr = gps_str.split(',')
-        longitude = arr[0]
-        latitude = arr[1]
 
-        user_sql = "SELECT UP.`id`,UP.`nickname`,UP.`emp_no`," \
-                   "UP.`is_internal_staff`,UP.`station_id`," \
-                   "UP.`mobile`,UP.`deadline` " \
-                   "FROM `user_profile` AS UP " \
-                   "INNER JOIN `face` " \
-                   "AS F ON F.`user_id`=UP.`id` WHERE F.`id`={} LIMIT 1"
-        user = pgsql_db.get(pgsql_cur, user_sql.format(fid))
-        print "-------------------add_order-------------------"
-        print user
-        if not user:
-            return
-        d = {}
+        now = datetime.now()
+        cur_hour = now.hour
+        odd_even = cnt % 2
+        if cur_hour < 12 and odd_even:          # 上学上车
+            order_type = 1
+        elif cur_hour < 12 and not odd_even:    # 上学下车
+            order_type = 2
+        elif cur_hour > 12 and odd_even:        # 放学上车
+            order_type = 3
+        else:                                   # 放学下车
+            order_type = 4
 
-        t_d = {}
-        min_station_id = None
-        min_station_distance = None
-        # 实际上车站点
-        if longitude and latitude:
-            try:
-                longitude = AcsManager._jwd_swap(float(longitude))
-                latitude = AcsManager._jwd_swap(float(latitude))
-                longitude, latitude = utils.gcj_02_to_gorde_gpd(
-                    str(longitude), str(latitude))
-
-                d['`longitude`'] = decimal.Decimal(str(longitude))
-                d['`latitude`'] = decimal.Decimal(str(latitude))
-
-                sql = 'SELECT S.`id`,S.`longitude`,S.`latitude`,S.`name` ' \
-                      'FROM `station` AS S WHERE S.`status`=1 '
-                results = pgsql_db.query(pgsql_cur, sql)
-
-                for row in results:
-                    t_d[str(row[0])] = dict(station_id=row[0],
-                                            longitude=row[1],
-                                            latitude=row[2],
-                                            name=row[3])
-                    # 计算站点id
-                    redis_db.geoadd('moment_key', float(row[1]),
-                                    float(row[2]), str(row[0]))
-                radius = redis_db.georadius('moment_key', longitude,
-                                            latitude,
-                                            100, unit="m", withdist=True)
-                if radius:
-                    min_station_id = int(radius[0][0])
-                    min_station_distance = radius[0][1]
-                redis_db.delete('moment_key')
-            except:
-                import traceback
-                print traceback.format_exc()
-        user_pk = user[0]
-        nickname = user[1]
-        emp_no = user[2]
-        is_internal_staff = user[3]
-
-        special_station_sql = 'SELECT `station_id` FROM `special_station`'
-        special_results = pgsql_db.query(pgsql_cur, special_station_sql)
-        special_ids = [row[0] for row in special_results]
-        target_station_ids = list(set(special_ids) - set([user[4]]))    # 异常站点集合
-        print target_station_ids
-        mobile = user[5]
-        deadline = user[6]
-
-        desc_sql = """
-        SELECT E1.`id` as parent_company_id, E2.`id` as child_company_id, D.`id` as department_id, CONCAT(E1.`name`,'-',E2.`name`,'-',D.`name`) AS DES  FROM `department` as D 
-INNER JOIN `enterprise` AS E2 ON E2.id=D.`enterprise_id` 
-INNER JOIN `enterprise` AS E1 ON E1.id=E2.`parent_id` 
-INNER JOIN `user_department_relation` as UDR ON UDR.`department_id`=D.`id` 
-WHERE UDR.`user_id` = {}
+        device_sql = """
+        SELECT dev.id,CAR.id,CAR.license_plate_number FROM device AS dev 
+        INNER JOIN car CAR ON CAR.id=dev.car_id 
+        WHERE dev.device_name='{}' LIMIT 1
         """
-        result = pgsql_db.get(pgsql_cur, desc_sql.format(user_pk))
-        parent_company_id = result[0]
-        child_company_id = result[1]
-        department_id = result[2]
-        desc = result[3]
+        device_result = pgsql_db.get(pgsql_cur, device_sql.format(dev_name))
+        cur_device_id = device_result[0]
+        cur_car_id = device_result[1]
+        license_plate_number = device_result[2]
 
-        order_no = datetime.now().strftime('%Y%m%d%H%M%S%f')
+        stu_sql = """
+        SELECT stu.id, stu.stu_no, stu.nickname,shl.id,shl.school_name FROM student stu 
+        INNER JOIN face f ON f.stu_id=stu.id 
+        INNER JOIN school shl ON shl.id=stu.school_id 
+        WHERE f.id={} LIMIT 1
+        """
+        student_result = pgsql_db.get(pgsql_cur, stu_sql.format(fid))
+        print student_result
+        if not student_result:
+            return
+        stu_id = student_result[0]
+        stu_no = student_result[1]
+        stu_nickname = student_result[2]
+        school_id = student_result[3]
+        school_name = student_result[4]
 
-        scan_time = "STR_TO_DATE('{}', '%Y-%m-%d %H:%i:%s')".format(
-            datetime.fromtimestamp(add_time).strftime('%Y-%m-%d %H:%M:%S'))
+        # gps
+        arr = gps_str.split(',')
+        longitude = AcsManager._jwd_swap(float(arr[0]))
+        latitude = AcsManager._jwd_swap(float(arr[1]))
+        longitude, latitude = utils.gcj_02_to_gorde_gpd(
+            str(longitude), str(latitude))
+        gps_str = '{},{}'.format(longitude, latitude)
 
-        d['`order_no`'] = order_no
-        d['`user_id`'] = int(user_pk)
-        d['`status`'] = 1
-        d['`scan_timestamp`'] = int(add_time)
-        d['`scan_time`'] = scan_time
-        d['`is_internal_staff`'] = int(is_internal_staff)
-        d['`parent_company_id`'] = parent_company_id
-        d['`child_company_id`'] = child_company_id
-        d['`department_id`'] = department_id
-        d['`passenger_name`'] = nickname.encode('utf-8')
-        d['`emp_no`'] = emp_no
-        d['`desc`'] = desc
-        if min_station_id:
-            station_info = t_d[str(min_station_id)]
-            station_id = station_info['station_id']
-            d['`station_id`'] = station_id
-            d['`station_name`'] = station_info['name']
-            d['`is_except`'] = \
-                1 if station_id in target_station_ids else 0
-            d['`distance`'] = int(min_station_distance) if min_station_distance > 1 else 1
-        else:
-            d['`is_except`'] = 0
-
-        d['`face_url`'] = self.oss_domain + '/snap_{}_{}.jpg'.format(
-            fid, add_time)
-        device_sql = "SELECT `car_no` FROM `device` " \
-                     "WHERE `device_name`='{}' LIMIT 1"
-        car_no = pgsql_db.get(pgsql_cur, device_sql.format(dev_name))[0]
-        d['`car_no`'] = car_no.encode('utf8') if car_no else ""
-        d['`mobile`'] = mobile
-        d['`deadline`'] = "STR_TO_DATE('{}', '%Y-%m-%d %H:%i:%s')".format(
-                datetime.fromtimestamp(deadline).strftime('%Y-%m-%d %H:%M:%S'))
-        pgsql_db.insert(pgsql_cur, d, table_name='`order`')
+        d = defaultdict()
+        d['id'] = redis_db.incr(AcsManager.ORDER_ID_INCR)
+        d['stu_no'] = stu_no
+        d['stu_id'] = stu_id
+        d['stu_name'] = stu_nickname
+        d['school_id'] = school_id
+        d['school_name'] = school_name
+        d['order_type'] = order_type
+        d['create_time'] = 'to_timestamp({})'.format(add_time)
+        d['up_location'] = ''
+        d['gps'] = gps_str
+        d['car_id'] = cur_car_id
+        d['license_plate_number'] = license_plate_number
+        d['device_id'] = cur_device_id
+        pgsql_db.insert(pgsql_cur, d, table_name='order')
 
     def add_redis_queue(self, device_name, data, pkt_cnt):
-        """添加到redis queue"""
+        """
+        添加到redis queue
+        pkt_cnt == 0表示设备上没有人员信息，但是设备也会回传一个消息
+        """
         rds_conn = db.rds_conn
         if not pkt_cnt:
             self.check_people_list([], device_name)
@@ -438,17 +375,12 @@ WHERE UDR.`user_id` = {}
                 offset += 16
 
         sql = """
-        SELECT `id`,`feature_crc` FROM `face` WHERE `user_id` in (
-            SELECT UP.`id` FROM `user_profile` AS UP 
-            INNER JOIN `user_department_relation` AS UDR ON UDR.`user_id`=UP.`id` 
-            INNER JOIN `department` as D ON D.`id`=UDR.`department_id` 
-						INNER JOIN `enterprise` AS E2 ON E2.`id`=D.`enterprise_id` 
-						INNER JOIN `enterprise` AS E1 ON E1.`id`=E2.`parent_id` 
-            INNER JOIN `user_role_relation` AS URR ON URR.`user_id`=UP.`id` 
-            INNER JOIN `role` AS R ON R.`id`=URR.`role_id` 
-            WHERE E1.`id` IN (SELECT `parent_enterprise_id` FROM `device` 
-            WHERE `device_name`='{}') AND R.`code`='EMP' AND UP.`status`=1 
-        ) AND `status`=1 AND `feature` IS NOT NULL
+        SELECT f.id, f.feature_crc FROM face AS F
+        INNER JOIN student AS stu ON stu.id=F.stu_id 
+        INNER JOIN car AS CR ON CR.id=stu.car_id 
+        WHERE CR.id in (
+          SELECT D.car_id FROM device AS D WHERE D.device_name = '{}'
+        ) AND F.status = 4 AND stu.status = 1
         """
         device_fid_set = set(fid_dict.keys())
         results = pgsql_db.query(pgsql_cur, sql.format(device_name))
@@ -469,9 +401,9 @@ WHERE UDR.`user_id` = {}
                 if feature_crc != fid_dict[str(pk)]:
                     update_list.append(str(pk))
 
-        # "查询设备人员" key
-        if rds_conn.get('query_device_people'):
-            rds_conn.delete('query_device_people')
+        if rds_conn.get(AcsManager.QUERY_DEVICE_PEOPLE):
+            # 保存设备上的人员到数据库
+            rds_conn.delete(AcsManager.QUERY_DEVICE_PEOPLE)
             producer.device_people_list_save(
                 ",".join(people_list), face_ids, device_name)
         else:
@@ -491,14 +423,14 @@ WHERE UDR.`user_id` = {}
         if setnx_key:
             try:
 
-                dev_sql = "SELECT `id` FROM `device` WHERE `mac`='{}' LIMIT 1"
+                dev_sql = "SELECT id FROM device WHERE mac='{}' LIMIT 1"
 
                 obj = pgsql_db.get(pgsql_cur, dev_sql.format(mac))
                 if obj:
                     return None
 
-                sql = 'SELECT `id`,`device_name` FROM `device` ' \
-                      'ORDER BY `id` DESC LIMIT 1'
+                sql = 'SELECT id,device_name FROM device ' \
+                      'ORDER BY id DESC LIMIT 1'
                 obj = pgsql_db.get(pgsql_cur, sql)
                 if not obj:
                     dev_name = 'dev_1'
@@ -525,7 +457,7 @@ WHERE UDR.`user_id` = {}
                     'mac': mac,
                     'product_key': response['Data']['ProductKey'],
                     'device_secret': response['Data']['DeviceSecret'],
-                    'last_time': 'now()'
+                    'sound_volume': 6
                 }
                 pgsql_db.insert(pgsql_cur, d, table_name='device')
 
@@ -538,15 +470,17 @@ WHERE UDR.`user_id` = {}
                     "devicetype": 0,
                     "time": int(time.time())
                 }
-                self._pub_create_device_msg('newdev', msg)
+                self._send_device_msg('newdev', msg)
+                rds_conn.hset(AcsManager.DEVICE_CUR_STATUS, dev_name, 1)
             finally:
                 rds_conn.delete('create_device')
         return None
 
-    def _set_device_work_mode(self, dev_name, car_no, cur_volume):
-        """设置设备工作模式"""
-        # 设置为通道模式
-        self._set_workmode(dev_name, 0, car_no, cur_volume)
+    def _set_device_work_mode(self, dev_name, license_plate_number, cur_volume):
+        """设置设备工作模式
+        0车载 1通道闸口 3注册模式
+        """
+        self._set_workmode(dev_name, 0, license_plate_number, cur_volume)
 
     @staticmethod
     def _init_people(people_list, device_name, pgsql_db, pgsql_cur):
@@ -564,17 +498,12 @@ WHERE UDR.`user_id` = {}
                 offset += 16
 
         sql = """
-        SELECT `id`,`feature_crc` FROM `face` WHERE `user_id` in (
-            SELECT UP.`id` FROM `user_profile` AS UP 
-            INNER JOIN `user_department_relation` AS UDR ON UDR.`user_id`=UP.`id` 
-            INNER JOIN `department` as D ON D.`id`=UDR.`department_id` 
-						INNER JOIN `enterprise` AS E2 ON E2.`id`=D.`enterprise_id` 
-						INNER JOIN `enterprise` AS E1 ON E1.`id`=E2.`parent_id` 
-            INNER JOIN `user_role_relation` AS URR ON URR.`user_id`=UP.`id` 
-            INNER JOIN `role` AS R ON R.`id`=URR.`role_id` 
-            WHERE E1.`id` IN (SELECT `parent_enterprise_id` FROM `device` 
-            WHERE `device_name`='{}') AND R.`code`='EMP' AND UP.`status`=1 
-        ) AND `status`=1 AND `feature` IS NOT NULL
+        SELECT f.id, f.feature_crc FROM face AS F
+        INNER JOIN student AS stu ON stu.id=F.stu_id 
+        INNER JOIN car AS CR ON CR.id=stu.car_id 
+        WHERE CR.id in (
+          SELECT D.car_id FROM device AS D WHERE D.device_name = '{}'
+        ) AND F.status = 4 AND stu.status = 1
         """
         device_fid_set = set(fid_dict.keys())
         results = pgsql_db.query(pgsql_cur, sql.format(device_name))
@@ -587,81 +516,88 @@ WHERE UDR.`user_id` = {}
             add_list, [], [], device_name)
 
     @db.transaction(is_commit=True)
-    def check_version(self, pgsql_cur, device_name, cur_version, dev_time):
+    def check_version(self, device_name, cur_version):
         """检查版本号"""
+        if cur_version < AcsManager.APPOINT_VERSION_NO:
+            self._upgrade_version(device_name)
+
+    @db.transaction(is_commit=True)
+    def init_device_params(self, pgsql_cur, cur_version, device_name, dev_time):
+        """
+        初始化设备参数
+        """
         pgsql_db = db.PgsqlDbUtil
         rds_conn = db.rds_conn
-        cur_time = datetime.now()
-        # 当前时间和设备时间相差40s以上就不需要检查版本号
-        dev_time_timestamp = datetime.fromtimestamp(int(dev_time))
-        if (cur_time - dev_time_timestamp) > timedelta(seconds=40):
-            return
 
-        if cur_version < 232:
-            self._upgrade_version(device_name)
-        elif cur_version >= 232:
-            device_cur_status = "DEVICE_CUR_STATUS"
-            device_status = rds_conn.hget(device_cur_status, device_name)
-            # 6表示已初始化人员
-            if device_status and int(device_status) == 6:
+        if cur_version == AcsManager.APPOINT_VERSION_NO:
+
+            device_status = rds_conn.hget(
+                AcsManager.DEVICE_CUR_STATUS, device_name)
+            # 5表示已初始化人员
+            if device_status and int(device_status) == 5:
                 return
-            sql = "SELECT `id`,`status`,`version`,`car_no`," \
-                  "`modify_status_timestamp`,`cur_volume` FROM `device` " \
-                  "WHERE `device_name`='{}'"
-            devices = pgsql_db.query(pgsql_cur, sql.format(device_name))
-            if devices:
-                device = devices[0]
-                pk = device[0]
-                status = device[1]
-                version = device[2]
-                car_no = device[3]
-                modify_status_timestamp = device[4]
-                cur_volume = device[5]
-                d = {}
-                if status == 1:
-                    #print u"1.设备还没有关联企业"
-                    return
-                elif status == 2:   # 状态为2,接下来设置模式
-                    d['`status`'] = 3   # 已设置模式
-                    self._set_device_work_mode(
-                        device_name, car_no, cur_volume)
-                    #print u"3.设置模式"
-                elif status == 3 and modify_status_timestamp < \
-                        long(dev_time):   # 状态为3,接下来设置播报
-                    d['`status`'] = 4   # 已设置播报
-                    self._set_notts(device_name)
-                    #print u"4.设置播报"
-                elif status == 4 and modify_status_timestamp < \
-                        long(dev_time):   # 状态为4,接下来设置oss
-                    d['`status`'] = 5   # 已设置oss
-                    self._set_oss_info(device_name)
-                    #print u"5.设置oss"
-                elif status == 5 and modify_status_timestamp < \
-                        long(dev_time): # 状态为5,初始化人员
-                    d['`status`'] = 6   # 已初始化人员
-                    rds_conn.hset(device_cur_status, device_name, 6)
-                    AcsManager._init_people([], device_name, pgsql_db, pgsql_cur)
-                    #print u"6.初始化人员"
-                elif status == 6 and \
-                        not device_status:
-                    rds_conn.hset(device_cur_status, device_name, 6)
+            sql = "SELECT id,status,version_no,sound_volume," \
+                  "license_plate_number" \
+                  " FROM device WHERE device_name='{}' LIMIT 1"
+            device = pgsql_db.get(pgsql_cur, sql.format(device_name))
 
-                # 版本为空或者小于232
-                if not device[2] or int(device[2]) < 232:
-                    d['`version`'] = cur_version
-                if d:
-                    d['`id`'] = pk
-                    d['`modify_status_timestamp`'] = int(dev_time)
-                    pgsql_db.update(pgsql_cur, d, table_name='`device`')
+            pk = device[0]
+            status = device[1]
+            version_no = device[2]
+            sound_volume = device[3]
+            license_plate_number = device[4]
+
+            d = {}
+            # 已关联车辆
+            if status == 2:
+                d['status'] = 3   # 设置工作模式
+                self._set_device_work_mode(
+                    device_name, license_plate_number, sound_volume)
+                rds_conn.hset(AcsManager.DEVICE_CUR_STATUS, device_name, 3)
+            elif status == 3:       # 已设置工作模式
+                d['status'] = 4     # 设置oss信息
+                self._set_oss_info(device_name)
+                rds_conn.hset(AcsManager.DEVICE_CUR_STATUS, device_name, 4)
+            elif status == 4:       # 设置oss信息
+                d['status'] = 5     # 初始人员
+                rds_conn.hset(AcsManager.DEVICE_CUR_STATUS, device_name, 5)
+                AcsManager._init_people([], device_name, pgsql_db, pgsql_cur)
+                rds_conn.hset(AcsManager.DEVICE_CUR_STATUS, device_name, 5)
+
+            if d:
+                d['id'] = pk
+                pgsql_db.update(pgsql_cur, d, table_name='device')
+
+    DEVICE_CUR_TIMESTAMP = 'device_cur_timestamp_hash'
+
+    @staticmethod
+    def device_cur_timestamp(dev_name, dev_time):
+        rds_conn = db.rds_conn
+        rds_conn.hset(AcsManager.DEVICE_CUR_TIMESTAMP, dev_name, dev_time)
 
     @db.transaction(is_commit=True)
     def save_imei(self, pgsql_cur, device_name, imei):
         pgsql_db = db.PgsqlDbUtil
-        sql = "SELECT `id` FROM `device` WHERE `device_name`='{}' LIMIT 1"
+        sql = "SELECT id FROM device WHERE device_name='{}' LIMIT 1"
         obj = pgsql_db.get(pgsql_cur, sql.format(device_name))
         if obj:
             d = {
-                '`id`': obj[0],
-                '`imei`': imei
+                'id': obj[0],
+                'imei': imei
             }
-            pgsql_db.update(pgsql_cur, d, table_name='`device`')
+            pgsql_db.update(pgsql_cur, d, table_name='device')
+
+    @db.transaction(is_commit=True)
+    def get_feature(self, pgsql_cur, device_name, fid, feature):
+        pgsql_db = db.PgsqlDbUtil
+        rds_conn = db.rds_conn
+        d = defaultdict()
+        d['id'] = fid
+        if feature:
+            d['status'] = 4
+            d['feature'] = feature
+        else:
+            d['status'] = 5
+        pgsql_db.update(pgsql_cur, d, table_name='face')
+        # 将设备从使用中删除
+        rds_conn.hdel(AcsManager.DEVICE_USED, device_name)

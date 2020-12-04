@@ -50,19 +50,19 @@ class ReceiveMessage(object):
         if 'cmd' in jdata:
             cmd = jdata['cmd']
             if cmd == 'syndata':
-                if jdata['devid'] == 'newdev':
+                dev_name = jdata['devid']
+                if dev_name == 'newdev':
                     logger.info(u'注册新设备')
                     acs_manager.create_device(jdata['mac'])
 
                 else:
-                    dev_name = jdata['devid']
                     acs_manager.check_version(
                         dev_name, jdata['version'], jdata['devtime'])
 
-                    if int(jdata['version']) >= 232:
-                        acs_manager.update_device_last_time(
-                            dev_name, jdata['devtime'], jdata['gps'],
-                            jdata['shd_devid'])
+                    acs_manager.init_device_params(
+                        jdata['version'], dev_name, jdata['devtime'])
+
+                    acs_manager.device_cur_timestamp(dev_name, jdata['devtime'])
 
             elif cmd == 'devwhitelist2':
                 logger.info(u"人员列表")
@@ -74,8 +74,12 @@ class ReceiveMessage(object):
                 # 生成特征值返回的信息
                 if 'feature_type' in jdata:
                     if jdata['feature']:
+                        AcsManager.get_feature(
+                            dev_name, jdata['fid'], jdata['feature'])
                         logger.info(u'生成特征值成功{}'.format(jdata['fid']))
                     else:
+                        AcsManager.get_feature(
+                            dev_name, jdata['fid'], jdata['feature'])
                         logger.info(u"生成特征值失败{}".format(jdata['fid']))
             elif cmd == 'updateface':
                 pass
@@ -90,7 +94,8 @@ class ReceiveMessage(object):
                     acs_manager.add_order(jdata['fid'],
                                           jdata['gps'],
                                           jdata['addtime'],
-                                          dev_name)
+                                          dev_name,
+                                          jdata['cnt'])
             elif cmd == 'syndevinfo':
                 print u'4g模块\sim卡信息'
                 acs_manager.save_imei(dev_name, jdata['imei'])

@@ -56,7 +56,7 @@ class Test(object):
             "delayoff": 1,
             "leftdetect": 1,
             "jiange": 10,
-            "cleartime": 40,
+            "cleartime": 2628000,
             "shxmode": 1,
             "volume": 6,
             "facesize": 390,
@@ -64,7 +64,8 @@ class Test(object):
             "natstatus": 0,
             "timezone": 8,
             "temperature": 0,
-            "noreg": 1
+            "noreg": 1,
+            "light_type": 0
         }
         return self.pub_msg(device_name, jdata)
 
@@ -171,7 +172,7 @@ class Test(object):
             "delayoff": 1,
             "leftdetect": 1,
             "jiange": 10,
-            "cleartime": 40,
+            "cleartime": 2628000,
             "shxmode": 1,
             "volume": 6,
             "facesize": 390,
@@ -180,7 +181,8 @@ class Test(object):
             "timezone": 8,
             "temperature": 0,
             "lcd_rotation": 0,
-            "noreg": 1
+            "noreg": 1,
+            "light_type": 0
         }
         self.pub_msg("dev_77", jdata)
 

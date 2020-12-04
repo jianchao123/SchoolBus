@@ -23,3 +23,4 @@ class Student(db.Model):
     end_time = db.Column(db.DateTime)
     car_id = db.Column(db.Integer)      # 车辆id
     license_plate_number = db.Column(db.String(16))
+    status = db.Column(db.Integer)      # 状态 1有效 10删除

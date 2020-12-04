@@ -18,144 +18,79 @@ from timer import db
 from timer import config
 
 
-class GenerateTid(object):
+def pub_msg(rds_conn, devname, jdata):
+    print u"-----------加入顺序发送消息的队列--------"
+    print jdata
+    k = rds_conn.get("stream_no_incr")
+    if k:
+        stream_no = rds_conn.incr("stream_no_incr")
+    else:
+        rds_conn.set("stream_no_incr", 1000000)
+        stream_no = 1000000
+    jdata["stream_no"] = stream_no
+    k = "mns_list_" + devname
+    rds_conn.rpush(k, json.dumps(jdata, encoding="utf-8"))
 
-    def _get_user_tid(self, oss_url):
-        params = {
-            'key': 'ksjaflnnsjiowe3',
-            'faceurl': oss_url
-        }
-        payload = """------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data;
-            name=\"key\"\r\n\r\n{}\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data;
-            name=\"products\"\r\n\r\n {}\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW--""".format(
-            params['key'], params['faceurl'])
-        headers = {
-            "content-type": "multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW"
-        }
-        resp = None
-        try:
-            resp = requests.post('http://api.pinganxiaoche.com/face/regface',
-                                 data=payload,
-                                 params=params,
-                                 verify=False, timeout=3, headers=headers)
-        except:
-            return None
-        c = json.loads(resp.content)
-        print c
-        if not c['code']:
-            return c['tid']
-        return None
 
-    @db.transaction(is_commit=True)
-    def generate_tid(self, mysql_cur):
-        """
-        生成tid (因为远程服务器执行能力不够,同一时间单线程执行)
-        :return:
-        """
-        print u"==================生成tid====================="
-        print datetime.now()
-        mysql_db = db.MysqlDbUtil(mysql_cur)
+class GenerateFeature(object):
+    """生成feature"""
+
+    DEVICE_CUR_TIMESTAMP = 'device_cur_timestamp_hash'
+    DEVICE_USED = "device_used_hash"
+
+    @db.transaction(is_commit=False)
+    def generate_feature(self, pgsql_cur):
+        pgsql_db = db.PgsqlDbUtil
         rds_conn = db.rds_conn
-        setnx_key = rds_conn.setnx('generate_tid', 1)
-        if setnx_key:
-            try:
-                sql = """
-                SELECT F.`id`,F.`oss_url`,F.`update_time` FROM `face` AS F 
-                INNER JOIN `user_profile` AS UP ON UP.`id`=F.`user_id` 
-                WHERE F.`status`=-1 AND UP.`status`=1
-                ORDER BY F.`id` ASC LIMIT 6
-                """
-                results = mysql_db.query(sql)
-                for row in results:
-                    update_time = row[2]
-                    # 如果是刚刚更新,需要等一会儿去生成tid
-                    if update_time + timedelta(seconds=20) > datetime.now():
-                        continue
-                    tid = self._get_user_tid(row[1])
-                    if tid:
-                        d = {
-                            '`id`': row[0],
-                            '`tid`': tid,
-                            '`status`': 0  # 处理中
-                        }
-                        mysql_db.update(d, table_name='`face`')
-            finally:
-                rds_conn.delete('generate_tid')
 
+        cur_timestamp = int(time.time())
+        on_line_devices = []
+        # 获取在线设备
+        devices = rds_conn.hgetall(GenerateFeature.DEVICE_CUR_TIMESTAMP)
+        for k, v in devices:
+            if cur_timestamp - int(v) <= 30:
+                on_line_devices.append(k)
 
-class QueryFeature(object):
+        used_devices = []
+        # 获取闲置中的设备
+        devices = rds_conn.hgetall(GenerateFeature.DEVICE_USED)
+        for k, v in devices:
+            used_devices.append(k)
+        unused_devices = set(on_line_devices) - set(used_devices)
+        # 未处理的
+        jdata = {
+            "cmd": "addface",
+            "fid": 0,
+            "faceurl": ""
+        }
 
-    def _get_feature_by_tid(self, tid):
-        """
-        feature_status (0未处理 1处理中 2处理完成 3失败)
-        :param tid:
-        :return:
-        """
-        url = 'http://api.pinganxiaoche.com/face/getresult?' \
-              'key=ksjaflnnsjiowe3&tid={}'.format(tid)
-        r = requests.get(url)
-        d = json.loads(r.content)
-        return d
-
-    @db.transaction(is_commit=True)
-    def query_feature(self, mysql_cur):
-        print u"==================生成tid====================="
-        print datetime.now()
-        mysql_db = db.MysqlDbUtil(mysql_cur)
-        rds_conn = db.rds_conn
-        sql = "SELECT F.`id`,F.`tid` FROM `face` AS F \
-    INNER JOIN `user_profile` AS UP ON UP.`id`=F.`user_id` " \
-              "WHERE F.`status`=0 AND UP.`status`=1 " \
-              "ORDER BY F.`id` ASC LIMIT 100"
-        setnx_key = rds_conn.setnx('query_feature', 1)
-        if setnx_key:
-            try:
-                results = mysql_db.query(sql)
-                for row in results:
-                    d = self._get_feature_by_tid(row[1])
-                    results = d['result']
-                    if results:
-                        obj = results[0]
-                        feature_status = obj['feature_status']
-                        if feature_status == 2:
-                            feature = obj['feature']
-                            d = {
-                                '`id`': row[0],
-                                '`feature`': feature,
-                                '`feature_crc`': zlib.crc32(
-                                    base64.b64decode(feature)),
-                                '`status`': 1  # 处理完成
-                            }
-                            mysql_db.update(d, table_name='`face`')
-
-                        elif feature_status in [0, 1]:
-                            continue
-                        elif feature_status == 3:
-                            d = {
-                                '`id`': row[0],
-                                '`status`': 11  # 11生成feature失败
-                            }
-                            mysql_db.update(d, table_name='`face`')
-                    else:
-                        # 如果results为空,修改状态为-1未处理
-                        d = {
-                            '`id`': row[0],
-                            '`status`': -1  # -1未处理
-                        }
-                        mysql_db.update(d, table_name='`face`')
-            finally:
-                rds_conn.delete('query_feature')
+        sql = "SELECT id,oss_url FROM face WHERE status == 2"
+        results = pgsql_db.query(pgsql_cur, sql)
+        for row in results:
+            face_id = row[0]
+            oss_url = row[1]
+            jdata["fid"] = face_id
+            jdata['faceurl'] = oss_url
+            device_name = unused_devices.pop()
+            pub_msg(rds_conn, device_name, jdata)
+            # 将设备置为使用中
+            rds_conn.hset(GenerateFeature.DEVICE_USED, device_name)
+            d = {
+                'id': face_id,
+                'status': 3
+            }
+            pgsql_db.update(pgsql_cur, d, table_name='face')
 
 
 class EveryMinuteExe(object):
 
     @db.transaction(is_commit=True)
-    def every_minute_execute(self, mysql_cur):
+    def every_minute_execute(self, pgsql_cur):
         """每分钟执行一次"""
         print u"==================每分钟执行一次====================={}".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         print datetime.now()
 
-        mysql_db = db.MysqlDbUtil(mysql_cur)
+        mysql_db = db.PgsqlDbUtil
         rds_conn = db.rds_conn
         rds_key = 'task_count'
         url = "http://api.pinganxiaoche.com/face/gettask?key=ksjaflnnsjiowe3"
@@ -170,14 +105,14 @@ class EveryMinuteExe(object):
             if tid_count:
                 if int(tid_count) > 1:
                     requests.get(del_req.format(tid))
-                    result = mysql_db.get(sql.format(tid))
+                    result = mysql_db.get(pgsql_cur, sql.format(tid))
                     if result:
                         face_id = result[0]
                         d = {
                             '`id`': face_id,
                             '`status`': 11  # 生成feature失败
                         }
-                        mysql_db.update(d, table_name='`face`')
+                        mysql_db.update(pgsql_cur, d, table_name='`face`')
                 else:
                     rds_conn.hset(rds_key, str(tid), int(tid_count) + 1)
             else:
@@ -191,14 +126,14 @@ class EveryMinuteExe(object):
         expire_sql = """SELECT F.`id` FROM `user_profile` AS UP 
         INNER JOIN `face` AS F ON F.`user_id`=UP.`id` 
         WHERE UP.`deadline` < {} """
-        results = mysql_db.query(expire_sql.format(time.time()))
+        results = mysql_db.query(pgsql_cur, expire_sql.format(time.time()))
         for row in results:
             face_id = row[0]
             d = {
                 '`id`': face_id,
                 '`status`': 2  # 过期
             }
-            mysql_db.update(d, table_name='`face`')
+            mysql_db.update(pgsql_cur, d, table_name='`face`')
 
         # msgqueue的心跳包
         try:
@@ -220,17 +155,17 @@ class FromOssQueryFace(object):
         self.product_key = config.Productkey
 
     @db.transaction(is_commit=True)
-    def from_oss_get_face(self, mysql_cur):
+    def from_oss_get_face(self, pgsql_cur):
         """从oss获取人脸"""
         print u"==================从oss获取人脸====================="
         print datetime.now()
         start = time.time()
         # 获取未绑定的人脸
-        mysql_db = db.MysqlDbUtil(mysql_cur)
+        mysql_db = db.PgsqlDbUtil
         sql = "SELECT F.`id`,F.`emp_no` FROM `face` AS F \
     INNER JOIN `user_profile` AS UP ON UP.`id`=F.`user_id` WHERE " \
               "F.`status`=-2 AND UP.`status`=1 order by rand()"
-        results = mysql_db.query(sql)
+        results = mysql_db.query(pgsql_cur, sql)
         emp_no_pk_map = {}
         server_face_list = []       # 服务器上的工号列表
         for row in results:
@@ -259,7 +194,7 @@ class FromOssQueryFace(object):
                     '`oss_url`': config.OSSDomain + "/people/face/" + row + ".jpg",
                     '`status`': -1  # 未处理
                 }
-                mysql_db.update(d, table_name='`face`')
+                mysql_db.update(pgsql_cur, d, table_name='`face`')
         end = time.time()
         print end - start
 
@@ -279,7 +214,6 @@ class EveryFewMinutesExe(object):
         每五分钟执行一次 删除不规则人脸
         :return:
         """
-        print u"==================每五分钟执行一次====================={}".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         try:
             # 删除不规则的人脸
             for obj in oss2.ObjectIterator(self.bucket, prefix='people/face/'):
@@ -295,32 +229,6 @@ class EveryFewMinutesExe(object):
                         is_del = 1
                 if is_del:
                     self.bucket.delete_object(obj.key)
-
-            # 服务器IP上报
-            OSSAccessKeyId = 'LTAI4FyQdrFKZrydCeP2QUvx'
-            OSSAccessKeySecret = 'BbPNdGxn0Qv6LpSl2jVyPhtcWiC8fu'
-            OSSEndpoint = 'oss-cn-shenzhen.aliyuncs.com'
-            OSSBucketName = 'animal-test-mirror'
-
-            my_ip = urlopen('http://ip.42.pl/raw').read()
-
-            auth = oss2.Auth(OSSAccessKeyId, OSSAccessKeySecret)
-            bucket = oss2.Bucket(auth, OSSEndpoint,
-                                 OSSBucketName)
-            prefix = "ip"
-
-            now = str(datetime.now().strftime("%Y-%m-%d %H:%M:%S") + str(
-                random.randint(1, 100000)))
-            bucket.put_object(prefix + '/{}.txt'.format(now), my_ip)
-
-            # 五分钟一个连接
-            data = {
-                "username": "jianchao",
-                "password": "jianchao"
-            }
-            requests.post("http://47.108.201.70/user/login",
-                          json.dumps(data),
-                          headers={'Content-Type': 'application/json'})
         except:
             import traceback
             db.logger.error(traceback.format_exc())
