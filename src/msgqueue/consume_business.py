@@ -575,10 +575,10 @@ class DeviceBusiness(object):
             }
             mysql_db.insert(mysql_cur, d, table_name='device_people_list')
 
-    @transaction(is_commit=True)
-    def device_people_list_upgrade(self, mysql_cur, data):
+    @transaction(is_commit=False)
+    def device_people_list_upgrade(self, pgsql_cur, data):
         """设备人员更新"""
-        mysql_db = PgsqlDbUtil
+        pgsql_db = PgsqlDbUtil
         print(">>>>> device_people_list_upgrade")
         self.logger.error("device_people_list_upgrade")
         add_list = data['add_list']         # fid
@@ -586,30 +586,28 @@ class DeviceBusiness(object):
         update_list = data['update_list']   # fid
         device_name = data['device_name']
 
-        # 批量删除fid
-        if del_list:
-            step = 0
+        # del list
+        if len(del_list) < 60:
+            for fid in del_list:
+                self._publish_del_people_msg(device_name, fid)
 
-            while True:
-                temp_list = del_list[step: step + 100]
-                if temp_list:
-                    jdata = {"cmd": "batchdelface",
-                             "fids": ",".join(temp_list)}
-                    self._pub_msg(device_name, jdata)
-                    step += 100
-                else:
-                    break
+        sql = "SELECT feature,nickname " \
+              "FROM face WHERE id in ({}) "
+        # update list
+        if len(update_list) < 60:
+            for fid in update_list:
+                obj = pgsql_db.get(pgsql_cur, sql.format(int(fid)))
+                if obj:
+                    self._publish_update_people_msg(
+                        device_name, fid, obj[1], obj[0])
 
-        # 批量添加所有fid
-        merge_list_fids = []
-        merge_list_fids.extend(update_list)
-        merge_list_fids.extend(add_list)
-        if merge_list_fids:
-            sql = "SELECT id,feature,nickname " \
-                  "FROM face WHERE id in ({}) "
-            results = mysql_db.query(
-                mysql_cur, sql.format(",".join(merge_list_fids)))
-            self.batch_people_add(device_name, results)
+        # add list
+        if len(add_list) < 60:
+            for fid in add_list:
+                obj = pgsql_db.get(sql.format(fid))
+                if obj:
+                    self._publish_add_people_msg(
+                        device_name, fid, obj[0], obj[1])
 
     def batch_people_add(self, device_name, results):
         """批量人员添加"""

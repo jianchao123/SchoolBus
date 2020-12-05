@@ -12,11 +12,28 @@ from sqlalchemy import func, or_
 from sqlalchemy.orm import aliased
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 from database.db import db
-from database.Face import Face
-from database.AdminUser import AdminUser
+from database.Order import Order
 from utils import defines
 from utils import tools
 from ext import cache
+
+class OrderService(object):
+
+    @staticmethod
+    def order_list(school_id, query_str, order_type, start_time, end_time):
+        db.session.commit()
+        query = db.session.query(Order)
+        if school_id:
+            query = query.filter(Order.school_id == school_id)
+        if order_type:
+            query = query.filter(Order.order_type == order_type)
+        if query_str:
+            query_str = '%{keyword}%'.format(keyword=query_str)
+            query = query.filter(or_(Order.stu_name.like(query_str),
+                Order.passenger_name.like(query_str)))
+        if start_time and end_time:
+            pass
+
 
 
 class UserProfileService(object):

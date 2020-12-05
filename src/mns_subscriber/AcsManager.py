@@ -30,11 +30,27 @@ import utils
 
 class AcsManager(object):
     """注册设备"""
-    DEVICE_USED = "device_used_hash"
+    # 注册模式相关
+    DEVICE_USED = "DEVICE_USED_HASH"
+
+    # 设备版本相关
     APPOINT_VERSION_NO = 232
     UPGRADE_JSON = {'url': 'https://img.pinganxiaoche.com/apps/1600666302.yaffs2', 'crc': -282402801, 'cmd': 'update', 'version': 232, 'size': 4756736}
+
+    # 设备当前状态
     DEVICE_CUR_STATUS = "DEVICE_CUR_STATUS"
-    QUERY_DEVICE_PEOPLE = "query_device_people"
+
+    # 当前设备返回的人员信息是在做什么操作(1更新 2查询设备上人员)
+    QUERY_DEVICE_PEOPLE = "QUERY_DEVICE_PEOPLE"
+
+    # 订单ID递增
+    ORDER_ID_INCR = "ORDER_ID_INCR"
+
+    # 每个设备当前时间戳
+    DEVICE_CUR_TIMESTAMP = 'DEVICE_CUR_TIMESTAMP_HASH'
+
+    # 学生上车栈
+    STUDENT_STACK = 'STUDENT_STACK'
 
     def __init__(self, product_key, mns_access_key_id,
                  mns_access_key_secret, oss_domain,
@@ -254,8 +270,6 @@ class AcsManager(object):
             }
             pgsql_db.update(pgsql_cur, d, table_name='device')
 
-    ORDER_ID_INCR = "order_id_incr"
-
     @db.transaction(is_commit=True)
     def add_order(self, pgsql_cur, fid, gps_str, add_time, dev_name, cnt):
         """
@@ -325,6 +339,7 @@ class AcsManager(object):
         d['license_plate_number'] = license_plate_number
         d['device_id'] = cur_device_id
         pgsql_db.insert(pgsql_cur, d, table_name='order')
+
 
     def add_redis_queue(self, device_name, data, pkt_cnt):
         """
@@ -567,8 +582,6 @@ class AcsManager(object):
             if d:
                 d['id'] = pk
                 pgsql_db.update(pgsql_cur, d, table_name='device')
-
-    DEVICE_CUR_TIMESTAMP = 'device_cur_timestamp_hash'
 
     @staticmethod
     def device_cur_timestamp(dev_name, dev_time):
