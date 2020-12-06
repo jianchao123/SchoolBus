@@ -15,3 +15,4 @@ class Face(db.Model):
     stu_no = db.Column(db.String(16))
     feature_crc = db.Column(db.Numeric(11, 6))
     update_time = db.Column(db.DateTime, default=datetime.now)
+    acc_url = db.Column(db.String(128))

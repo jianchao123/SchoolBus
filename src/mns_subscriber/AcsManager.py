@@ -17,6 +17,8 @@ from aliyunsdkcore.client import AcsClient
 from aliyunsdkiot.request.v20180120.RegisterDeviceRequest import \
     RegisterDeviceRequest
 from aliyunsdkiot.request.v20180120.PubRequest import PubRequest
+
+from define import RedisKey
 import db
 
 
@@ -30,27 +32,6 @@ import utils
 
 class AcsManager(object):
     """注册设备"""
-    # 注册模式相关
-    DEVICE_USED = "DEVICE_USED_HASH"
-
-    # 设备版本相关
-    APPOINT_VERSION_NO = 232
-    UPGRADE_JSON = {'url': 'https://img.pinganxiaoche.com/apps/1600666302.yaffs2', 'crc': -282402801, 'cmd': 'update', 'version': 232, 'size': 4756736}
-
-    # 设备当前状态
-    DEVICE_CUR_STATUS = "DEVICE_CUR_STATUS"
-
-    # 当前设备返回的人员信息是在做什么操作(1更新 2查询设备上人员)
-    QUERY_DEVICE_PEOPLE = "QUERY_DEVICE_PEOPLE"
-
-    # 订单ID递增
-    ORDER_ID_INCR = "ORDER_ID_INCR"
-
-    # 每个设备当前时间戳
-    DEVICE_CUR_TIMESTAMP = 'DEVICE_CUR_TIMESTAMP_HASH'
-
-    # 学生上车栈
-    STUDENT_STACK = 'STUDENT_STACK'
 
     def __init__(self, product_key, mns_access_key_id,
                  mns_access_key_secret, oss_domain,
@@ -64,7 +45,7 @@ class AcsManager(object):
 
     def _upgrade_version(self, device_name):
         """升级版本"""
-        self._send_device_msg(device_name, AcsManager.UPGRADE_JSON)
+        self._send_device_msg(device_name, RedisKey.UPGRADE_JSON)
 
     def _set_oss_info(self, device_name):
         """设置oss信息"""
@@ -325,7 +306,7 @@ class AcsManager(object):
         gps_str = '{},{}'.format(longitude, latitude)
 
         d = defaultdict()
-        d['id'] = redis_db.incr(AcsManager.ORDER_ID_INCR)
+        d['id'] = redis_db.incr(RedisKey.ORDER_ID_INCR)
         d['stu_no'] = stu_no
         d['stu_id'] = stu_id
         d['stu_name'] = stu_nickname
@@ -339,7 +320,6 @@ class AcsManager(object):
         d['license_plate_number'] = license_plate_number
         d['device_id'] = cur_device_id
         pgsql_db.insert(pgsql_cur, d, table_name='order')
-
 
     def add_redis_queue(self, device_name, data, pkt_cnt):
         """
@@ -416,9 +396,9 @@ class AcsManager(object):
                 if feature_crc != fid_dict[str(pk)]:
                     update_list.append(str(pk))
 
-        if rds_conn.get(AcsManager.QUERY_DEVICE_PEOPLE):
+        if rds_conn.get(RedisKey.QUERY_DEVICE_PEOPLE):
             # 保存设备上的人员到数据库
-            rds_conn.delete(AcsManager.QUERY_DEVICE_PEOPLE)
+            rds_conn.delete(RedisKey.QUERY_DEVICE_PEOPLE)
             producer.device_people_list_save(
                 ",".join(people_list), face_ids, device_name)
         else:
@@ -472,7 +452,8 @@ class AcsManager(object):
                     'mac': mac,
                     'product_key': response['Data']['ProductKey'],
                     'device_secret': response['Data']['DeviceSecret'],
-                    'sound_volume': 6
+                    'sound_volume': 6,
+                    'order_type': 1 # 默认为刷脸类型
                 }
                 pgsql_db.insert(pgsql_cur, d, table_name='device')
 
@@ -486,7 +467,7 @@ class AcsManager(object):
                     "time": int(time.time())
                 }
                 self._send_device_msg('newdev', msg)
-                rds_conn.hset(AcsManager.DEVICE_CUR_STATUS, dev_name, 1)
+                rds_conn.hset(RedisKey.DEVICE_CUR_STATUS, dev_name, 1)
             finally:
                 rds_conn.delete('create_device')
         return None
@@ -533,7 +514,7 @@ class AcsManager(object):
     @db.transaction(is_commit=True)
     def check_version(self, device_name, cur_version):
         """检查版本号"""
-        if cur_version < AcsManager.APPOINT_VERSION_NO:
+        if cur_version < RedisKey.APPOINT_VERSION_NO:
             self._upgrade_version(device_name)
 
     @db.transaction(is_commit=True)
@@ -544,10 +525,10 @@ class AcsManager(object):
         pgsql_db = db.PgsqlDbUtil
         rds_conn = db.rds_conn
 
-        if cur_version == AcsManager.APPOINT_VERSION_NO:
+        if cur_version == RedisKey.APPOINT_VERSION_NO:
 
             device_status = rds_conn.hget(
-                AcsManager.DEVICE_CUR_STATUS, device_name)
+                RedisKey.DEVICE_CUR_STATUS, device_name)
             # 5表示已初始化人员
             if device_status and int(device_status) == 5:
                 return
@@ -568,16 +549,16 @@ class AcsManager(object):
                 d['status'] = 3   # 设置工作模式
                 self._set_device_work_mode(
                     device_name, license_plate_number, sound_volume)
-                rds_conn.hset(AcsManager.DEVICE_CUR_STATUS, device_name, 3)
+                rds_conn.hset(RedisKey.DEVICE_CUR_STATUS, device_name, 3)
             elif status == 3:       # 已设置工作模式
                 d['status'] = 4     # 设置oss信息
                 self._set_oss_info(device_name)
-                rds_conn.hset(AcsManager.DEVICE_CUR_STATUS, device_name, 4)
+                rds_conn.hset(RedisKey.DEVICE_CUR_STATUS, device_name, 4)
             elif status == 4:       # 设置oss信息
                 d['status'] = 5     # 初始人员
-                rds_conn.hset(AcsManager.DEVICE_CUR_STATUS, device_name, 5)
+                rds_conn.hset(RedisKey.DEVICE_CUR_STATUS, device_name, 5)
                 AcsManager._init_people([], device_name, pgsql_db, pgsql_cur)
-                rds_conn.hset(AcsManager.DEVICE_CUR_STATUS, device_name, 5)
+                rds_conn.hset(RedisKey.DEVICE_CUR_STATUS, device_name, 5)
 
             if d:
                 d['id'] = pk
@@ -586,7 +567,7 @@ class AcsManager(object):
     @staticmethod
     def device_cur_timestamp(dev_name, dev_time):
         rds_conn = db.rds_conn
-        rds_conn.hset(AcsManager.DEVICE_CUR_TIMESTAMP, dev_name, dev_time)
+        rds_conn.hset(RedisKey.DEVICE_CUR_TIMESTAMP, dev_name, dev_time)
 
     @db.transaction(is_commit=True)
     def save_imei(self, pgsql_cur, device_name, imei):
@@ -613,4 +594,4 @@ class AcsManager(object):
             d['status'] = 5
         pgsql_db.update(pgsql_cur, d, table_name='face')
         # 将设备从使用中删除
-        rds_conn.hdel(AcsManager.DEVICE_USED, device_name)
+        rds_conn.hdel(RedisKey.DEVICE_USED, device_name)

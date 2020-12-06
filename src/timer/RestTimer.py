@@ -16,6 +16,8 @@ from aliyunsdkiot.request.v20180120.PubRequest import PubRequest
 
 from timer import db
 from timer import config
+from define import RedisKey
+from instruction import Instruction
 
 
 def pub_msg(rds_conn, devname, jdata):
@@ -32,28 +34,58 @@ def pub_msg(rds_conn, devname, jdata):
     rds_conn.rpush(k, json.dumps(jdata, encoding="utf-8"))
 
 
+instrution = Instruction(config.Productkey, config.MNSAccessKeyId,
+                         config.MNSAccessKeySecret, config.OSSDomain,
+                         config.OSSAccessKeyId, config.OSSAccessKeySecret)
+
+
+class OpenRegisterMode(object):
+    """开启注册模式"""
+
+    @db.transaction(is_commit=False)
+    def open_register_mode(self, pgsql_cur):
+        """
+        只要有专门生成feature的设备在线即开启注册模式
+        :param pgsql_cur:
+        :return:
+        """
+        cur_timestamp = int(time.time())
+        on_line_devices = []
+
+        pgsql_db = db.PgsqlDbUtil
+        rds_conn = db.rds_conn
+        # 获取在线设备
+        devices = rds_conn.hgetall(RedisKey.DEVICE_CUR_TIMESTAMP)
+        for k, v in devices:
+            if cur_timestamp - int(v) <= 30:
+                on_line_devices.append(k)
+
+        # 获取生成特征值的设备
+        sql = "SELECT device_name FROM device WHERE device_type = 2"
+        pgsql_db.query(pgsql_cur, sql)
+        generate_device_list = []
+
+        # 交集
+        on_line_devices = list(set(on_line_devices) & set(generate_device_list))
+        for row in on_line_devices:
+            instrution.set_workmode(row, 3, "", None)
+            # 写入Key 标记设置模式的时间 HASH device_name '模式,时间戳'
+
+
+
 class GenerateFeature(object):
     """生成feature"""
-
-    DEVICE_CUR_TIMESTAMP = 'device_cur_timestamp_hash'
-    DEVICE_USED = "device_used_hash"
 
     @db.transaction(is_commit=False)
     def generate_feature(self, pgsql_cur):
         pgsql_db = db.PgsqlDbUtil
         rds_conn = db.rds_conn
 
-        cur_timestamp = int(time.time())
-        on_line_devices = []
-        # 获取在线设备
-        devices = rds_conn.hgetall(GenerateFeature.DEVICE_CUR_TIMESTAMP)
-        for k, v in devices:
-            if cur_timestamp - int(v) <= 30:
-                on_line_devices.append(k)
+
 
         used_devices = []
         # 获取闲置中的设备
-        devices = rds_conn.hgetall(GenerateFeature.DEVICE_USED)
+        devices = rds_conn.hgetall(RedisKey.DEVICE_USED)
         for k, v in devices:
             used_devices.append(k)
         unused_devices = set(on_line_devices) - set(used_devices)
@@ -74,7 +106,7 @@ class GenerateFeature(object):
             device_name = unused_devices.pop()
             pub_msg(rds_conn, device_name, jdata)
             # 将设备置为使用中
-            rds_conn.hset(GenerateFeature.DEVICE_USED, device_name)
+            rds_conn.hset(RedisKey.DEVICE_USED, device_name)
             d = {
                 'id': face_id,
                 'status': 3

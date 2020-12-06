@@ -73,13 +73,11 @@ class ReceiveMessage(object):
             elif cmd == 'addface':
                 # 生成特征值返回的信息
                 if 'feature_type' in jdata:
+                    AcsManager.get_feature(
+                        dev_name, jdata['fid'], jdata['feature'])
                     if jdata['feature']:
-                        AcsManager.get_feature(
-                            dev_name, jdata['fid'], jdata['feature'])
                         logger.info(u'生成特征值成功{}'.format(jdata['fid']))
                     else:
-                        AcsManager.get_feature(
-                            dev_name, jdata['fid'], jdata['feature'])
                         logger.info(u"生成特征值失败{}".format(jdata['fid']))
             elif cmd == 'updateface':
                 pass

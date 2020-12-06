@@ -17,11 +17,15 @@ from utils import defines
 from utils import tools
 from ext import cache
 
+
 class OrderService(object):
 
     @staticmethod
-    def order_list(school_id, query_str, order_type, start_time, end_time):
+    def order_list(school_id, query_str, order_type,
+                   start_date, end_date, page, size):
         db.session.commit()
+
+        offset = (page - 1) * size
         query = db.session.query(Order)
         if school_id:
             query = query.filter(Order.school_id == school_id)
@@ -31,8 +35,31 @@ class OrderService(object):
             query_str = '%{keyword}%'.format(keyword=query_str)
             query = query.filter(or_(Order.stu_name.like(query_str),
                 Order.passenger_name.like(query_str)))
-        if start_time and end_time:
-            pass
+        if start_date and end_date:
+            end_date = end_date + timedelta(days=1)
+            query = query.filter(or_(Order.create_time > start_date,
+                                     Order.create_time < end_date))
+        count = query.count()
+        results = query.offset(offset).limit(size).all()
+
+        data = []
+        for row in results:
+            data.append({
+                'id': row.id,
+                'stu_no': row.stu_no,
+                'stu_id': row.stu_id,
+                'stu_name': row.stu_name,
+                'school_id': row.school_id,
+                'school_name': row.school_name,
+                'order_type': row.order_type,
+                'create_time': row.create_time,
+                'up_location': row.up_location,
+                'gps': row.gps,
+                'car_id': row.car_id,
+                'license_plate_number': row.license_plate_number,
+                'device_id': row.device_id
+            })
+        return {'results': data, 'count': count}
 
 
 
