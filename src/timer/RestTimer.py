@@ -15,9 +15,10 @@ from aliyunsdkiot.request.v20180120.RegisterDeviceRequest import \
 from aliyunsdkiot.request.v20180120.PubRequest import PubRequest
 
 from timer import db
-from timer import config
+
 from define import RedisKey
-from instruction import Instruction
+from utils import aip_word_to_audio
+import config
 
 
 def pub_msg(rds_conn, devname, jdata):
@@ -34,69 +35,73 @@ def pub_msg(rds_conn, devname, jdata):
     rds_conn.rpush(k, json.dumps(jdata, encoding="utf-8"))
 
 
-instrution = Instruction(config.Productkey, config.MNSAccessKeyId,
-                         config.MNSAccessKeySecret, config.OSSDomain,
-                         config.OSSAccessKeyId, config.OSSAccessKeySecret)
+class GenerateAAC(object):
+    """生成AAC音频格式文件 10秒 100个"""
 
-
-class OpenRegisterMode(object):
-    """开启注册模式"""
-
-    @db.transaction(is_commit=False)
-    def open_register_mode(self, pgsql_cur):
-        """
-        只要有专门生成feature的设备在线即开启注册模式
-        :param pgsql_cur:
-        :return:
-        """
-        cur_timestamp = int(time.time())
-        on_line_devices = []
-
+    @db.transaction(is_commit=True)
+    def generate_audio(self, pgsql_cur):
         pgsql_db = db.PgsqlDbUtil
-        rds_conn = db.rds_conn
-        # 获取在线设备
-        devices = rds_conn.hgetall(RedisKey.DEVICE_CUR_TIMESTAMP)
-        for k, v in devices:
-            if cur_timestamp - int(v) <= 30:
-                on_line_devices.append(k)
 
-        # 获取生成特征值的设备
-        sql = "SELECT device_name FROM device WHERE device_type = 2"
-        pgsql_db.query(pgsql_cur, sql)
-        generate_device_list = []
+        sql = "SELECT id,nickname,stu_no FROM face WHERE acc_url IS NULL"
+        results = pgsql_db.query(sql)
+        for row in results:
+            begin = time.time()
+            oss_key = 'audio/' + row[2] + ''
+            aip_word_to_audio(row[1], '')
+            end = time.time()
+            print end - begin
 
-        # 交集
-        on_line_devices = list(set(on_line_devices) & set(generate_device_list))
-        for row in on_line_devices:
-            instrution.set_workmode(row, 3, "", None)
-            # 写入Key 标记设置模式的时间 HASH device_name '模式,时间戳'
+        pgsql_db.update(pgsql_cur, )
 
 
 
 class GenerateFeature(object):
-    """生成feature"""
+    """生成feature 1秒执行一次"""
 
-    @db.transaction(is_commit=False)
-    def generate_feature(self, pgsql_cur):
-        pgsql_db = db.PgsqlDbUtil
+    def generate_feature(self):
         rds_conn = db.rds_conn
+        cur_timestamp = int(time.time())
 
+        # 获取在线设备
+        online_devices = []
+        devices = rds_conn.hgetall(RedisKey.DEVICE_CUR_TIMESTAMP)
+        for k, v in devices:
+            if cur_timestamp - int(v) <= 30:
+                online_devices.append(k)
 
+        # 获取生成特征值的设备(编辑设备的时候存入)
+        generate_devices = rds_conn.smembers(RedisKey.GENERATE_DEVICE_NAMES)
+
+        # 交集
+        online_generate_devices = list(set(online_devices)
+                                       & generate_devices)
+
+        if not online_generate_devices:
+            return
 
         used_devices = []
         # 获取闲置中的设备
         devices = rds_conn.hgetall(RedisKey.DEVICE_USED)
         for k, v in devices:
             used_devices.append(k)
-        unused_devices = set(on_line_devices) - set(used_devices)
-        # 未处理的
+        unused_devices = list(set(online_generate_devices) - set(used_devices))
+        if not unused_devices:
+            return
+        self.execute(rds_conn, unused_devices)
+
+    @db.transaction(is_commit=True)
+    def execute(self, pgsql_cur, rds_conn, unused_devices):
+
+        pgsql_db = db.PgsqlDbUtil
+
         jdata = {
             "cmd": "addface",
             "fid": 0,
             "faceurl": ""
         }
 
-        sql = "SELECT id,oss_url FROM face WHERE status == 2"
+        sql = "SELECT id,oss_url FROM face " \
+              "WHERE status == 2 LIMIT {}".format(len(unused_devices))
         results = pgsql_db.query(pgsql_cur, sql)
         for row in results:
             face_id = row[0]
@@ -107,6 +112,7 @@ class GenerateFeature(object):
             pub_msg(rds_conn, device_name, jdata)
             # 将设备置为使用中
             rds_conn.hset(RedisKey.DEVICE_USED, device_name)
+            # 更新face状态
             d = {
                 'id': face_id,
                 'status': 3
@@ -119,40 +125,10 @@ class EveryMinuteExe(object):
     @db.transaction(is_commit=True)
     def every_minute_execute(self, pgsql_cur):
         """每分钟执行一次"""
-        print u"==================每分钟执行一次====================={}".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+        print u"==================每分钟执行一次====================={}".\
+            format(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         print datetime.now()
-
         mysql_db = db.PgsqlDbUtil
-        rds_conn = db.rds_conn
-        rds_key = 'task_count'
-        url = "http://api.pinganxiaoche.com/face/gettask?key=ksjaflnnsjiowe3"
-        del_req = "http://api.pinganxiaoche.com/face/deltask?" \
-                  "key=ksjaflnnsjiowe3&tid={}"
-        sql = 'SELECT `id` FROM `face` WHERE `tid`={} LIMIT 1'
-        r = requests.get(url)
-        d = json.loads(r.content)
-        for row in d["result"]:
-            tid = row['tid']
-            tid_count = rds_conn.hget(rds_key, str(tid))
-            if tid_count:
-                if int(tid_count) > 1:
-                    requests.get(del_req.format(tid))
-                    result = mysql_db.get(pgsql_cur, sql.format(tid))
-                    if result:
-                        face_id = result[0]
-                        d = {
-                            '`id`': face_id,
-                            '`status`': 11  # 生成feature失败
-                        }
-                        mysql_db.update(pgsql_cur, d, table_name='`face`')
-                else:
-                    rds_conn.hset(rds_key, str(tid), int(tid_count) + 1)
-            else:
-                rds_conn.hset(rds_key, str(tid), 1)
-
-        length = rds_conn.hlen(rds_key)
-        if length and int(length) > 50:
-            rds_conn.delete(rds_key)
 
         # 过期人脸更新状态
         expire_sql = """SELECT F.`id` FROM `user_profile` AS UP 

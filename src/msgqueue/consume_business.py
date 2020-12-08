@@ -13,7 +13,7 @@ from aliyunsdkcore.client import AcsClient
 from aliyunsdkiot.request.v20180120.RegisterDeviceRequest import \
     RegisterDeviceRequest
 from aliyunsdkiot.request.v20180120.PubRequest import PubRequest
-
+from define import grade, classes
 
 class HeartBeatConsumer(object):
 
@@ -27,334 +27,110 @@ class HeartBeatConsumer(object):
         ch.basic_ack(delivery_tag=method.delivery_tag)
 
 
-class UserConsumer(object):
+class StudentConsumer(object):
 
     def __init__(self):
         self.logger = utils.get_logger(config.log_path)
-        self.user_business = UserBusiness(self.logger)
+        self.student_business = StudentBusiness(self.logger)
 
-    def user_callback(self, ch, method, properties, body):
+    def student_callback(self, ch, method, properties, body):
         print method
         data = json.loads(body.decode('utf-8'))
         arr = method.routing_key.split(".")
         routing_suffix = arr[-1]
         if routing_suffix == 'batchadd':
-            import_people_key = rds_conn.setnx('import_people', 1)
-            if import_people_key:
-                try:
-                    self.user_business.batch_add_user(data)
-                finally:
-                    rds_conn.delete('import_people')
+            self.student_business.batch_add_student(data)
+
         # 消息确认
         ch.basic_ack(delivery_tag=method.delivery_tag)
 
 
-class UserBusiness(object):
-    """用户创建后的业务处理"""
+class StudentBusiness(object):
 
     def __init__(self, logger):
         self.logger = logger
 
     @transaction(is_commit=True)
-    def batch_add_user(self, mysql_cur, data):
-        """批量添加用户"""
-        # {
-        #     "parent": {
-        #         "child": []
-        #     }
-        # }
-        mysql_db = PgsqlDbUtil
-        all_json = {}
-        # 添加用户之前先添加部门
-        for row in data:
-            department_desc = row[3]
-            arr = department_desc.split("-")
-            parent_company_name = arr[0]
-            child_company_name = arr[1]
-            department_name = arr[2]
+    def batch_add_student(self, pgsql_cur, data):
+        """批量添加学生
+        身份证号,姓名,性别,家长1姓名,家长1手机号,家长2姓名,家长2手机号,家庭地址,备注,学校,年级,班级,截止时间,车牌
+        """
+        pgsql_db = PgsqlDbUtil
+        stu_no = data['stu_no']
+        nickname = data['nickname']
+        gender = data['gender']
+        parents1_name = data['parents1_name']
+        parents1_mobile = data['parents1_mobile']
+        parents2_name = data['parents2_name']
+        parents2_mobile = data['parents2_mobile']
+        address = data['address']
+        remarks = data['remarks']
+        school_name = data['school_name']
+        grade_name = data['grade_name']
+        classes_name = data['classes_name']
+        end_time = data['end_time']
+        license_plate_number = data['license_plate_number']
 
-            if parent_company_name in all_json:
-                parent_json = all_json[parent_company_name]
-                if child_company_name in parent_json:
-                    department_list = parent_json[child_company_name]
-                    if department_name not in department_list:
-                        department_list.append(department_name)
-                else:
-                    parent_json[child_company_name] = [department_name]
-            else:
-                all_json[parent_company_name] = {child_company_name: [department_name]}
-
-        print all_json
-
-        parent_sql = u"SELECT id FROM enterprise " \
-                     u"WHERE name='{}' AND level=1 AND status=1"
-
-        child_sql = u"SELECT id FROM enterprise " \
-                    u"WHERE name='{}' AND level=2 AND status=1 " \
-                    u"AND parent_id={}"
-
-        department_sql = u"""SELECT D.id FROM department AS D 
-INNER JOIN enterprise AS E2 ON E2.id=D.enterprise_id 
-INNER JOIN enterprise AS E1 ON E1.id=E2.parent_id 
-WHERE E1.id={} AND E2.id={} AND D.name='{}' 
-AND E1.status=1 AND E2.status=1 AND D.status=1"""
-        unique_sql = "SELECT id FROM enterprise WHERE uniqueid='{}' LIMIT 1"
-        for parent_company_name in all_json:
-            parent_companies = mysql_db.query(
-                mysql_cur, parent_sql.format(parent_company_name))
-            # 总公司不存在
-            if not parent_companies:
-                cur_parent_uniqueid = "%.6f" % time.time()
-                print cur_parent_uniqueid
-                d = {
-                    "name": parent_company_name.encode('utf8'),
-                    "level": 1,
-                    "status": 1,
-                    "uniqueid": cur_parent_uniqueid
-                }
-                mysql_db.insert(mysql_cur, d, table_name='enterprise')
-                parent_company_id = mysql_db.get(
-                    mysql_cur, unique_sql.format(cur_parent_uniqueid))[0]
-            else:
-                # 存在,获取总公司id
-                parent_company_id = parent_companies[0][0]
-
-            parent_json = all_json[parent_company_name]
-            for child_company_name in parent_json:
-                print child_sql.format(
-                    child_company_name, parent_company_id)
-                child_companies = mysql_db.query(mysql_cur, child_sql.format(
-                    child_company_name, parent_company_id))
-                # 子公司不存在
-                if not child_companies:
-                    cur_child_uniqueid = "%.6f" % time.time()
-                    print cur_child_uniqueid
-                    d = {
-                        "name": child_company_name.encode('utf8'),
-                        "level": 2,
-                        "parent_id": parent_company_id,
-                        "status": 1,
-                        "uniqueid": cur_child_uniqueid
-
-                    }
-                    mysql_db.insert(mysql_cur, d, table_name='enterprise')
-                    child_company_id = mysql_db.get(
-                        mysql_cur, unique_sql.format(cur_child_uniqueid))[0]
-                else:
-                    # 存在,获取子公司id
-                    child_company_id = child_companies[0][0]
-                department_list = parent_json[child_company_name]
-                for department_name in department_list:
-                    departments = mysql_db.query(mysql_cur, department_sql.format(
-                        parent_company_id, child_company_id, department_name))
-
-                    if not departments:
-                        desc = parent_company_name + "-" + \
-                               child_company_name + "-" + department_name
-                        d = {
-                            "name": department_name.encode('utf8'),
-                            "desc": desc.encode('utf8'),
-                            "enterprise_id": child_company_id,
-                            "status": 1
-                        }
-                        mysql_db.insert(mysql_cur, d, table_name='department')
-
-        # 查询所有站点
-        station_sql = 'SELECT id,name,longitude,latitude ' \
-                      'FROM station WHERE status=1'
-        results = mysql_db.query(mysql_cur, station_sql)
-        station_json = {}
+        # 所有学校
+        school_sql = 'SELECT id,school_name FROM school'
+        results = pgsql_db.query(school_sql)
+        school_dict = {}
         for row in results:
-            station_json[row[1]] = [row[0], row[2], row[3]]
+            school_dict[row[1]] = row[0]
 
-        get_face_sql = "SELECT id,oss_url FROM face WHERE user_id='{}'"
-        user_role_id = mysql_db.get(mysql_cur, "SELECT id FROM role WHERE code='EMP' LIMIT 1")[0]
-        user_exist_sql = "SELECT id,status FROM user_profile WHERE emp_no='{}'"
-        get_user_sql = "SELECT id FROM user_profile WHERE emp_no='{}' LIMIT 1"
-        get_department_sql = u"""SELECT D.id FROM department AS D
-INNER JOIN enterprise AS E2 ON E2.id=D.enterprise_id
-INNER JOIN enterprise AS E1 ON E1.id=E2.parent_id
-WHERE E1.name='{}' AND E2.name='{}' AND D.name='{}'
-AND E1.status=1 AND E2.status=1 AND D.status=1 LIMIT 1"""
+        # 性别
+        gender_dict = {u'男': 1, u'女': 2}
 
-        get_department_sql_by_userid = "SELECT id FROM user_department_relation WHERE user_id={} LIMIT 1"
-        print data
-        for row_data in data:
-            emp_no = row_data[0]
-            nickname = row_data[1]
-            sex_name = row_data[2]
-            department_name = row_data[3]
-            mobile = row_data[4]
-            id_card = row_data[5]
-            station_name = row_data[6]
-            deadline = row_data[7]
+        # 车辆
+        car_sql = 'SELECT id,license_plate_number FROM car'
+        results = pgsql_db.query(car_sql)
+        car_dict = {}
+        for row in results:
+            car_dict[row[1]] = row[0]
 
-            department_arr = department_name.split('-')
+        stu_sql = "SELECT id FROM student WHERE stu_no='{}' " \
+                  "LIMIT 1".format(stu_no)
+        student = pgsql_db.get(stu_sql)
+        d = {
+            'stu_no': stu_no,
+            'nickname': nickname,
+            'gender': gender_dict[gender],
+            'parents_1': parents1_name,
+            'mobile_1': parents1_mobile,
+            'parents_2': parents2_name,
+            'mobile_2': parents2_mobile,
+            'address': address,
+            'remarks': remarks,
+            'school_id': school_dict[school_name],
+            'grade_id': grade.index(grade_name),
+            'class_id': classes.index(classes_name),
+            'create_time': "now()",
+            'end_time': "to_date('{}', 'yyyy-MM-dd')".format(end_time),
+            'car_id': car_dict[license_plate_number],
+            'license_plate_number': license_plate_number,
+            'status': 1
+        }
 
-            user_exist_results = mysql_db.query(
-                mysql_cur, user_exist_sql.format(emp_no))
-            if user_exist_results:
-                exist_user_id = user_exist_results[0][0]
-                status = user_exist_results[0][1]
+        if student:
+            d['id'] = student[0]
+            pgsql_db.update(pgsql_cur, d, 'student')
 
-                print "----------batchadd-user already exists-----------{}".format(emp_no)
-                if status == 10:
-                    specified_gps = \
-                        str(station_json[station_name][1]) + ',' + \
-                        str(station_json[station_name][2])
-                    d = {
-                        'id': exist_user_id,
-                        'username': emp_no,
-                        'emp_no': emp_no,
-                        'nickname': nickname.encode('utf-8'),
-                        'sex': 1 if sex_name == u'男' else 2,
-                        'mobile': mobile,
-                        'id_card': id_card,
-                        'deadline': deadline,
-                        'station_id': station_json[station_name][0],
-                        'specified_gps': specified_gps,
-                        'address': station_name.encode('utf-8'),
-                        'is_internal_staff': 1,
-                        'status': 1,
-                        'create_time': 'now()'
-                    }
-                    mysql_db.update(mysql_cur, d, table_name='user_profile')
-                    face_result = mysql_db.get(mysql_cur, get_face_sql.format(exist_user_id))
-                    fid = face_result[0]
-                    oss_url = face_result[1]
-                    face_data = {
-                        'id': fid,
-                        'status': -2,
-                        'nickname': nickname.encode('utf-8'),
-                        'oss_url': '',
-                        'update_time': 'now()'
-                    }
-                    mysql_db.update(mysql_cur, face_data, table_name='face')
-
-                    # 关联部门
-                    cur_get_department_sql = get_department_sql.format(
-                        department_arr[0],
-                        department_arr[1],
-                        department_arr[2])
-
-                    cur_department_id = mysql_db.get(mysql_cur, cur_get_department_sql)[0]
-
-                    user_department_relation_pk = mysql_db.get(mysql_cur, 
-                        get_department_sql_by_userid.format(exist_user_id))[0]
-                    d = {
-                        'id': user_department_relation_pk,
-                        'user_id': exist_user_id,
-                        'department_id': cur_department_id
-                    }
-                    mysql_db.update(mysql_cur, d, table_name='user_department_relation')
-                    if oss_url:
-                        utils.delete_oss_file(["people" + oss_url.split("people")[1]])
-                elif status == 1:
-                    print "========================="
-                    specified_gps = \
-                        str(station_json[station_name][1]) + ',' + \
-                        str(station_json[station_name][2])
-                    d = {
-                        'id': exist_user_id,
-                        'username': emp_no,
-                        'emp_no': emp_no,
-                        'nickname': nickname.encode('utf-8'),
-                        'sex': 1 if sex_name == u'男' else 2,
-                        'mobile': mobile,
-                        'id_card': id_card,
-                        'deadline': deadline,
-                        'station_id': station_json[station_name][0],
-                        'specified_gps': specified_gps,
-                        'address': station_name.encode('utf-8'),
-                        'is_internal_staff': 1,
-                        'status': 1
-                    }
-                    mysql_db.update(mysql_cur, d, table_name='user_profile')
-                    face_result = mysql_db.get(mysql_cur, get_face_sql.format(exist_user_id))
-                    fid = face_result[0]
-                    oss_url = face_result[1]
-
-                    face_data = {
-                        'id': fid,
-                        'status': -2,
-                        'nickname': nickname.encode('utf-8'),
-                        'oss_url': '',
-                        'update_time': 'now()'
-                    }
-                    mysql_db.update(mysql_cur, face_data, table_name='face')
-
-                    # 关联部门
-                    cur_get_department_sql = get_department_sql.format(
-                        department_arr[0],
-                        department_arr[1],
-                        department_arr[2])
-                    print cur_get_department_sql
-                    cur_department_id = mysql_db.get(mysql_cur, cur_get_department_sql)[0]
-
-                    user_department_relation_pk = mysql_db.get(mysql_cur, 
-                        get_department_sql_by_userid.format(exist_user_id))[0]
-                    d = {
-                        'id': user_department_relation_pk,
-                        'user_id': exist_user_id,
-                        'department_id': cur_department_id
-                    }
-                    print d
-                    mysql_db.update(mysql_cur, d, table_name='user_department_relation')
-                    if oss_url:
-                        utils.delete_oss_file(["people" + oss_url.split("people")[1]])
-            else:
-                # 创建用户
-                specified_gps = \
-                    str(station_json[station_name][1]) + ',' + \
-                    str(station_json[station_name][2])
-                d = {
-                    'username': emp_no,
-                    'emp_no': emp_no,
-                    'nickname': nickname.encode('utf-8'),
-                    'sex': 1 if sex_name == u'男' else 2,
-                    'mobile': mobile,
-                    'id_card': id_card,
-                    'deadline': deadline,
-                    'station_id': station_json[station_name][0],
-                    'specified_gps': specified_gps,
-                    'address': station_name.encode('utf-8'),
-                    'is_internal_staff': 1,
-                    'create_time': 'now()',
-                    'status': 1
-                }
-                mysql_db.insert(mysql_cur, d, table_name='user_profile')
-
-                # 创建人脸
-                cur_user_id = mysql_db.get(mysql_cur, get_user_sql.format(emp_no))[0]
-                d = {
-                    'status': -2,
-                    'nickname': nickname.encode('utf-8'),
-                    'user_id': cur_user_id,
-                    'emp_no': emp_no,
-                    'update_time': 'now()'
-                }
-                mysql_db.insert(mysql_cur, d, table_name='face')
-
-                # 添加角色
-                d = {
-                    'user_id': cur_user_id,
-                    'role_id': user_role_id
-                }
-                mysql_db.insert(mysql_cur, d, table_name='user_role_relation')
-
-                # 关联部门
-                cur_get_department_sql = get_department_sql.format(
-                    department_arr[0],
-                    department_arr[1],
-                    department_arr[2])
-                print cur_get_department_sql
-                cur_department_id = mysql_db.get(mysql_cur, cur_get_department_sql)[0]
-                d = {
-                    'user_id': cur_user_id,
-                    'department_id': cur_department_id
-                }
-                mysql_db.insert(mysql_cur, d, table_name='user_department_relation')
-                print emp_no
+        else:
+            pgsql_db.insert(pgsql_cur, d)
+            stu = pgsql_db.get(stu_sql)
+            face_d = {
+                'oss_url': '',
+                'status': 1,  # 没有人脸
+                'feature': '',
+                'nickname': nickname,
+                'stu_no': stu_no,
+                'feature_crc': '',
+                'update_time': 'now()',
+                'acc_url': '',
+                'end_timestamp': '',
+                'stu_id': stu[0]
+            }
+            pgsql_db.insert(pgsql_cur, face_d, 'face')
 
 
 class DeviceConsumer(object):
@@ -371,8 +147,6 @@ class DeviceConsumer(object):
         routing_suffix = arr[-1]
         if routing_suffix == 'list':
             self.device_business.device_people_list_upgrade(data)
-        if routing_suffix == 'updatechepai':
-            self.device_business.update_chepai(data)
         if routing_suffix == 'listsave':
             self.device_business.device_people_list_save(data)
         if routing_suffix == 'getdevicepeopledata':
@@ -384,7 +158,7 @@ class DeviceConsumer(object):
 class DeviceBusiness(object):
     """设备业务"""
 
-    tts = "https://wgxing-device.oss-cn-beijing." \
+    tts = "https://cdbus-dev.oss-cn-shanghai." \
           "aliyuncs.com/people/video/qsc.aac"
 
     def __init__(self, product_key, mns_access_key_id,
@@ -447,38 +221,6 @@ class DeviceBusiness(object):
         }
         self._pub_msg(device_name, jdata)
 
-    def _set_workmode(self, device_name, chepai=None, cur_volume=None):
-        """
-        设置设备工作模式
-        0车载 1通道闸口 3注册模式
-        """
-
-        jdata = {
-            "cmd": "syntime",
-            "time": int(time.time()),
-            "chepai": '',
-            "workmode": 0,
-            "delayoff": 1,
-            "leftdetect": 1,
-            "jiange": 10,
-            "cleartime": 2628000,
-            "shxmode": 1,
-            "volume": 6,
-            "facesize": 390,
-            "uploadtype": 1,
-            "natstatus": 0,
-            "timezone": 8,
-            "temperature": 0,
-            "noreg": 1,
-            "light_type": 0
-        }
-        if chepai:
-            jdata["chepai"] = chepai.encode('utf-8')
-        if cur_volume and (-121 < int(cur_volume) < 7):
-            jdata["volume"] = cur_volume
-        print jdata
-        return self._pub_msg(device_name, jdata)
-
     def _pub_msg(self, devname, jdata):
         print u"-----------加入顺序发送消息的队列--------"
         print jdata
@@ -493,9 +235,10 @@ class DeviceBusiness(object):
         rds_conn.rpush(k, json.dumps(jdata, encoding="utf-8"))
 
     @transaction(is_commit=True)
-    def device_people_list_save(self, mysql_cur, data):
+    def device_people_list_save(self, pgsql_cur, data):
+        """保存设备上的信息到数据库"""
         print "=================device_people_list_save====================="
-        mysql_db = PgsqlDbUtil
+        pgsql_db = PgsqlDbUtil
         people_list_str = data['people_list_str']
         device_name = data['device_name']
         server_face_ids = data['server_face_ids']
@@ -515,13 +258,13 @@ class DeviceBusiness(object):
                 fid_list.append(str(fid))
                 offset += 16
         device_sql = "SELECT id FROM device WHERE device_name='{}'"
-        device_id = mysql_db.get(device_sql.format(device_name))[0]
+        device_id = pgsql_db.get(device_sql.format(device_name))[0]
 
         people_data = []
         if fid_list:
             sql = "SELECT id,nickname,emp_no FROM face WHERE id IN (" \
                   + ",".join(fid_list) + ")"
-            results = mysql_db.query(mysql_cur, sql)
+            results = pgsql_db.query(pgsql_cur, sql)
             for row in results:
                 fid = str(row[0])
                 nickname = row[1]
@@ -536,7 +279,7 @@ class DeviceBusiness(object):
                 sql = "SELECT id,nickname,emp_no FROM face " \
                       "WHERE id IN ({})".format(",".join(qq))
                 print sql
-                results = mysql_db.query(mysql_cur, sql)
+                results = pgsql_db.query(pgsql_cur, sql)
                 for row in results:
                     fid = str(row[0])
                     nickname = row[1]
@@ -546,7 +289,7 @@ class DeviceBusiness(object):
 
         get_sql = 'SELECT id FROM device_people_list ' \
                   'WHERE device_id={} LIMIT 1'
-        result = mysql_db.get(mysql_cur, get_sql.format(device_id))
+        result = pgsql_db.get(pgsql_cur, get_sql.format(device_id))
         print "-=-=-=-=-=========================="
         print result
         if result:
@@ -561,7 +304,7 @@ class DeviceBusiness(object):
                 'device_people': ",".join(people_data),
                 'not_updated': ",".join(not_updated_person_data)
             }
-            mysql_db.update(mysql_cur, d, table_name='device_people_list')
+            pgsql_db.update(pgsql_cur, d, table_name='device_people_list')
         else:
 
             d = {
@@ -573,7 +316,7 @@ class DeviceBusiness(object):
                 'device_people': ",".join(people_data),
                 'not_updated': ",".join(not_updated_person_data)
             }
-            mysql_db.insert(mysql_cur, d, table_name='device_people_list')
+            pgsql_db.insert(pgsql_cur, d, table_name='device_people_list')
 
     @transaction(is_commit=False)
     def device_people_list_upgrade(self, pgsql_cur, data):
@@ -609,43 +352,6 @@ class DeviceBusiness(object):
                     self._publish_add_people_msg(
                         device_name, fid, obj[0], obj[1])
 
-    def batch_people_add(self, device_name, results):
-        """批量人员添加"""
-        lines = []
-        for row in results:
-            line = str(row[0]) + "," + row[1] + "," + row[2] + "\n"
-            lines.append(line.encode('utf8'))
-        s = str(int(time.time()))
-        fd = None
-        file_path = os.path.join(self.path, s + '.txt')
-        try:
-            if not os.path.exists(self.path):
-                os.makedirs(self.path)
-            fd = open(file_path, 'w')
-            fd.writelines(lines)
-        finally:
-            if fd:
-                fd.close()
-                # os.remove(file_path)
-        try:
-            fd = open(file_path, 'r')
-        finally:
-            if fd:
-                fd.close()
-        oss_key = 'txts/' + s + '.txt'
-        utils.upload_zip(oss_key, file_path)
-        time.sleep(2)
-        # 判断文件是否存在
-        if utils.oss_file_exists(oss_key):
-            self._batch_add_people(
-                device_name, config.OSSDomain + "/" + oss_key)
-
-    def update_chepai(self, data):
-        chepai = data['chepai']
-        device_name = data['device_name']
-        cur_volume = data['cur_volume']
-        self._set_workmode(device_name, chepai, cur_volume)
-
     def send_get_people_data_msg(self, data):
         """发送获取设备上人员数据的消息"""
         device_name = data['device_name']
@@ -668,12 +374,10 @@ class ExportExcelConsumer(object):
         data = json.loads(body.decode('utf-8'))
         arr = method.routing_key.split(".")
         routing_suffix = arr[-1]
-        if routing_suffix == 'order':
-            self.excel_business.export_order_detail(data)
-        if routing_suffix == 'empinfo':
-            self.excel_business.people_info(data)
-        if routing_suffix == 'empstatistics':
-            self.excel_business.people_statistics(data)
+        if routing_suffix == 'exportorder':
+            self.excel_business.export_order(data)
+        if routing_suffix == 'exportalertrecord':
+            self.excel_business.export_alert_record(data)
 
         # 消息确认
         ch.basic_ack(delivery_tag=method.delivery_tag)
@@ -690,59 +394,41 @@ class ExportExcelBusiness(object):
         self.path = os.path.dirname(__file__) + '/temp'
 
     @transaction(is_commit=True)
-    def export_order_detail(self, mysql_cur, data):
-        mysql_db = PgsqlDbUtil
+    def export_order(self, pgsql_cur, data):
+        pgsql_db = PgsqlDbUtil
 
-        parent_company_id = data['parent_company_id']
-        child_company_id = data['child_company_id']
-        department_id = data['department_id']
-        year = data['year']
-        month = data['month']
+        school_id = data['school_id']
+        order_type = data['order_type']
+        start_time = data['start_time']
+        end_time = data['end_time']
         task_id = data['task_id']
 
-        setnx_key = rds_conn.setnx('export_order_detail', 1)
-        if setnx_key:
-            try:
-                sql = 'SELECT id FROM export_task ' \
-                      'WHERE status=1 AND id={} LIMIT 1'  # 待处理的
-                obj = mysql_db.get(mysql_cur, sql.format(task_id))
-                if not obj:
-                    return None  # 没有需要处理的
-                sql = mysql_db.update(mysql_cur, {'id': task_id, 'status': 2},
-                                      table_name='export_task')  # 改为处理中
-                self.logger.error(sql)
-                time.sleep(1)
-            finally:
-                rds_conn.delete('export_order_detail')
-
-        # 导出excel
         sql = """
-        SELECT UP.emp_no,UP.nickname,UP.deadline,UP.mobile,D.desc,
-        O.scan_time,S.name,O.car_no,O.order_no FROM order AS O 
-INNER JOIN user_profile AS UP ON UP.id=O.user_id 
-INNER JOIN user_department_relation AS UDR ON UDR.user_id=UP.id 
-INNER JOIN department AS D ON D.id=UDR.department_id 
-LEFT JOIN station AS S ON S.id=O.station_id 
-WHERE O.parent_company_id={} {} AND YEAR(O.scan_time) = {} AND MONTH(O.scan_time) = {} 
-LIMIT {} OFFSET {}
+        SELECT stu_no,stu_name,school_name,order_type,create_time,
+        license_plate_number,up_location FROM order O 
+        INNER JOIN school SHL ON SHL.id=O.school_id 
+        WHERE 1=1 {} 
+        LIMIT {} OFFSET {}
         """
         limit = 10000
         page = 1
         offset = (page - 1) * limit
 
         param_str = ''
-        if child_company_id:
-            param_str += ' AND O.child_company_id={} '.format(child_company_id)
+        if school_id:
+            param_str += ' AND O.school_id={} '.format(school_id)
+        if order_type:
+            param_str += ' AND O.order_type={} '.format(order_type)
+        if start_time and end_time:
+            param_str += \
+                "AND O.create_time between to_date('{}','YYYY-MM-DD') and " \
+                "to_date('{}','YYYY-MM-DD')".format(start_time, end_time)
 
-        if child_company_id and department_id:
-            param_str += ' AND O.department_id={} '.format(department_id)
-
-        results = mysql_db.query(mysql_cur, sql.format(
-            parent_company_id, param_str, year, month, limit, offset))
-        value_title = [u"订单id", u"工号", u"姓名", u"所属分组", u"手机号", u"乘坐时间",
-                       u"实际乘坐地点", u"乘坐车牌号", u"有效期"]
-        zip_name = u"乘坐记录(月报表){}-{}".format(year, month)
-        excel_name = u"乘坐记录(月报表){}-{} 第{}部分.xls"
+        results = pgsql_db.query(pgsql_cur, sql.format(param_str, limit, offset))
+        value_title = [u'学生编号', u'学生姓名' u'学校', u'乘车记录类型', 
+                       u'乘车时间', u'乘坐车辆', u'gps位置']
+        zip_name = u"乘坐记录{}-{}".format(start_time, end_time)
+        excel_name = u"乘坐记录第{}部分.xls"
         sheet_name = u'数据{}条-{}条'
         zip_index = 0
 
@@ -762,15 +448,21 @@ LIMIT {} OFFSET {}
                 zip_index += 1
                 # 创建一个workbook
                 workbook = utils.create_new_workbook()
-                book_name_xls = path + "/" + excel_name.format(
-                    year, month, zip_index)
+                book_name_xls = path + "/" + excel_name.format(zip_index)
             sheet_data = [value_title]
             for index, row in enumerate(results):
-                valid_period = datetime.fromtimestamp(
-                    row[2]).strftime('%Y-%m-%d %H:%M:%S')
-                scan_time = row[5].strftime('%Y-%m-%d %H:%M:%S')
-                sheet_data.append([row[8], row[0], row[1], row[4], row[3],
-                                   scan_time, row[6], row[7], valid_period])
+                order_type = row[3]
+                if order_type == 1:
+                    order_type_str = u"上学上车"
+                elif order_type == 2:
+                    order_type_str = u"上学下车"
+                elif order_type == 3:
+                    order_type_str = u"放学上车"
+                else:
+                    order_type_str = u"放学下车"
+                create_time_str = row[4].strftime('%Y-%m-%d %H:%M:%S')
+                sheet_data.append([row[0], row[1], row[2], order_type_str, 
+                                   create_time_str, row[5], row[6]])
 
             utils.write_excel_xls(
                 workbook,
@@ -780,70 +472,58 @@ LIMIT {} OFFSET {}
             # 下一页
             page += 1
             offset = (page - 1) * limit
-            results = mysql_db.query(mysql_cur, sql.format(
-                parent_company_id, param_str,
-                year, month, limit, offset))
+            results = pgsql_db.query(
+                pgsql_cur, sql.format(param_str, limit, offset))
         local_path = path + '.zip'
         utils.zip_dir(path, local_path)
         oss_key = 'zips/' + zip_name + ".zip"
         utils.upload_zip(oss_key, local_path)
-        mysql_db.update(mysql_cur, {'id': task_id, 'status': 3,
-                         'zip_url': config.OSSDomain + "/" + oss_key},
-                        table_name='export_task')
+        
+        d = {'id': task_id, 'status': 3, 'zip_url': config.OSSDomain + "/" + oss_key}
+        pgsql_db.update(pgsql_cur, d, table_name='export_task')
         # 删除文件
         shutil.rmtree(path)
         os.remove(path + ".zip")
 
     @transaction(is_commit=True)
-    def people_info(self, mysql_cur, data):
+    def export_alert_record(self, pgsql_cur, data):
         """
-        人员信息
+        报警信息
         """
-        mysql_db = PgsqlDbUtil
-
-        parent_company_id = data['parent_company_id']
-        child_company_id = data.get('child_company_id', None)
-        department_id = data.get('department_id', None)
-        admin_name = data['admin_name']
+        pgsql_db = PgsqlDbUtil
+        
+        query_str = data['query_str']
+        status = data['status']
+        start_time = data.get('start_time', None)
+        end_time = data.get('end_time', None)
+        first_alert = data['first_alert']
+        second_alert = data['second_alert']
         task_id = data['task_id']
 
-        setnx_key = rds_conn.setnx('export_people_statistics_data', 1)
-        if setnx_key:
-            try:
-                sql = 'SELECT id FROM export_task ' \
-                      'WHERE status=1 AND id={} LIMIT 1'  # 待处理的
-                obj = mysql_db.get(mysql_cur, sql.format(task_id))
-                if not obj:
-                    return None  # 没有需要处理的
-                mysql_db.update(mysql_cur, {'id': task_id, 'status': 2},
-                                table_name='export_task')  # 改为处理中
-                time.sleep(1)
-            finally:
-                rds_conn.delete('export_people_statistics_data')
-
-        # 导出excel
         sql = """
-            SELECT UP.emp_no,UP.nickname,D.desc,UP.mobile,UP.id_card,
-          S.name,UP.deadline,UP.create_time,S1.name 
-FROM user_profile AS UP 
-INNER JOIN user_department_relation AS UDR ON UDR.user_id=UP.id 
-INNER JOIN department AS D ON D.id=UDR.department_id 
-INNER JOIN enterprise AS E2 ON E2.id=D.enterprise_id 
-INNER JOIN station AS S ON S.id=UP.station_id 
-WHERE E2.parent_id={}  AND UP.status=1 
+        SELECT license_plate_number,worker_name_1,worker_name_2,company_name,
+        people_number,first_alert,second_alert,alert_start_time,alert_location,
+        status FROM alert_info WHERE 1=1 
             """
-        sql = sql.format(parent_company_id)
-        if child_company_id:
-            sql += ' AND D.enterprise_id={} '.format(child_company_id)
-        if child_company_id and department_id:
-            sql += ' AND D.id={} '.format(department_id)
+        if status:
+            sql += " AND status={}".format(status)
+        if query_str:
+            sql += " AND license_plate_number like '%{}%' AND worker_name_1 " \
+                   "like '%{}%' AND worker_name_2 like '%{}%'"
+        if first_alert:
+            sql += " AND first_alert={}".format(first_alert)
+        if second_alert:
+            sql += " AND second_alert={}".format(second_alert)
+        if start_time and end_time:
+            sql += " AND alert_start_time BETWEEN to_date('{}','YYYY-MM-DD') " \
+                   "and to_date('{}','YYYY-MM-DD')"
 
-        results = mysql_db.query(mysql_cur, sql)
-        value_title = [u"工号", u"姓名", u"所属分组", u"手机号",
-                       u"身份证号", u"乘坐地点1", u"乘坐地点2", u"有效期",
-                       u"开户时间", u"操作人员"]
-        excel_name = u"人员信息汇总.xls"
-        sheet_name = u'人员信息汇总'
+        results = pgsql_db.query(pgsql_cur, sql)
+        value_title = [u'车牌', u'驾驶员', u'照管员', u'校车公司名字', 
+                       u'遗漏人数', u'首次报警', u'二次报警', u'报警开始时间', 
+                       u'gps位置', u'状态']
+        excel_name = u"报警记录.xls"
+        sheet_name = u'报警记录'
 
         path = self.path + "/" + excel_name
         if os.path.exists(path):
@@ -853,11 +533,8 @@ WHERE E2.parent_id={}  AND UP.status=1
                 pass
         sheet_data = [value_title]
         for index, row in enumerate(results):
-            valid_period = datetime.fromtimestamp(row[6]).strftime('%Y-%m-%d %H:%M:%S')
-            create_time = row[7].strftime('%Y-%m-%d %H:%M:%S')
-            sheet_data.append([row[0], row[1], row[2], row[3], row[4],
-                               row[5], row[8], valid_period,
-                               create_time, admin_name])
+
+            sheet_data.append([row[0],])
 
         workbook = utils.create_new_workbook()
         utils.write_excel_xls(
@@ -868,86 +545,7 @@ WHERE E2.parent_id={}  AND UP.status=1
 
         oss_key = 'zips/' + excel_name
         utils.upload_zip(oss_key, path)
-        mysql_db.update(mysql_cur, {'id': task_id, 'status': 3,
-                         'zip_url': config.OSSDomain + "/" + oss_key},
-                        table_name='export_task')
-        # 删除文件
-        os.remove(path)
-
-    @transaction(is_commit=True)
-    def people_statistics(self, mysql_cur, data):
-        """
-        人员统计
-        """
-        mysql_db = PgsqlDbUtil
-
-        parent_company_id = data['parent_company_id']
-        child_company_id = data['child_company_id']
-        department_id = data['department_id']
-        year = data['year']
-        month = data['month']
-        task_id = data['task_id']
-
-        setnx_key = rds_conn.setnx('export_people_statistics_data', 1)
-        if setnx_key:
-            try:
-                sql = 'SELECT id FROM export_task ' \
-                      'WHERE status=1 AND id={} LIMIT 1'  # 待处理的
-                obj = mysql_db.get(mysql_cur, sql.format(task_id))
-                if not obj:
-                    return None  # 没有需要处理的
-                mysql_db.update(mysql_cur, {'id': task_id, 'status': 2},
-                                table_name='export_task')  # 改为处理中
-                time.sleep(1)
-            finally:
-                rds_conn.delete('export_people_statistics_data')
-
-        # 导出excel
-        sql = \
-        """
-        SELECT UP.emp_no,UP.nickname,D.desc,UP.mobile,UP.id_card,(SELECT COUNT(id) FROM order WHERE user_id=UP.id AND YEAR(scan_time)={} AND MONTH(scan_time)={}) AS tt_count,UP.deadline 
-FROM user_profile AS UP 
-INNER JOIN user_department_relation AS UDR ON UDR.user_id=UP.id 
-INNER JOIN department AS D ON D.id=UDR.department_id 
-INNER JOIN enterprise AS E2 ON E2.id=D.enterprise_id  
-INNER JOIN station AS S ON S.id=UP.station_id 
-WHERE E2.parent_id={}  ORDER BY tt_count DESC
-        """
-        sql = sql.format(year, month, parent_company_id)
-        if child_company_id:
-            sql += ' AND E2.id={} '.format(child_company_id)
-        if child_company_id and department_id:
-            sql += ' AND D.id={} '.format(department_id)
-        results = mysql_db.query(mysql_cur, sql)
-        value_title = [u"工号", u"姓名", u"所属分组", u"手机号", u"身份证号", u"乘车次数", u"有效期"]
-        excel_name = u"人员统计.xls"
-        sheet_name = u'人员统计'
-
-        path = self.path + "/" + excel_name
-        if os.path.exists(path):
-            try:
-                os.remove(path)
-            except:
-                pass
-
-        sheet_data = [value_title]
-        for index, row in enumerate(results):
-            valid_period = datetime.fromtimestamp(
-                row[6]).strftime('%Y-%m-%d %H:%M:%S')
-            sheet_data.append([row[0], row[1], row[2], row[3], row[4],
-                               row[5], valid_period])
-
-        workbook = utils.create_new_workbook()
-        utils.write_excel_xls(
-            workbook,
-            path,
-            sheet_name,
-            sheet_data)
-
-        oss_key = 'zips/' + excel_name
-        utils.upload_zip(oss_key, path)
-        mysql_db.update(mysql_cur, {'id': task_id, 'status': 3,
-                         'zip_url': config.OSSDomain + "/" + oss_key},
-                        table_name='export_task')
+        d = {'id': task_id, 'status': 3, 'zip_url': config.OSSDomain + "/" + oss_key}
+        pgsql_db.update(pgsql_cur, d, table_name='export_task')
         # 删除文件
         os.remove(path)

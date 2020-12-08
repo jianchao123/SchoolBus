@@ -9,7 +9,7 @@ if env == "TEST":
     DeviceSecret = 'bmq66tsx0OGju0CGqeYjzCTYlwA454j0'
 
     # OSS
-    OSSDomain = 'https://wgxing-device.oss-cn-beijing.aliyuncs.com'
+    OSSDomain = 'https://cdbus-dev.oss-cn-shanghai.aliyuncs.com'
     OSSAccessKeyId = 'LTAIWE5CGeOiozf7'
     OSSAccessKeySecret = 'IGuoRIxwMlPQqJ9ujWyTvSq2em4RDj'
 
@@ -59,7 +59,7 @@ else:
     DeviceSecret = 'bmq66tsx0OGju0CGqeYjzCTYlwA454j0'
 
     # OSS
-    OSSDomain = 'https://wgxing-device.oss-cn-beijing.aliyuncs.com'
+    OSSDomain = 'https://cdbus-dev.oss-cn-shanghai.aliyuncs.com'
     OSSAccessKeyId = 'LTAIWE5CGeOiozf7'
     OSSAccessKeySecret = 'IGuoRIxwMlPQqJ9ujWyTvSq2em4RDj'
 

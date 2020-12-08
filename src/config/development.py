@@ -17,7 +17,7 @@ class DevelopmentConfig(Config):
     LOG_PATH = '/home/jianchao/code/transport/logs/main'
 
     # 阿里云OSS
-    OSS_BUCKET = "bus-dev"
+    OSS_BUCKET = "cdbus-dev"
     OSS_REGION = "oss-cn-shanghai"
     OSS_POINT = "oss-cn-shanghai.aliyuncs.com"
     OSS_ALL_KEY = "LTAIWE5CGeOiozf7"

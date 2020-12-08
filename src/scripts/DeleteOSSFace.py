@@ -7,7 +7,7 @@ class OssOperation(object):
 
     def __init__(self):
         auth = oss2.Auth(config.OSSAccessKeyId, config.OSSAccessKeySecret)
-        self.bucket = oss2.Bucket(auth, config.OSSEndpoint, 'wgxing-device')
+        self.bucket = oss2.Bucket(auth, config.OSSEndpoint, 'cdbus-dev')
 
     def delete_prefix_file(self):
         prefix = "people/face/"

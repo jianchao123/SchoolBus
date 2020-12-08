@@ -24,3 +24,9 @@ class RedisKey(object):
 
     # 设备当前状态
     DEVICE_CUR_STATUS = "DEVICE_CUR_STATUS_HASH"
+
+    # 生成特征码的设备集合
+    GENERATE_DEVICE_NAMES = "GENERATE_DEVICE_NAMES_HASH"
+
+    # ACC关闭HASH
+    ACC_CLOSE = "ACC_CLOSE_HASH"

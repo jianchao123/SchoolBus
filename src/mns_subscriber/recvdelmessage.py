@@ -73,7 +73,7 @@ class ReceiveMessage(object):
             elif cmd == 'addface':
                 # 生成特征值返回的信息
                 if 'feature_type' in jdata:
-                    AcsManager.get_feature(
+                    AcsManager.save_feature(
                         dev_name, jdata['fid'], jdata['feature'])
                     if jdata['feature']:
                         logger.info(u'生成特征值成功{}'.format(jdata['fid']))
@@ -86,7 +86,9 @@ class ReceiveMessage(object):
             elif cmd == 'record':
                 if jdata['fid'] == -1:
                     logger.info(u"日志信息")
-                    print jdata
+                    log_id = jdata['gps']
+                    if log_id and int(log_id) == 3:
+                        AcsManager.acc_close(dev_name, )
                 else:
                     logger.info(u"添加订单")
                     acs_manager.add_order(jdata['fid'],

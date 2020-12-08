@@ -7,10 +7,16 @@ import json
 import requests
 import zipfile
 from xlutils.copy import copy
+from aip import AipSpeech
 import logging
 import time
 from timer.db import rds_conn as lock_conn
 import config
+
+auth = oss2.Auth(config.OSSAccessKeyId, config.OSSAccessKeySecret)
+bucket = oss2.Bucket(auth, config.OSSEndpoint, config.OSSBucketName)
+aip_client = AipSpeech(config.BAIDU_APP_ID, config.BAIDU_API_KEY,
+                   config.BAIDU_SECRET_KEY)
 
 
 def get_logger(log_path):
@@ -76,15 +82,12 @@ def zip_dir(dir_path, out_full_name):
 
 def delete_oss_file(files):
     """删除oss文件"""
-    auth = oss2.Auth(config.OSSAccessKeyId, config.OSSAccessKeySecret)
-    bucket = oss2.Bucket(auth, config.OSSEndpoint, config.OSSBucketName)
     return bucket.batch_delete_objects(files)
 
 
 def upload_zip(oss_key, local_path):
     """上传zip到oss"""
-    auth = oss2.Auth(config.OSSAccessKeyId, config.OSSAccessKeySecret)
-    bucket = oss2.Bucket(auth, config.OSSEndpoint, config.OSSBucketName)
+
     with open(local_path, 'rb') as file_obj:
         bucket.put_object(oss_key, file_obj)
 
@@ -110,8 +113,7 @@ def safe_str(obj):
 
 def oss_file_exists(oss_key):
     """文件是否存在"""
-    auth = oss2.Auth(config.OSSAccessKeyId, config.OSSAccessKeySecret)
-    bucket = oss2.Bucket(auth, config.OSSEndpoint, config.OSSBucketName)
+
     return bucket.object_exists(oss_key)
 
 
@@ -129,6 +131,17 @@ def get_location(longitude, latitude):
         return poi['name'].encode('utf8') + "({})".format(
             poi['address'].encode('utf8'))
     return None
+
+
+def aip_word_to_audio(text, oss_key):
+    """文字转语音"""
+    result = aip_client.synthesis(text, 'zh', 1, {
+        'vol': 5,
+    })
+    if not isinstance(result, dict):
+        bucket.put_object(oss_key, result)
+        return True
+    return False
 
 
 class RedisLock(object):

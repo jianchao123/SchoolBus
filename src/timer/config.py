@@ -16,7 +16,7 @@ if env == "TEST":
     DeviceSecret = 'bmq66tsx0OGju0CGqeYjzCTYlwA454j0'
 
     # OSS
-    OSSDomain = 'https://wgxing-device.oss-cn-beijing.aliyuncs.com'
+    OSSDomain = 'https://cdbus-dev.oss-cn-shanghai.aliyuncs.com'
     OSSAccessKeyId = 'LTAIWE5CGeOiozf7'
     OSSAccessKeySecret = 'IGuoRIxwMlPQqJ9ujWyTvSq2em4RDj'
     OSSEndpoint = ''
@@ -39,6 +39,11 @@ if env == "TEST":
 
     # 高德
     GD_AK = "7db32e8af1a361c8f86e10b58ad7a08e"
+
+    # 百度音频转换
+    BAIDU_APP_ID = '23117459'
+    BAIDU_API_KEY = 'e8ZnYfnzvlptbcxdAYcYtTVI'
+    BAIDU_SECRET_KEY = 'l8bkk6odc03fXgnLDxrYQuRwe62yFsQ2'
 
 elif env == "PRO":
     # 物联网
@@ -72,8 +77,12 @@ elif env == "PRO":
     # 高德
     GD_AK = "7db32e8af1a361c8f86e10b58ad7a08e"
 
+    # 百度音频转换
+    BAIDU_APP_ID = '23117459'
+    BAIDU_API_KEY = 'e8ZnYfnzvlptbcxdAYcYtTVI'
+    BAIDU_SECRET_KEY = 'l8bkk6odc03fXgnLDxrYQuRwe62yFsQ2'
+
 else:
-    # TODO 需要更换配置
     # 物联网
     Productkey = 'a1vperyb2Cg'
     ProductHost = 'a1vperyb2Cg.iot-as-mqtt.cn-shanghai.aliyuncs.com'
@@ -81,11 +90,11 @@ else:
     DeviceSecret = 'bmq66tsx0OGju0CGqeYjzCTYlwA454j0'
 
     # OSS
-    OSSDomain = 'https://wgxing-device.oss-cn-beijing.aliyuncs.com'
+    OSSDomain = 'https://cdbus-dev.oss-cn-shanghai.aliyuncs.com'
+    OSSEndpoint = 'http://oss-cn-shanghai.aliyuncs.com'
+    OSSBucketName = 'cdbus-dev'
     OSSAccessKeyId = 'LTAIWE5CGeOiozf7'
     OSSAccessKeySecret = 'IGuoRIxwMlPQqJ9ujWyTvSq2em4RDj'
-    OSSEndpoint = ''
-    OSSBucketName = ''
 
     # MNS
     MNSEndpoint = 'http://1162097573951650.mns.cn-shanghai.aliyuncs.com/'
@@ -104,6 +113,11 @@ else:
 
     # 高德
     GD_AK = "7db32e8af1a361c8f86e10b58ad7a08e"
+
+    # 百度音频转换
+    BAIDU_APP_ID = '23117459'
+    BAIDU_API_KEY = 'e8ZnYfnzvlptbcxdAYcYtTVI'
+    BAIDU_SECRET_KEY = 'l8bkk6odc03fXgnLDxrYQuRwe62yFsQ2'
 
 redis_conf = dict(host="127.0.0.1", port=6379, db=0, decode_responses=True)
 pgsql_conf = dict(host=pgsql_host, database=pgsql_db, port=pgsql_port,

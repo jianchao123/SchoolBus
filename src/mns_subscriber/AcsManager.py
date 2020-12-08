@@ -104,11 +104,11 @@ class AcsManager(object):
             "time": int(time.time()),
             "chepai": chepai.encode('utf8'),
             "workmode": workmode,
-            "delayoff": 1,
-            "leftdetect": 1,
+            "delayoff": 10,
+            "leftdetect": 5,
             "jiange": 10,
             "cleartime": 2628000,
-            "shxmode": 1,
+            "shxmode": 0,
             "volume": int(cur_volume),
             "facesize": 390,
             "uploadtype": 1,
@@ -452,8 +452,7 @@ class AcsManager(object):
                     'mac': mac,
                     'product_key': response['Data']['ProductKey'],
                     'device_secret': response['Data']['DeviceSecret'],
-                    'sound_volume': 6,
-                    'order_type': 1 # 默认为刷脸类型
+                    'sound_volume': 6
                 }
                 pgsql_db.insert(pgsql_cur, d, table_name='device')
 
@@ -472,11 +471,11 @@ class AcsManager(object):
                 rds_conn.delete('create_device')
         return None
 
-    def _set_device_work_mode(self, dev_name, license_plate_number, cur_volume):
+    def _set_device_work_mode(self, dev_name, license_plate_number, cur_volume, workmode):
         """设置设备工作模式
         0车载 1通道闸口 3注册模式
         """
-        self._set_workmode(dev_name, 0, license_plate_number, cur_volume)
+        self._set_workmode(dev_name, workmode, license_plate_number, cur_volume)
 
     @staticmethod
     def _init_people(people_list, device_name, pgsql_db, pgsql_cur):
@@ -533,7 +532,7 @@ class AcsManager(object):
             if device_status and int(device_status) == 5:
                 return
             sql = "SELECT id,status,version_no,sound_volume," \
-                  "license_plate_number" \
+                  "license_plate_number,order_type" \
                   " FROM device WHERE device_name='{}' LIMIT 1"
             device = pgsql_db.get(pgsql_cur, sql.format(device_name))
 
@@ -542,13 +541,15 @@ class AcsManager(object):
             version_no = device[2]
             sound_volume = device[3]
             license_plate_number = device[4]
+            order_type = device[5]
 
             d = {}
             # 已关联车辆
             if status == 2:
+                workmode = 0 if order_type == 1 else 3
                 d['status'] = 3   # 设置工作模式
                 self._set_device_work_mode(
-                    device_name, license_plate_number, sound_volume)
+                    device_name, license_plate_number, sound_volume, workmode)
                 rds_conn.hset(RedisKey.DEVICE_CUR_STATUS, device_name, 3)
             elif status == 3:       # 已设置工作模式
                 d['status'] = 4     # 设置oss信息
@@ -566,8 +567,11 @@ class AcsManager(object):
 
     @staticmethod
     def device_cur_timestamp(dev_name, dev_time):
+        """设备初始化完成之后才能写入时间戳"""
         rds_conn = db.rds_conn
-        rds_conn.hset(RedisKey.DEVICE_CUR_TIMESTAMP, dev_name, dev_time)
+        cur_status = rds_conn.hget(RedisKey.DEVICE_CUR_STATUS, dev_name)
+        if cur_status and cur_status == 6:
+            rds_conn.hset(RedisKey.DEVICE_CUR_TIMESTAMP, dev_name, dev_time)
 
     @db.transaction(is_commit=True)
     def save_imei(self, pgsql_cur, device_name, imei):
@@ -582,7 +586,7 @@ class AcsManager(object):
             pgsql_db.update(pgsql_cur, d, table_name='device')
 
     @db.transaction(is_commit=True)
-    def get_feature(self, pgsql_cur, device_name, fid, feature):
+    def save_feature(self, pgsql_cur, device_name, fid, feature):
         pgsql_db = db.PgsqlDbUtil
         rds_conn = db.rds_conn
         d = defaultdict()
@@ -595,3 +599,12 @@ class AcsManager(object):
         pgsql_db.update(pgsql_cur, d, table_name='face')
         # 将设备从使用中删除
         rds_conn.hdel(RedisKey.DEVICE_USED, device_name)
+
+    def acc_close(self, device_name):
+        """
+        acc关闭
+        向redis存入一条acc关闭的数据
+        """
+        rds_conn = db.rds_conn
+        # TODO 日志是否有devtime
+        rds_conn.hset(RedisKey.ACC_CLOSE, device_name, int(time.time()))

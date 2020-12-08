@@ -103,7 +103,7 @@ class Test(object):
         self.pub_msg('newdev', msg)
 
     def register_to_device(self):
-        d = {'ttsurl': 'https://wgxing-device.oss-cn-beijing.aliyuncs.com/people/video/qsc.aac',
+        d = {'ttsurl': 'https://cdbus-dev.oss-cn-shanghai.aliyuncs.com/people/video/qsc.aac',
              'go_station': '',
              'return_station': '',
              'faceurl': '',
@@ -131,7 +131,7 @@ class Test(object):
     def batchaddface(self):
         """批量添加人脸"""
         jdata = {
-            "url": 'https://wgxing-device.oss-cn-beijing.aliyuncs.com/txts/1597287230.txt',
+            "url": 'https://cdbus-dev.oss-cn-shanghai.aliyuncs.com/txts/1597287230.txt',
             "cmd": "batchaddface"
         }
         self.pub_msg('dev_19', jdata)
