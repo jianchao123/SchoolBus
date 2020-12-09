@@ -135,12 +135,24 @@ def get_location(longitude, latitude):
 
 def aip_word_to_audio(text, oss_key):
     """文字转语音"""
+    import os
     result = aip_client.synthesis(text, 'zh', 1, {
         'vol': 5,
     })
+    aac_path = 'temp/' + '5103225679.aac'
     if not isinstance(result, dict):
-        bucket.put_object(oss_key, result)
+        mp3_path = 'temp/' + str(int(time.time())) + '.mp3'
+        with open(mp3_path, 'wb') as f:
+            f.write(result)
+        os.system('ffmpeg -i {} -codec:a aac -b:a 32k {}'
+                  ''.format(mp3_path, aac_path))
+        with open(aac_path, 'rb') as f:
+            bucket.put_object(oss_key, f)
+        os.remove(mp3_path)
+        os.remove(aac_path)
         return True
+    else:
+        print result
     return False
 
 

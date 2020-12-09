@@ -21,16 +21,10 @@ def _publish_msg(exchange, routing_key, message):
                           body=message, mandatory=True)
 
 
-def generate_create_user_msg(user_id):
-    """生成创建用户的消息"""
-    data = {
-        "user_id": user_id
-    }
-    _publish_msg('user_exchange', 'user_created', json.dumps(data))
-
-
 def get_device_people_data(device_name):
-    """获取设备人员数据"""
+    """获取设备人员数据
+    service调用发送
+    """
     data = {
         'device_name': device_name
     }
@@ -62,60 +56,23 @@ def device_people_update_msg(add_list, del_list, update_list, device_name):
     _publish_msg('device_exchange', 'device.list', json.dumps(data))
 
 
-def export_order_excel_msg(parent_company_id, child_company_id,
-                           department_id, year, month, task_id):
+def export_order_excel_msg(school_id, car_id, order_type,
+                           start_date, end_date, task_id):
     """导出订单excel消息"""
     data = {
-        "parent_company_id": parent_company_id,
-        "child_company_id": child_company_id,
-        "department_id": department_id,
-        "year": year,
-        "month": month,
+        "school_id": school_id,
+        "car_id": car_id,
+        "order_type": order_type,
+        "start_date": start_date,
+        "end_date": end_date,
         "task_id": task_id
     }
     _publish_msg('excel_exchange', 'excel.order', json.dumps(data))
 
 
-def export_people_info_msg(parent_company_id, child_company_id,
-                           department_id, admin_name, task_id):
-    """导出人员信息"""
-    data = {
-        "parent_company_id": parent_company_id,
-        "child_company_id": child_company_id,
-        "department_id": department_id,
-        "admin_name": admin_name,
-        "task_id": task_id
-    }
-    _publish_msg('excel_exchange', 'excel.empinfo', json.dumps(data))
-
-
-def export_people_statistics_msg(parent_company_id, child_company_id,
-                                 department_id, year, month, task_id):
-    """导出人员统计数据"""
-    data = {
-        "parent_company_id": parent_company_id,
-        "child_company_id": child_company_id,
-        "department_id": department_id,
-        "year": year,
-        "month": month,
-        "task_id": task_id
-    }
-    _publish_msg('excel_exchange', 'excel.empstatistics', json.dumps(data))
-
-
-def update_chepai(device_name, chepai, cur_volume):
-    """更新车牌"""
-    data ={
-        "chepai": chepai,
-        "device_name": device_name,
-        "cur_volume": cur_volume
-    }
-    _publish_msg('device_exchange', 'device.updatechepai', json.dumps(data))
-
-
-def batch_add_user(data):
-    """批量添加用户"""
-    _publish_msg('user_exchange', 'user.batchadd', json.dumps(data))
+def batch_add_student(data):
+    """批量添加学生"""
+    _publish_msg('user_exchange', 'user.batchaddstudent', json.dumps(data))
 
 
 def heartbeat():

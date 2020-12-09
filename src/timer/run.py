@@ -12,7 +12,7 @@ sys.path.insert(0, project_src_dir)
 from apscheduler.schedulers.gevent import BlockingScheduler
 
 from timer.RestTimer import GenerateFeature, EveryMinuteExe, \
-    FromOssQueryFace, EveryFewMinutesExe, OrderSendMsg
+    FromOssQueryFace, EveryFewMinutesExe, OrderSendMsg, GenerateAAC
 
 if __name__ == "__main__":
     generate_feature = GenerateFeature()
@@ -20,10 +20,15 @@ if __name__ == "__main__":
     from_oss_query_face = FromOssQueryFace()
     every_few_minutes_exe = EveryFewMinutesExe()
     order_send_msg = OrderSendMsg()
+    generate_aac = GenerateAAC()
 
     sched = BlockingScheduler()
+    # 顺序发送消息
+    sched.add_job(order_send_msg.order_sent_msg, 'interval', seconds=0.5)
     # 生成特征码
     sched.add_job(generate_feature.generate_feature, 'interval', seconds=1)
+    # 生成aac文件
+    sched.add_job(generate_aac.generate_audio, 'interval', seconds=10)
     # 上传人脸zip包到oss,将人脸匹配到记录
     sched.add_job(from_oss_query_face.from_oss_get_face, 'interval', seconds=16)
     # 每分钟执行
@@ -32,8 +37,6 @@ if __name__ == "__main__":
     # 每五分钟执行
     sched.add_job(func=every_few_minutes_exe.every_few_minutes_execute,
                   trigger='cron', day="*", hour="*", minute="*/5")
-    # 顺序发送消息
-    sched.add_job(order_send_msg.order_sent_msg, 'interval', seconds=0.5)
     sched.start()
 
     # g = sched.start()

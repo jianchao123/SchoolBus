@@ -30,3 +30,6 @@ class SubErrorCode(object):
     USER_INVALID_TOKEN_ERR = (200002, u'无效的token值')
     USER_PWD_ERR = (200009, u"密码错误")
     USER_PWD_LEN_ERR = (200010, u"用户密码错误")
+
+    ORDER_NUMBER_TOO_BIG = (200020, u"订单条数太大")
+    ORDER_EXPORTING = (200021, u"订单导出中")

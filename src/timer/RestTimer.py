@@ -36,23 +36,32 @@ def pub_msg(rds_conn, devname, jdata):
 
 
 class GenerateAAC(object):
-    """生成AAC音频格式文件 10秒 100个"""
+    """生成AAC音频格式文件 10秒 30个"""
 
     @db.transaction(is_commit=True)
     def generate_audio(self, pgsql_cur):
         pgsql_db = db.PgsqlDbUtil
 
-        sql = "SELECT id,nickname,stu_no FROM face WHERE acc_url IS NULL"
+        sql = "SELECT id,nickname,stu_no,feature FROM face " \
+              "WHERE acc_url IS NULL LIMIT 30"
         results = pgsql_db.query(sql)
         for row in results:
+            feature = row[3]
+
             begin = time.time()
-            oss_key = 'audio/' + row[2] + ''
-            aip_word_to_audio(row[1], '')
+            oss_key = 'audio/' + row[2] + '.aac'
+            aip_word_to_audio(row[1], oss_key)
             end = time.time()
             print end - begin
 
-        pgsql_db.update(pgsql_cur, )
-
+            d = {
+                'id': row[0],
+                'aac_url': config.OSSDomain + '/' + oss_key
+            }
+            # feature不为空则修改状态
+            if feature:
+                d['status'] = 4
+            pgsql_db.update(pgsql_cur, d, 'face')
 
 
 class GenerateFeature(object):
@@ -252,13 +261,12 @@ class OrderSendMsg(object):
         self.client = AcsClient(config.MNSAccessKeyId,
                                 config.MNSAccessKeySecret, 'cn-shanghai')
         self.product_key = config.Productkey
+        self.request = PubRequest()
+        self.request.set_accept_format('json')
 
     def order_sent_msg(self):
         """顺序发送消息"""
         try:
-            request = PubRequest()
-            request.set_accept_format('json')
-
             rds_conn = db.rds_conn
             device_queues = rds_conn.keys('mns_list_*')
             for queue_name in device_queues:
@@ -277,12 +285,12 @@ class OrderSendMsg(object):
                     # 发送消息
                     topic = '/' + self.product_key + '/' \
                             + device_name + '/user/get'
-                    request.set_TopicFullName(topic)
+                    self.request.set_TopicFullName(topic)
 
-                    b64_str = base64.b64encode(json.dumps(data, encoding='utf8'))
-                    request.set_MessageContent(b64_str)
-                    request.set_ProductKey(self.product_key)
-                    self.client.do_action_with_exception(request)
+                    b64_str = base64.b64encode(json.dumps(data))
+                    self.request.set_MessageContent(b64_str)
+                    self.request.set_ProductKey(self.product_key)
+                    self.client.do_action_with_exception(self.request)
         except:
             import traceback
             err_msg = traceback.format_exc()

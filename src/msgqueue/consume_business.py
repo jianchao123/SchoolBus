@@ -38,9 +38,12 @@ class StudentConsumer(object):
         data = json.loads(body.decode('utf-8'))
         arr = method.routing_key.split(".")
         routing_suffix = arr[-1]
-        if routing_suffix == 'batchadd':
+        if routing_suffix == 'batchaddstudent':
             self.student_business.batch_add_student(data)
-
+        if routing_suffix == 'batchaddworker':
+            self.student_business.batch_add_worker(data)
+        if routing_suffix == 'batchaddcar':
+            self.student_business.batch_add_car(data)
         # 消息确认
         ch.basic_ack(delivery_tag=method.delivery_tag)
 
@@ -116,7 +119,7 @@ class StudentBusiness(object):
             pgsql_db.update(pgsql_cur, d, 'student')
 
         else:
-            pgsql_db.insert(pgsql_cur, d)
+            pgsql_db.insert(pgsql_cur, d, 'student')
             stu = pgsql_db.get(stu_sql)
             face_d = {
                 'oss_url': '',
@@ -131,6 +134,93 @@ class StudentBusiness(object):
                 'stu_id': stu[0]
             }
             pgsql_db.insert(pgsql_cur, face_d, 'face')
+
+    @transaction(is_commit=True)
+    def batch_add_worker(self, pgsql_cur, data):
+        """
+        批量添加工作者
+        """
+        pgsql_db = PgsqlDbUtil
+        emp_no = data['emp_no']
+        nickname = data['nickname']
+        gender = data['gender']
+        mobile = data['mobile']
+        remarks = data['remarks']
+        company_name = data['company_name']
+        department_name = data['department_name']
+        duty_id = data['duty_id']
+        car_id = data['car_id']
+        license_plate_number = data['license_plate_number']
+
+        # 所有学校
+        school_sql = 'SELECT id,school_name FROM school'
+        results = pgsql_db.query(school_sql)
+        school_dict = {}
+        for row in results:
+            school_dict[row[1]] = row[0]
+
+        # 性别
+        gender_dict = {u'男': 1, u'女': 2}
+
+        # 职务
+        duty_dict = {u'驾驶员': 1, u'照管员': 2}
+
+        # 车辆
+        car_sql = 'SELECT id,license_plate_number FROM car'
+        results = pgsql_db.query(car_sql)
+        car_dict = {}
+        for row in results:
+            car_dict[row[1]] = row[0]
+
+        worker_sql = "SELECT id FROM worker WHERE emp_no='{}' " \
+                     "LIMIT 1".format(emp_no)
+        worker = pgsql_db.get(worker_sql)
+        d = {
+            'emp_no': emp_no,
+            'nickname': nickname,
+            'gender': gender_dict[gender],
+            'mobile': mobile,
+            'remarks': remarks,
+            'company_name': company_name,
+            'department_name': department_name,
+            'duty_id': duty_dict[duty_id],
+            'car_id': car_dict[car_id],
+            'license_plate_number': license_plate_number
+        }
+
+        if worker:
+            d['id'] = worker[0]
+            pgsql_db.update(pgsql_cur, d, 'worker')
+        else:
+            pgsql_db.insert(pgsql_cur, d, 'worker')
+
+    @transaction(is_commit=True)
+    def batch_add_car(self, pgsql_cur, data):
+        """批量添加车辆
+        """
+        pgsql_db = PgsqlDbUtil
+
+        license_plate_number = data['license_plate_number']
+        capacity = data['capacity']
+        company_name = data['company_name']
+
+        car_sql = "SELECT id FROM car WHERE license_plate_number='{}' " \
+                  "LIMIT 1".format(license_plate_number)
+        car = pgsql_db.get(car_sql)
+        d = {
+            'code': datetime.strftime('%Y%m%d%H%M%S%f'),
+            'license_plate_number': license_plate_number,
+            'capacity': capacity,
+            'device_iid': '',
+            'worker_str': '',
+            'company_name': company_name
+        }
+
+        if car:
+            d['id'] = car[0]
+            pgsql_db.update(pgsql_cur, d, 'car')
+        else:
+            pgsql_db.insert(pgsql_cur, d, 'car')
 
 
 class DeviceConsumer(object):
@@ -398,6 +488,7 @@ class ExportExcelBusiness(object):
         pgsql_db = PgsqlDbUtil
 
         school_id = data['school_id']
+        car_id = data['car_id']
         order_type = data['order_type']
         start_time = data['start_time']
         end_time = data['end_time']
@@ -417,6 +508,8 @@ class ExportExcelBusiness(object):
         param_str = ''
         if school_id:
             param_str += ' AND O.school_id={} '.format(school_id)
+        if car_id:
+            param_str += ' AND O.car_id={} '.format(car_id)
         if order_type:
             param_str += ' AND O.order_type={} '.format(order_type)
         if start_time and end_time:
@@ -479,7 +572,8 @@ class ExportExcelBusiness(object):
         oss_key = 'zips/' + zip_name + ".zip"
         utils.upload_zip(oss_key, local_path)
         
-        d = {'id': task_id, 'status': 3, 'zip_url': config.OSSDomain + "/" + oss_key}
+        d = {'id': task_id, 'status': 2,
+             'zip_url': config.OSSDomain + "/" + oss_key}
         pgsql_db.update(pgsql_cur, d, table_name='export_task')
         # 删除文件
         shutil.rmtree(path)

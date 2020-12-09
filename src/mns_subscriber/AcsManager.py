@@ -139,52 +139,6 @@ class AcsManager(object):
             if rds_stream_no and str(rds_stream_no) == str(stream_no):
                 rds_conn.delete(k)
 
-    # @db.transaction(is_commit=True)
-    # def device_open(self, pgsql_cur, device_name, lastTime):
-    #     pgsql_db = db.PgsqlDbUtil
-    #     sql = "SELECT id,status,version,car_no," \
-    #           "modify_status_timestamp,cur_volume FROM device " \
-    #           "WHERE device_name='{}'"
-    #     devices = pgsql_db.query(pgsql_cur, sql.format(device_name))
-    #     if devices:
-    #         device = devices[0]
-    #         if device:
-    #             car_no = device[3]
-    #             cur_volume = device[4]
-    #             lastTime = datetime.strptime(lastTime, "%Y-%m-%d %H:%M:%S.%f").strftime(
-    #                 "%Y-%m-%d %H:%M:%S")
-    #             d = {
-    #                 'id': device[0],
-    #                 'open_time': "STR_TO_DATE('{}', '%Y-%m-%d %H:%i:%s')"
-    #                                "".format(lastTime),
-    #                 'is_open': 1
-    #             }
-    #             pgsql_db.update(pgsql_cur, d, table_name='device')
-    #             self._set_device_work_mode(
-    #                 device_name, car_no, cur_volume)
-
-    # @db.transaction(is_commit=True)
-    # def device_close(self, pgsql_cur, device_name, lastTime):
-    #     pgsql_db = db.PgsqlDbUtil
-    #     rds_conn = db.rds_conn
-    #     sql = "SELECT id,open_time FROM device " \
-    #           "WHERE device_name='{}'"
-    #     devices = pgsql_db.query(pgsql_cur, sql.format(device_name))
-    #     if devices:
-    #         device = devices[0]
-    #         if device:
-    #             pk = device[0]
-    #             open_time = device[1]
-    #             last_time = datetime.strptime(lastTime, "%Y-%m-%d %H:%M:%S.%f")
-    #             # 关机时间小于开机时间,说明这个关机时间是无效的
-    #             if last_time < open_time:
-    #                 return
-    #             d = {
-    #                 'id': pk,
-    #                 'is_open': 0
-    #             }
-    #             pgsql_db.update(pgsql_cur, d, table_name='device')
-
     @db.transaction(is_commit=True)
     def update_device_last_time(self, pgsql_cur, device_name,
                                 devtime, gps_str, device_iid):
@@ -592,7 +546,12 @@ class AcsManager(object):
         d = defaultdict()
         d['id'] = fid
         if feature:
-            d['status'] = 4
+            # aac_url不为空则修改状态
+            sql = "SELECT id FROM face WHERE id={} " \
+                  "AND aac_url IS NOT NULL"
+            results = pgsql_db.get(sql.format(fid))
+            if results:
+                d['status'] = 4
             d['feature'] = feature
         else:
             d['status'] = 5

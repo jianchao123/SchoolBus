@@ -388,9 +388,6 @@ def get_require_check_with_user(args_name):
         def __wrapper(**arg):
             try:
                 require_token_check(request, g)
-                if not len(args_name):
-                    return jsonify(
-                        make_correct_resp(fn(g.user_id, None, **arg)))
                 args = get_check_args(request, args_name)
                 return jsonify(make_correct_resp(fn(g.user_id, args, **arg)))
             except AppErrorBase as ex:

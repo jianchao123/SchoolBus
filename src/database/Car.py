@@ -12,3 +12,4 @@ class Car(db.Model):
     capacity = db.Column(db.Integer)
     device_iid = db.Column(db.String(16))
     worker_str = db.Column(db.String(32))   # 该车辆的工作人员信息
+    company_name = db.Column(db.String(16))
