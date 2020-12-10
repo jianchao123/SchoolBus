@@ -9,7 +9,7 @@ import pika
 queue_conn = pika.BlockingConnection(pika.ConnectionParameters(
     host='localhost', heartbeat=0))
 channel = queue_conn.channel()
-channel.exchange_declare(exchange='user_exchange', exchange_type='topic')
+channel.exchange_declare(exchange='student_exchange', exchange_type='topic')
 channel.exchange_declare(exchange='device_exchange', exchange_type='topic')
 channel.exchange_declare(exchange='excel_exchange', exchange_type='topic')
 
@@ -70,9 +70,74 @@ def export_order_excel_msg(school_id, car_id, order_type,
     _publish_msg('excel_exchange', 'excel.order', json.dumps(data))
 
 
-def batch_add_student(data):
+def export_alert_info_msg(query_str, status, start_time, end_time,
+                          first_alert, second_alert, task_id):
+    """导出报警消息"""
+    data = {
+        'query_str': query_str,
+        'status': status,
+        'start_time': start_time,
+        'end_time': end_time,
+        'first_alert': first_alert,
+        'second_alert': second_alert,
+        'task_id': task_id,
+    }
+    _publish_msg('excel_exchange', 'excel.exportalertinfo', json.dumps(data))
+
+
+def batch_add_student(stu_no, nickname, gender, parents1_name, parents1_mobile,
+                      parents2_name, parents2_mobile, address, remarks,
+                      school_name, grade_name, classes_name, end_time,
+                      license_plate_number):
     """批量添加学生"""
-    _publish_msg('user_exchange', 'user.batchaddstudent', json.dumps(data))
+    data = {
+        'stu_no': stu_no,
+        'nickname': nickname,
+        'gender': gender,
+        'parents1_name': parents1_name,
+        'parents1_mobile': parents1_mobile,
+        'parents2_name': parents2_name,
+        'parents2_mobile': parents2_mobile,
+        'address': address,
+        'remarks': remarks,
+        'school_name': school_name,
+        'grade_name': grade_name,
+        'classes_name': classes_name,
+        'end_time': end_time,
+        'license_plate_number': license_plate_number
+    }
+    _publish_msg('student_exchange', 'student.batchaddstudent',
+                 json.dumps(data))
+
+
+def batch_add_worker(emp_no, nickname, gender, mobile, remarks, company_name,
+                     department_name, duty_id, car_id, license_plate_number):
+    """批量添加工作者"""
+    data = {
+        'emp_no': emp_no,
+        'nickname': nickname,
+        'gender': gender,
+        'mobile': mobile,
+        'remarks': remarks,
+        'company_name': company_name,
+        'department_name': department_name,
+        'duty_id': duty_id,
+        'car_id': car_id,
+        'license_plate_number': license_plate_number,
+    }
+    _publish_msg('student_exchange', 'student.batchaddworker',
+                 json.dumps(data))
+
+
+def batch_add_car(license_plate_number, capacity, company_name):
+    """批量添加车辆"""
+    data = {
+        'license_plate_number': license_plate_number,
+        'capacity': capacity,
+        'company_name': company_name
+    }
+    _publish_msg('student_exchange', 'student.batchaddcar',
+                 json.dumps(data))
 
 
 def heartbeat():
@@ -83,6 +148,6 @@ def heartbeat():
 
 # 测试用户创建
 if __name__ == "__main__":
-    # generate_create_user_msg(12)
+    # generate_create_student_msg(12)
     device_people_update_msg([], [], ['440', '441', '442', '443', '444'],
                              'dev_1')

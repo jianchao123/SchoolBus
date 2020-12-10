@@ -17,8 +17,8 @@ class RedisKey(object):
     # 订单ID递增
     ORDER_ID_INCR = "ORDER_ID_INCR"
 
-    # 学生上车栈
-    STUDENT_STACK = 'STUDENT_STACK'
+    # 学生上车集合
+    STUDENT_SET = 'STUDENT_SET:{}'
 
     # 每个设备当前时间戳
     DEVICE_CUR_TIMESTAMP = 'DEVICE_CUR_TIMESTAMP_HASH'
@@ -31,6 +31,9 @@ class RedisKey(object):
 
     # ACC关闭HASH
     ACC_CLOSE = "ACC_CLOSE_HASH"
+
+    # 设备当前车上人数
+    DEVICE_CUR_PEOPLE_NUMBER = "DEVICE_CUR_PEOPLE_NUMBER_HASH"
 
 
 grade = [u'小班', u'中班', u'大班', u'学前班', u'一年级', u'二年级', u'三年级',

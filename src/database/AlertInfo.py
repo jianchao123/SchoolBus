@@ -7,6 +7,7 @@ class AlertInfo(db.Model):
     __tablename__ = 'alert_info'
 
     id = db.Column(db.BigInteger, primary_key=True)
+    car_id = db.Column(db.Integer)
     license_plate_number = db.Column(db.String(16)) # 车牌
     worker_id_1 = db.Column(db.Integer)         # 驾驶员
     worker_name_1 = db.Column(db.String(16))

@@ -1,12 +1,9 @@
 # coding:utf-8
-import random
-from urllib2 import urlopen
 import time
-import zlib
 import base64
 import json
-import requests
 import oss2
+from collections import defaultdict
 from datetime import datetime, timedelta
 
 from aliyunsdkcore.client import AcsClient
@@ -17,6 +14,7 @@ from aliyunsdkiot.request.v20180120.PubRequest import PubRequest
 from timer import db
 
 from define import RedisKey
+from define import grade, classes
 from utils import aip_word_to_audio
 import config
 
@@ -62,6 +60,116 @@ class GenerateAAC(object):
             if feature:
                 d['status'] = 4
             pgsql_db.update(pgsql_cur, d, 'face')
+
+
+class CheckAccClose(object):
+    """检查acc关闭 11秒间隔"""
+
+    @db.transaction(is_commit=True)
+    def check_acc_close(self, pgsql_cur):
+        """检查acc close"""
+        pgsql_db = db.PgsqlDbUtil
+        rds_conn = db.rds_conn
+        acc_hash = rds_conn.hgetall(RedisKey.ACC_CLOSE)
+        cur_timestamp = int(time.time())
+        for dev_name, acc_timestamp in acc_hash.items():
+            time_diff = cur_timestamp - acc_timestamp
+
+            sql = "SELECT CAR.license_plate_number,CAR.company_name," \
+                  "CAR.id FROM device D INNER JOIN car CAR ON " \
+                  "CAR.id=D.car_id WHERE D.device_name='{}' LIMIT 1"
+            results = pgsql_db.get(sql.format(dev_name))
+            license_plate_number = results[0]
+            company_name = results[1]
+            car_id = results[2]
+
+            self.post_wechat_msg(car_id, company_name, dev_name,
+                                 license_plate_number, pgsql_cur, pgsql_db,
+                                 rds_conn, time_diff)
+
+    def post_wechat_msg(self, car_id, company_name, dev_name,
+                        license_plate_number, pgsql_cur, pgsql_db, rds_conn,
+                        time_diff):
+        if 30 < time_diff:
+            if time_diff < 300:
+                number = int(rds_conn.hget(
+                    RedisKey.DEVICE_CUR_PEOPLE_NUMBER, dev_name))
+                if number:
+                    # 工作人员
+                    sql = "SELECT id,nickname,duty_id FROM worker " \
+                          "WHERE car_id={} LIMIT 1".format(car_id)
+                    results = pgsql_db.query(sql.format(dev_name))
+                    worker_id_1 = None
+                    worker_name_1 = None
+                    worker_id_2 = None
+                    worker_name_2 = None
+                    for row in results:
+                        if row[2] == 1:
+                            worker_id_1 = row[0]
+                            worker_name_2 = row[1]
+                        elif row[2] == 2:
+                            worker_id_2 = row[0]
+                            worker_name_2 = row[1]
+
+                    # 取出滞留人员
+                    fids = rds_conn.smembers(RedisKey.STUDENT_SET)
+                    fids = ','.join(list(fids))
+                    sql = "SELECT STU.nickname,SHL.school_name,STU.grade_id," \
+                          "STU.class_id,STU.mobile_1,STU.mobile_2 FROM " \
+                          "face F INNER JOIN student STU ON STU.id=F.stu_id " \
+                          "INNER JOIN school SHL ON SHL.id=STU.school_id " \
+                          "WHERE F.id in ({})".format(','.join(fids))
+                    results = pgsql_db.query(sql.format(fids))
+                    infos = []
+                    for row in results:
+                        info = defaultdict()
+                        info['nickname'] = row[0]
+                        info['school_name'] = row[1]
+                        info['grade_name'] = grade[row[2]]
+                        info['class_name'] = classes[row[3]]
+                        info['mobile_1'] = row[4]
+                        info['mobile_2'] = row[5]
+                        infos.append(info)
+                    people_info = ""
+                    for info in infos:
+                        people_info += '{},{},{},{},{}\n'.format(
+                            info['nickname'], info['school_name'],
+                            info['grade_name'], info['class_name'],
+                            info['mobile_1'], info['mobile_2'])
+                    d = {
+                        'car_id': car_id,
+                        'license_plate_number': license_plate_number,
+                        'worker_id_1': worker_id_1,
+                        'worker_name_1': worker_name_1,
+                        'worker_id_2': worker_id_2,
+                        'worker_name_2': worker_name_2,
+                        'company_name': company_name,
+                        'people_number': number,
+                        'people_info': people_info,
+                        'first_alert': 1,
+                        'second_alert': 0,
+                        'alert_start_time': 'now()',
+                        'alert_location': '',
+                        'status': 1,
+                        'cancel_info': ''
+                    }
+                    pgsql_db.insert(pgsql_cur, d, 'alert_info')
+                    # TODO 推送第一次公众号消息
+            else:
+                # 判断报警状态是否修改
+                sql = "SELECT status FROM alert_info WHERE car_id={} " \
+                      "ORDER BY id DESC LIMIT 1"
+                result = pgsql_db.get(sql.format(car_id))
+                # 大于5分钟还处于报警中就推送第二次消息
+                if result and result[0] == 1:
+                    # TODO 推送第二次公众号消息
+                    d = {
+                        'id': car_id,
+                        'second_alert': 1
+                    }
+                    pgsql_db.update(pgsql_cur, d, 'alert_info')
+                # 大于5分钟直接删除Key
+                rds_conn.srem(RedisKey.ACC_CLOSE, dev_name)
 
 
 class GenerateFeature(object):
@@ -161,6 +269,7 @@ class EveryMinuteExe(object):
 
 
 class FromOssQueryFace(object):
+    """16秒执行一次"""
 
     def __init__(self):
         self.auth = oss2.Auth(config.OSSAccessKeyId, config.OSSAccessKeySecret)

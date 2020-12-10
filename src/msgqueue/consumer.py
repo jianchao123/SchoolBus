@@ -15,7 +15,7 @@ current_dir = os.path.dirname(current_dir)
 sys.path.insert(0, current_dir)
 
 import pika
-from msgqueue.consume_business import UserConsumer
+from msgqueue.consume_business import StudentConsumer
 from msgqueue.consume_business import DeviceConsumer
 from msgqueue.consume_business import ExportExcelConsumer
 from msgqueue.consume_business import HeartBeatConsumer
@@ -30,22 +30,22 @@ def start_subscriber():
     # 声明交换机
     # Exchange为topic时,生产者可以指定一个支持通配符的RoutingKey（如demo.*）
     # 发向此Exchange,凡是Exchange上RoutingKey满足此通配符的Queue就会收到消息
-    channel.exchange_declare(exchange='user_exchange', exchange_type='topic')
+    channel.exchange_declare(exchange='student_exchange', exchange_type='topic')
     channel.exchange_declare(exchange='device_exchange', exchange_type='topic')
     channel.exchange_declare(exchange='excel_exchange', exchange_type='topic')
     channel.exchange_declare(exchange='heartbeat_exchange', exchange_type='topic')
 
     # 声明消息队列, durable消息队列持久化
-    channel.queue_declare(queue="user_queue", durable=True)
+    channel.queue_declare(queue="student_queue", durable=True)
     channel.queue_declare(queue="device_queue", durable=True)
     channel.queue_declare(queue="excel_queue", durable=True)
     channel.queue_declare(queue='heartbeat_queue', durable=True)
 
     # 绑定交换机和队列(一个交换机可以绑定多个队列)
     # routing_key路由器(绑定到队列上),携带该路由的消息都将被分发到该消息队列
-    channel.queue_bind(exchange='user_exchange',
-                       queue="user_queue",
-                       routing_key="user.*")
+    channel.queue_bind(exchange='student_exchange',
+                       queue="student_queue",
+                       routing_key="student.*")
     channel.queue_bind(exchange='device_exchange',
                        queue="device_queue",
                        routing_key="device.*")
@@ -59,10 +59,10 @@ def start_subscriber():
     channel.basic_qos(prefetch_count=1)
 
     # 消费者 auto_ack=False设置为手动确认消息
-    user_consumer = UserConsumer()
+    stu_consumer = StudentConsumer()
     channel.basic_consume(
-        queue="user_queue",
-        on_message_callback=user_consumer.user_callback,
+        queue="student_queue",
+        on_message_callback=stu_consumer.student_callback,
         auto_ack=False)
     device_consumer = DeviceConsumer()
     channel.basic_consume(

@@ -216,6 +216,13 @@ class AcsManager(object):
         now = datetime.now()
         cur_hour = now.hour
         odd_even = cnt % 2
+        # 是上车就入集合
+        k = RedisKey.STUDENT_SET.format(dev_name)
+        if odd_even % 2:
+            redis_db.sadd(k, fid)
+        else:
+            redis_db.srem(k, fid)
+
         if cur_hour < 12 and odd_even:          # 上学上车
             order_type = 1
         elif cur_hour < 12 and not odd_even:    # 上学下车
@@ -520,12 +527,13 @@ class AcsManager(object):
                 pgsql_db.update(pgsql_cur, d, table_name='device')
 
     @staticmethod
-    def device_cur_timestamp(dev_name, dev_time):
+    def device_cur_timestamp(dev_name, dev_time, cnt):
         """设备初始化完成之后才能写入时间戳"""
         rds_conn = db.rds_conn
         cur_status = rds_conn.hget(RedisKey.DEVICE_CUR_STATUS, dev_name)
         if cur_status and cur_status == 6:
             rds_conn.hset(RedisKey.DEVICE_CUR_TIMESTAMP, dev_name, dev_time)
+            rds_conn.hset(RedisKey.DEVICE_CUR_PEOPLE_NUMBER, cnt)
 
     @db.transaction(is_commit=True)
     def save_imei(self, pgsql_cur, device_name, imei):

@@ -15,6 +15,7 @@ from aliyunsdkiot.request.v20180120.RegisterDeviceRequest import \
 from aliyunsdkiot.request.v20180120.PubRequest import PubRequest
 from define import grade, classes
 
+
 class HeartBeatConsumer(object):
 
     def __init__(self):
@@ -466,7 +467,7 @@ class ExportExcelConsumer(object):
         routing_suffix = arr[-1]
         if routing_suffix == 'exportorder':
             self.excel_business.export_order(data)
-        if routing_suffix == 'exportalertrecord':
+        if routing_suffix == 'exportalertinfo':
             self.excel_business.export_alert_record(data)
 
         # 消息确认
