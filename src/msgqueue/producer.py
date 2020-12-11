@@ -70,73 +70,79 @@ def export_order_excel_msg(school_id, car_id, order_type,
     _publish_msg('excel_exchange', 'excel.order', json.dumps(data))
 
 
-def export_alert_info_msg(query_str, status, start_time, end_time,
-                          first_alert, second_alert, task_id):
+def export_alert_info_msg(status, start_date, end_date,
+                          alert_info_type, car_id, task_id):
     """导出报警消息"""
     data = {
-        'query_str': query_str,
         'status': status,
-        'start_time': start_time,
-        'end_time': end_time,
-        'first_alert': first_alert,
-        'second_alert': second_alert,
+        'start_date': start_date,
+        'end_date': end_date,
+        'alert_info_type': alert_info_type,
+        'car_id': car_id,
         'task_id': task_id,
     }
     _publish_msg('excel_exchange', 'excel.exportalertinfo', json.dumps(data))
 
 
-def batch_add_student(stu_no, nickname, gender, parents1_name, parents1_mobile,
-                      parents2_name, parents2_mobile, address, remarks,
-                      school_name, grade_name, classes_name, end_time,
-                      license_plate_number):
+def batch_add_student(data):
     """批量添加学生"""
-    data = {
-        'stu_no': stu_no,
-        'nickname': nickname,
-        'gender': gender,
-        'parents1_name': parents1_name,
-        'parents1_mobile': parents1_mobile,
-        'parents2_name': parents2_name,
-        'parents2_mobile': parents2_mobile,
-        'address': address,
-        'remarks': remarks,
-        'school_name': school_name,
-        'grade_name': grade_name,
-        'classes_name': classes_name,
-        'end_time': end_time,
-        'license_plate_number': license_plate_number
-    }
+    # data = {
+    #     'stu_no': stu_no,
+    #     'nickname': nickname,
+    #     'gender': gender,
+    #     'parents1_name': parents1_name,
+    #     'parents1_mobile': parents1_mobile,
+    #     'parents2_name': parents2_name,
+    #     'parents2_mobile': parents2_mobile,
+    #     'address': address,
+    #     'remarks': remarks,
+    #     'school_name': school_name,
+    #     'grade_name': grade_name,
+    #     'classes_name': classes_name,
+    #     'end_time': end_time,
+    #     'license_plate_number': license_plate_number
+    # }
     _publish_msg('student_exchange', 'student.batchaddstudent',
                  json.dumps(data))
 
 
-def batch_add_worker(emp_no, nickname, gender, mobile, remarks, company_name,
-                     department_name, duty_id, car_id, license_plate_number):
+def batch_add_worker(data):
     """批量添加工作者"""
-    data = {
-        'emp_no': emp_no,
-        'nickname': nickname,
-        'gender': gender,
-        'mobile': mobile,
-        'remarks': remarks,
-        'company_name': company_name,
-        'department_name': department_name,
-        'duty_id': duty_id,
-        'car_id': car_id,
-        'license_plate_number': license_plate_number,
-    }
+    # data = {
+    #     'emp_no': emp_no,
+    #     'nickname': nickname,
+    #     'gender': gender,
+    #     'mobile': mobile,
+    #     'remarks': remarks,
+    #     'company_name': company_name,
+    #     'department_name': department_name,
+    #     'duty_id': duty_id,
+    #     'car_id': car_id,
+    #     'license_plate_number': license_plate_number,
+    # }
     _publish_msg('student_exchange', 'student.batchaddworker',
                  json.dumps(data))
 
 
-def batch_add_car(license_plate_number, capacity, company_name):
+def batch_add_car(data):
     """批量添加车辆"""
-    data = {
-        'license_plate_number': license_plate_number,
-        'capacity': capacity,
-        'company_name': company_name
-    }
+    # data = {
+    #     'license_plate_number': license_plate_number,
+    #     'capacity': capacity,
+    #     'company_name': company_name
+    # }
     _publish_msg('student_exchange', 'student.batchaddcar',
+                 json.dumps(data))
+
+
+def batch_add_school(data):
+    """批量添加学校"""
+    # data = {
+    #     'license_plate_number': license_plate_number,
+    #     'capacity': capacity,
+    #     'company_name': company_name
+    # }
+    _publish_msg('student_exchange', 'student.batchaddschool',
                  json.dumps(data))
 
 

@@ -35,8 +35,9 @@ class OrderService(object):
             query = query.filter(Order.order_type == order_type)
         if query_str:
             query_str = '%{keyword}%'.format(keyword=query_str)
-            query = query.filter(or_(Order.stu_name.like(query_str),
-                Order.passenger_name.like(query_str)))
+            query = query.filter(or_(
+                Order.stu_name.like(query_str),
+                Order.license_plate_number.like(query_str)))
         if start_date and end_date:
             end_date = end_date + timedelta(days=1)
             query = query.filter(or_(Order.create_time > start_date,

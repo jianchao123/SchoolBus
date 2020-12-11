@@ -87,8 +87,9 @@ class ReceiveMessage(object):
             elif cmd == 'record':
                 if jdata['fid'] == -1:
                     logger.info(u"日志信息")
-                    log_id = jdata['gps']
-                    if log_id and int(log_id) == 3:
+                    log_id = int(jdata['gps'].split('|')[0])
+                    # acc关闭
+                    if log_id == 3:
                         AcsManager.acc_close(dev_name, )
                 else:
                     logger.info(u"添加订单")
@@ -135,6 +136,8 @@ class ReceiveMessage(object):
             try:
                 self.msg_handler(acs_manager, logger)
             except Exception as e:
+                # import traceback
+                # print traceback.format_exc()
                 logger.error(e.message)
                 if e.type == u"QueueNotExist":
                     print("Queue not exist!")

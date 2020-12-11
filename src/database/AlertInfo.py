@@ -19,6 +19,7 @@ class AlertInfo(db.Model):
     first_alert = db.Column(db.Integer)     # 第一次报警 1是 0否
     second_alert = db.Column(db.Integer)    # 第二次报警 1是 0否
     alert_start_time = db.Column(db.DateTime, default=datetime.now) # 报警开始时间
+    alert_second_time = db.Column(db.DateTime, default=datetime.now)
     alert_location = db.Column(db.String(16))   # 报警定位
     status = db.Column(db.Integer)          # 1 正在报警 2已解除
     cancel_info = db.Column(db.String(128)) # 取消报警相关信息

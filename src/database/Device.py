@@ -19,4 +19,4 @@ class Device(db.Model):
     license_plate_number = db.Column(db.String(16))
     status = db.Column(db.Integer)      # 1已创建虚拟设备 2已关联车辆 3已设置工作模式 4已设置oss信息 5已初始化人员
     sound_volume = db.Column(db.Integer)
-    order_type = db.Column(db.Integer)  # 1刷脸 2生成特征值
+    device_type = db.Column(db.Integer)  # 1刷脸 2生成特征值

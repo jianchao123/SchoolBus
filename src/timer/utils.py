@@ -10,9 +10,8 @@ from xlutils.copy import copy
 from aip import AipSpeech
 import logging
 import time
-from timer.db import rds_conn as lock_conn
 import config
-
+print config.BAIDU_APP_ID
 auth = oss2.Auth(config.OSSAccessKeyId, config.OSSAccessKeySecret)
 bucket = oss2.Bucket(auth, config.OSSEndpoint, config.OSSBucketName)
 aip_client = AipSpeech(config.BAIDU_APP_ID, config.BAIDU_API_KEY,
@@ -30,6 +29,9 @@ def get_logger(log_path):
     logger.setLevel(logging.INFO)
     logger.addHandler(handler)
     return logger
+
+
+logger = get_logger(config.log_path)
 
 
 def create_new_workbook():
@@ -160,7 +162,8 @@ class RedisLock(object):
     """自旋锁"""
 
     def __init__(self, key):
-        self.rdcon = lock_conn
+        from db import rds_conn
+        self.rdcon = rds_conn
         self._lock = 0
         self.lock_key = key
 

@@ -42,7 +42,7 @@ class GenerateAAC(object):
 
         sql = "SELECT id,nickname,stu_no,feature FROM face " \
               "WHERE acc_url IS NULL LIMIT 30"
-        results = pgsql_db.query(sql)
+        results = pgsql_db.query(pgsql_cur, sql)
         for row in results:
             feature = row[3]
 
@@ -132,7 +132,7 @@ class CheckAccClose(object):
                         infos.append(info)
                     people_info = ""
                     for info in infos:
-                        people_info += '{},{},{},{},{}\n'.format(
+                        people_info += '{},{},{},{},{}|'.format(
                             info['nickname'], info['school_name'],
                             info['grade_name'], info['class_name'],
                             info['mobile_1'], info['mobile_2'])
@@ -165,7 +165,8 @@ class CheckAccClose(object):
                     # TODO 推送第二次公众号消息
                     d = {
                         'id': car_id,
-                        'second_alert': 1
+                        'second_alert': 1,
+                        'alert_second_time': 'now()'
                     }
                     pgsql_db.update(pgsql_cur, d, 'alert_info')
                 # 大于5分钟直接删除Key
@@ -248,17 +249,17 @@ class EveryMinuteExe(object):
         mysql_db = db.PgsqlDbUtil
 
         # 过期人脸更新状态
-        expire_sql = """SELECT F.`id` FROM `user_profile` AS UP 
-        INNER JOIN `face` AS F ON F.`user_id`=UP.`id` 
-        WHERE UP.`deadline` < {} """
+        expire_sql = """SELECT F.id FROM user_profile AS UP 
+        INNER JOIN face AS F ON F.user_id=UP.id 
+        WHERE UP.deadline < {} """
         results = mysql_db.query(pgsql_cur, expire_sql.format(time.time()))
         for row in results:
             face_id = row[0]
             d = {
-                '`id`': face_id,
-                '`status`': 2  # 过期
+                'id': face_id,
+                'status': 2  # 过期
             }
-            mysql_db.update(pgsql_cur, d, table_name='`face`')
+            mysql_db.update(pgsql_cur, d, table_name='face')
 
         # msgqueue的心跳包
         try:
@@ -288,9 +289,9 @@ class FromOssQueryFace(object):
         start = time.time()
         # 获取未绑定的人脸
         mysql_db = db.PgsqlDbUtil
-        sql = "SELECT F.`id`,F.`emp_no` FROM `face` AS F \
-    INNER JOIN `user_profile` AS UP ON UP.`id`=F.`user_id` WHERE " \
-              "F.`status`=-2 AND UP.`status`=1 order by rand()"
+        sql = "SELECT F.id,F.emp_no FROM face AS F \
+    INNER JOIN user_profile AS UP ON UP.id=F.user_id WHERE " \
+              "F.status=-2 AND UP.status=1 order by rand()"
         results = mysql_db.query(pgsql_cur, sql)
         emp_no_pk_map = {}
         server_face_list = []       # 服务器上的工号列表
@@ -316,11 +317,11 @@ class FromOssQueryFace(object):
             intersection = intersection[:100]
             for row in intersection:
                 d = {
-                    '`id`': emp_no_pk_map[row],
-                    '`oss_url`': config.OSSDomain + "/people/face/" + row + ".jpg",
-                    '`status`': -1  # 未处理
+                    'id': emp_no_pk_map[row],
+                    'oss_url': config.OSSDomain + "/people/face/" + row + ".jpg",
+                    'status': -1  # 未处理
                 }
-                mysql_db.update(pgsql_cur, d, table_name='`face`')
+                mysql_db.update(pgsql_cur, d, table_name='face')
         end = time.time()
         print end - start
 

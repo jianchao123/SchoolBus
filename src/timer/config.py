@@ -1,6 +1,5 @@
 # coding:utf-8
 import os
-from utils import get_logger
 
 project_name = "school_bus"
 project_dir = os.path.dirname(os.path.dirname(
@@ -28,7 +27,7 @@ if env == "TEST":
     MNSAccessKeySecret = 'vhuBLJpqlOsSisnuUQ1xvE02GCXhIC'
 
     # LOG
-    log_path = "/data/logs/{}/mns".format(project_name)
+    log_path = "/data/logs/{}/timer".format(project_name)
 
     # PGSQL
     pgsql_host = '127.0.0.1'
@@ -65,7 +64,7 @@ elif env == "PRO":
     MNSAccessKeySecret = ''
 
     # LOG
-    log_path = "/data/logs/{}/mns".format(project_name)
+    log_path = "/data/logs/{}/timer".format(project_name)
 
     # PGSQL
     pgsql_host = '127.0.0.1'
@@ -102,7 +101,7 @@ else:
     MNSAccessKeySecret = 'vhuBLJpqlOsSisnuUQ1xvE02GCXhIC'
 
     # LOG
-    log_path = project_dir + "/logs/mns"
+    log_path = project_dir + "/logs/timer"
 
     # PGSQL
     pgsql_host = '127.0.0.1'
@@ -121,8 +120,5 @@ else:
 
 redis_conf = dict(host="127.0.0.1", port=6379, db=0, decode_responses=True)
 pgsql_conf = dict(host=pgsql_host, database=pgsql_db, port=pgsql_port,
-                  user=pgsql_user, password=pgsql_passwd, charset="utf8")
-
-logger = get_logger(log_path)
-logger.info('--------ENV={}---------------'.format(env))
+                  user=pgsql_user, password=pgsql_passwd)
 print env

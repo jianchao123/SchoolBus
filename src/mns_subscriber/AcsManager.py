@@ -471,8 +471,7 @@ class AcsManager(object):
         producer.device_people_update_msg(
             add_list, [], [], device_name)
 
-    @db.transaction(is_commit=True)
-    def check_version(self, device_name, cur_version):
+    def check_version(self, device_name, cur_version, dev_time):
         """检查版本号"""
         if cur_version < RedisKey.APPOINT_VERSION_NO:
             self._upgrade_version(device_name)
@@ -493,9 +492,10 @@ class AcsManager(object):
             if device_status and int(device_status) == 5:
                 return
             sql = "SELECT id,status,version_no,sound_volume," \
-                  "license_plate_number,order_type" \
+                  "license_plate_number,device_type" \
                   " FROM device WHERE device_name='{}' LIMIT 1"
             device = pgsql_db.get(pgsql_cur, sql.format(device_name))
+            print device
 
             pk = device[0]
             status = device[1]
@@ -509,15 +509,18 @@ class AcsManager(object):
             if status == 2:
                 workmode = 0 if order_type == 1 else 3
                 d['status'] = 3   # 设置工作模式
+                print u"设置工作模式"
                 self._set_device_work_mode(
                     device_name, license_plate_number, sound_volume, workmode)
                 rds_conn.hset(RedisKey.DEVICE_CUR_STATUS, device_name, 3)
             elif status == 3:       # 已设置工作模式
                 d['status'] = 4     # 设置oss信息
+                print u"设置oss信息"
                 self._set_oss_info(device_name)
                 rds_conn.hset(RedisKey.DEVICE_CUR_STATUS, device_name, 4)
             elif status == 4:       # 设置oss信息
                 d['status'] = 5     # 初始人员
+                print u"初始化人员"
                 rds_conn.hset(RedisKey.DEVICE_CUR_STATUS, device_name, 5)
                 AcsManager._init_people([], device_name, pgsql_db, pgsql_cur)
                 rds_conn.hset(RedisKey.DEVICE_CUR_STATUS, device_name, 5)

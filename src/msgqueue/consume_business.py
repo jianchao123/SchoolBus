@@ -45,6 +45,8 @@ class StudentConsumer(object):
             self.student_business.batch_add_worker(data)
         if routing_suffix == 'batchaddcar':
             self.student_business.batch_add_car(data)
+        if routing_suffix == 'batchaddschool':
+            self.student_business.batch_add_school(data)
         # 消息确认
         ch.basic_ack(delivery_tag=method.delivery_tag)
 
@@ -60,81 +62,81 @@ class StudentBusiness(object):
         身份证号,姓名,性别,家长1姓名,家长1手机号,家长2姓名,家长2手机号,家庭地址,备注,学校,年级,班级,截止时间,车牌
         """
         pgsql_db = PgsqlDbUtil
-        stu_no = data['stu_no']
-        nickname = data['nickname']
-        gender = data['gender']
-        parents1_name = data['parents1_name']
-        parents1_mobile = data['parents1_mobile']
-        parents2_name = data['parents2_name']
-        parents2_mobile = data['parents2_mobile']
-        address = data['address']
-        remarks = data['remarks']
-        school_name = data['school_name']
-        grade_name = data['grade_name']
-        classes_name = data['classes_name']
-        end_time = data['end_time']
-        license_plate_number = data['license_plate_number']
-
-        # 所有学校
         school_sql = 'SELECT id,school_name FROM school'
-        results = pgsql_db.query(school_sql)
-        school_dict = {}
-        for row in results:
-            school_dict[row[1]] = row[0]
-
-        # 性别
-        gender_dict = {u'男': 1, u'女': 2}
-
-        # 车辆
         car_sql = 'SELECT id,license_plate_number FROM car'
-        results = pgsql_db.query(car_sql)
-        car_dict = {}
-        for row in results:
-            car_dict[row[1]] = row[0]
+        stu_sql = "SELECT id FROM student WHERE stu_no='{}' LIMIT 1"
+        for row in data:
+            stu_no = row['stu_no']
+            nickname = row['nickname']
+            gender = row['gender']
+            parents1_name = row['parents1_name']
+            parents1_mobile = row['parents1_mobile']
+            parents2_name = row['parents2_name']
+            parents2_mobile = row['parents2_mobile']
+            address = row['address']
+            remarks = row['remarks']
+            school_name = row['school_name']
+            grade_name = row['grade_name']
+            classes_name = row['classes_name']
+            end_time = row['end_time']
+            license_plate_number = row['license_plate_number']
 
-        stu_sql = "SELECT id FROM student WHERE stu_no='{}' " \
-                  "LIMIT 1".format(stu_no)
-        student = pgsql_db.get(stu_sql)
-        d = {
-            'stu_no': stu_no,
-            'nickname': nickname,
-            'gender': gender_dict[gender],
-            'parents_1': parents1_name,
-            'mobile_1': parents1_mobile,
-            'parents_2': parents2_name,
-            'mobile_2': parents2_mobile,
-            'address': address,
-            'remarks': remarks,
-            'school_id': school_dict[school_name],
-            'grade_id': grade.index(grade_name),
-            'class_id': classes.index(classes_name),
-            'create_time': "now()",
-            'end_time': "to_date('{}', 'yyyy-MM-dd')".format(end_time),
-            'car_id': car_dict[license_plate_number],
-            'license_plate_number': license_plate_number,
-            'status': 1
-        }
+            # 所有学校
+            results = pgsql_db.query(school_sql)
+            school_dict = {}
+            for school in results:
+                school_dict[school[1]] = school[0]
 
-        if student:
-            d['id'] = student[0]
-            pgsql_db.update(pgsql_cur, d, 'student')
+            # 性别
+            gender_dict = {u'男': 1, u'女': 2}
 
-        else:
-            pgsql_db.insert(pgsql_cur, d, 'student')
-            stu = pgsql_db.get(stu_sql)
-            face_d = {
-                'oss_url': '',
-                'status': 1,  # 没有人脸
-                'feature': '',
-                'nickname': nickname,
+            # 车辆
+            results = pgsql_db.query(car_sql)
+            car_dict = {}
+            for car in results:
+                car_dict[car[1]] = car[0]
+
+            student = pgsql_db.get(stu_sql.format(stu_no))
+            d = {
                 'stu_no': stu_no,
-                'feature_crc': '',
-                'update_time': 'now()',
-                'acc_url': '',
-                'end_timestamp': '',
-                'stu_id': stu[0]
+                'nickname': nickname,
+                'gender': gender_dict[gender],
+                'parents_1': parents1_name,
+                'mobile_1': parents1_mobile,
+                'parents_2': parents2_name,
+                'mobile_2': parents2_mobile,
+                'address': address,
+                'remarks': remarks,
+                'school_id': school_dict[school_name],
+                'grade_id': grade.index(grade_name),
+                'class_id': classes.index(classes_name),
+                'end_time': "to_date('{}', 'yyyy-MM-dd')".format(end_time),
+                'car_id': car_dict[license_plate_number],
+                'license_plate_number': license_plate_number,
             }
-            pgsql_db.insert(pgsql_cur, face_d, 'face')
+
+            if student:
+                d['id'] = student[0]
+                pgsql_db.update(pgsql_cur, d, 'student')
+
+            else:
+                d['create_time'] = 'now()'
+                d['status'] = 1
+                pgsql_db.insert(pgsql_cur, d, 'student')
+                stu = pgsql_db.get(stu_sql)
+                face_d = {
+                    'oss_url': '',
+                    'status': 1,  # 没有人脸
+                    'feature': '',
+                    'nickname': nickname,
+                    'stu_no': stu_no,
+                    'feature_crc': '',
+                    'update_time': 'now()',
+                    'acc_url': '',
+                    'end_timestamp': '',
+                    'stu_id': stu[0]
+                }
+                pgsql_db.insert(pgsql_cur, face_d, 'face')
 
     @transaction(is_commit=True)
     def batch_add_worker(self, pgsql_cur, data):
@@ -142,86 +144,104 @@ class StudentBusiness(object):
         批量添加工作者
         """
         pgsql_db = PgsqlDbUtil
-        emp_no = data['emp_no']
-        nickname = data['nickname']
-        gender = data['gender']
-        mobile = data['mobile']
-        remarks = data['remarks']
-        company_name = data['company_name']
-        department_name = data['department_name']
-        duty_id = data['duty_id']
-        car_id = data['car_id']
-        license_plate_number = data['license_plate_number']
-
-        # 所有学校
         school_sql = 'SELECT id,school_name FROM school'
-        results = pgsql_db.query(school_sql)
-        school_dict = {}
-        for row in results:
-            school_dict[row[1]] = row[0]
-
-        # 性别
-        gender_dict = {u'男': 1, u'女': 2}
-
-        # 职务
-        duty_dict = {u'驾驶员': 1, u'照管员': 2}
-
-        # 车辆
         car_sql = 'SELECT id,license_plate_number FROM car'
-        results = pgsql_db.query(car_sql)
-        car_dict = {}
-        for row in results:
-            car_dict[row[1]] = row[0]
+        worker_sql = "SELECT id FROM worker WHERE emp_no='{}' LIMIT 1"
+        for row in data:
+            emp_no = row['emp_no']
+            nickname = row['nickname']
+            gender = row['gender']
+            mobile = row['mobile']
+            remarks = row['remarks']
+            company_name = row['company_name']
+            department_name = row['department_name']
+            duty_id = row['duty_id']
+            car_id = row['car_id']
+            license_plate_number = row['license_plate_number']
 
-        worker_sql = "SELECT id FROM worker WHERE emp_no='{}' " \
-                     "LIMIT 1".format(emp_no)
-        worker = pgsql_db.get(worker_sql)
-        d = {
-            'emp_no': emp_no,
-            'nickname': nickname,
-            'gender': gender_dict[gender],
-            'mobile': mobile,
-            'remarks': remarks,
-            'company_name': company_name,
-            'department_name': department_name,
-            'duty_id': duty_dict[duty_id],
-            'car_id': car_dict[car_id],
-            'license_plate_number': license_plate_number
-        }
+            # 所有学校
+            results = pgsql_db.query(school_sql)
+            school_dict = {}
+            for school in results:
+                school_dict[school[1]] = school[0]
 
-        if worker:
-            d['id'] = worker[0]
-            pgsql_db.update(pgsql_cur, d, 'worker')
-        else:
-            pgsql_db.insert(pgsql_cur, d, 'worker')
+            # 性别
+            gender_dict = {u'男': 1, u'女': 2}
+
+            # 职务
+            duty_dict = {u'驾驶员': 1, u'照管员': 2}
+
+            # 车辆
+            results = pgsql_db.query(car_sql)
+            car_dict = {}
+            for car in results:
+                car_dict[car[1]] = car[0]
+
+            worker = pgsql_db.get(worker_sql.format(emp_no))
+            d = {
+                'emp_no': emp_no,
+                'nickname': nickname,
+                'gender': gender_dict[gender],
+                'mobile': mobile,
+                'remarks': remarks,
+                'company_name': company_name,
+                'department_name': department_name,
+                'duty_id': duty_dict[duty_id],
+                'car_id': car_dict[car_id],
+                'license_plate_number': license_plate_number
+            }
+
+            if worker:
+                d['id'] = worker[0]
+                pgsql_db.update(pgsql_cur, d, 'worker')
+            else:
+                pgsql_db.insert(pgsql_cur, d, 'worker')
 
     @transaction(is_commit=True)
     def batch_add_car(self, pgsql_cur, data):
         """批量添加车辆
         """
         pgsql_db = PgsqlDbUtil
+        car_sql = "SELECT id FROM car WHERE license_plate_number='{}' LIMIT 1"
+        for row in data:
+            license_plate_number = row['license_plate_number']
+            capacity = row['capacity']
+            company_name = row['company_name']
 
-        license_plate_number = data['license_plate_number']
-        capacity = data['capacity']
-        company_name = data['company_name']
+            car_sql = car_sql.format(license_plate_number)
+            car = pgsql_db.get(car_sql)
+            if car:
+                d = {
+                    'id': car[0],
+                    'license_plate_number': license_plate_number,
+                    'capacity': capacity,
+                    'company_name': company_name
+                }
+                pgsql_db.update(pgsql_cur, d, 'car')
+            else:
+                d = {
+                    'code': datetime.now().strftime('%Y%m%d%H%M%S%f'),
+                    'license_plate_number': license_plate_number,
+                    'capacity': capacity,
+                    'device_iid': '',
+                    'worker_str': '',
+                    'company_name': company_name
+                }
+                pgsql_db.insert(pgsql_cur, d, 'car')
 
-        car_sql = "SELECT id FROM car WHERE license_plate_number='{}' " \
-                  "LIMIT 1".format(license_plate_number)
-        car = pgsql_db.get(car_sql)
-        d = {
-            'code': datetime.strftime('%Y%m%d%H%M%S%f'),
-            'license_plate_number': license_plate_number,
-            'capacity': capacity,
-            'device_iid': '',
-            'worker_str': '',
-            'company_name': company_name
-        }
-
-        if car:
-            d['id'] = car[0]
-            pgsql_db.update(pgsql_cur, d, 'car')
-        else:
-            pgsql_db.insert(pgsql_cur, d, 'car')
+    @transaction(is_commit=True)
+    def batch_add_school(self, pgsql_cur, data):
+        """批量添加学校"""
+        pgsql_db = PgsqlDbUtil
+        sql = "SELECT id FROM school WHERE school_name='{}' LIMIT 1"
+        for row in data:
+            school_name = row['school_name']
+            school = pgsql_db.get(pgsql_cur, sql.format(school_name))
+            if not school:
+                d = {
+                    'school_name': school_name
+                }
+                pgsql_db.insert(pgsql_cur, d, 'school')
 
 
 class DeviceConsumer(object):
@@ -488,11 +508,11 @@ class ExportExcelBusiness(object):
     def export_order(self, pgsql_cur, data):
         pgsql_db = PgsqlDbUtil
 
-        school_id = data['school_id']
-        car_id = data['car_id']
-        order_type = data['order_type']
-        start_time = data['start_time']
-        end_time = data['end_time']
+        school_id = data.get('school_id', None)
+        car_id = data.get('car_id', None)
+        order_type = data.get('order_type', None)
+        start_date = data.get('start_date', None)
+        end_date = data.get('end_date', None)
         task_id = data['task_id']
 
         sql = """
@@ -513,15 +533,15 @@ class ExportExcelBusiness(object):
             param_str += ' AND O.car_id={} '.format(car_id)
         if order_type:
             param_str += ' AND O.order_type={} '.format(order_type)
-        if start_time and end_time:
+        if start_date and end_date:
             param_str += \
                 "AND O.create_time between to_date('{}','YYYY-MM-DD') and " \
-                "to_date('{}','YYYY-MM-DD')".format(start_time, end_time)
+                "to_date('{}','YYYY-MM-DD')".format(start_date, end_date)
 
         results = pgsql_db.query(pgsql_cur, sql.format(param_str, limit, offset))
         value_title = [u'学生编号', u'学生姓名' u'学校', u'乘车记录类型', 
                        u'乘车时间', u'乘坐车辆', u'gps位置']
-        zip_name = u"乘坐记录{}-{}".format(start_time, end_time)
+        zip_name = u"乘坐记录{}-{}".format(start_date, end_date)
         excel_name = u"乘坐记录第{}部分.xls"
         sheet_name = u'数据{}条-{}条'
         zip_index = 0
@@ -586,37 +606,36 @@ class ExportExcelBusiness(object):
         报警信息
         """
         pgsql_db = PgsqlDbUtil
-        
-        query_str = data['query_str']
-        status = data['status']
-        start_time = data.get('start_time', None)
-        end_time = data.get('end_time', None)
-        first_alert = data['first_alert']
-        second_alert = data['second_alert']
+
+        status = data.get('status', None)
+        start_date = data.get('start_date', None)
+        end_date = data.get('end_date', None)
+        alert_info_type = data.get('alert_info_type', None)
+        car_id = data.get('car_id', None)
         task_id = data['task_id']
 
         sql = """
         SELECT license_plate_number,worker_name_1,worker_name_2,company_name,
-        people_number,first_alert,second_alert,alert_start_time,alert_location,
-        status FROM alert_info WHERE 1=1 
+        people_number,people_info,alert_start_time,alert_second_time,
+        status,gps,cancel_info FROM alert_info WHERE 1=1 
             """
         if status:
             sql += " AND status={}".format(status)
-        if query_str:
-            sql += " AND license_plate_number like '%{}%' AND worker_name_1 " \
-                   "like '%{}%' AND worker_name_2 like '%{}%'"
-        if first_alert:
-            sql += " AND first_alert={}".format(first_alert)
-        if second_alert:
-            sql += " AND second_alert={}".format(second_alert)
-        if start_time and end_time:
+        if alert_info_type:
+            if alert_info_type == 1:
+                sql += " AND first_alert=1"
+            elif alert_info_type == 2:
+                sql += " AND second_alert=1"
+        if car_id:
+            sql += " AND car_id={}".format(car_id)
+        if start_date and end_date:
             sql += " AND alert_start_time BETWEEN to_date('{}','YYYY-MM-DD') " \
-                   "and to_date('{}','YYYY-MM-DD')"
+                   "and to_date('{}','YYYY-MM-DD')".format(start_date, end_date)
 
         results = pgsql_db.query(pgsql_cur, sql)
-        value_title = [u'车牌', u'驾驶员', u'照管员', u'校车公司名字', 
-                       u'遗漏人数', u'首次报警', u'二次报警', u'报警开始时间', 
-                       u'gps位置', u'状态']
+        value_title = [u'车牌', u'驾驶员', u'照管员', u'校车公司名字', u'遗漏人数',
+                       u'遗漏学生', u'一次报警时间',u'二次报警时间', u'状态',
+                       u'gps位置', u'解除人员', u'解除时间', u'移除理由']
         excel_name = u"报警记录.xls"
         sheet_name = u'报警记录'
 
@@ -628,8 +647,10 @@ class ExportExcelBusiness(object):
                 pass
         sheet_data = [value_title]
         for index, row in enumerate(results):
-
-            sheet_data.append([row[0],])
+            arr = row[10].split(',')
+            sheet_data.append([row[0], row[1], row[2], row[3], row[4], row[5],
+                               row[6], row[7], row[8], row[9], arr[0],
+                               arr[1], arr[2]])
 
         workbook = utils.create_new_workbook()
         utils.write_excel_xls(

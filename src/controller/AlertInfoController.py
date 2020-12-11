@@ -1,22 +1,13 @@
 # coding:utf-8
-
-import time
 from datetime import datetime
-from collections import defaultdict
-from flask import jsonify
 from flask.blueprints import Blueprint
 
-from core.framework import make_error_resp, post_require_check, \
-    get_require_check, parse_page_size_arg, make_correct_resp, \
-    get_require_check_with_user, post_require_check_with_user, \
-    get_require_check_with_permissions, post_require_check_with_permissions, \
-    form_none_param_with_permissions
+from core.framework import get_require_check_with_user, \
+    post_require_check_with_user
 from core.AppError import AppError
-from utils.tools import gen_token, md5_encrypt, mobile_verify
 from utils.defines import SubErrorCode, GlobalErrorCode
-from ext import conf
 
-from service.OrderService import OrderService
+from service.AlertInfoService import AlertInfoService
 
 try:
     import requests
@@ -26,34 +17,30 @@ except ImportError:
     client_name = 'httplib'
 
 # """蓝图对象"""
-bp = Blueprint('OrderController', __name__)
+bp = Blueprint('AlertInfoController', __name__)
 """蓝图url前缀"""
-url_prefix = '/order'
+url_prefix = '/alert_info'
 
 
-@bp.route('/order/list', methods=['GET'])
+@bp.route('/alert_info/list', methods=['GET'])
 @get_require_check_with_user(['page', 'size'])
-def order_list(user_id, data):
+def alert_info_list(user_id, data):
     """
-    订单列表
-    订单列表，需要先登录
+    报警信息列表
+    报警信息列表，需要先登录
     ---
     tags:
-      - 订单
+      - 报警信息
     parameters:
       - name: token
         in: header
         type: string
         required: true
         description: TOKEN
-      - name: school_id
+      - name: status
         in: query
         type: integer
-        description: 学校id
-      - name: order_type
-        in: query
-        type: integer
-        description: 订单类型 1 上学上车 2上学下车 3 放学上车 4 放学下车
+        description: 状态1 正在报警  2 已解除
       - name: start_date
         in: query
         type: string
@@ -65,7 +52,15 @@ def order_list(user_id, data):
       - name: query_str
         in: query
         type: string
-        description: 查询串
+        description: 学生名字/乘坐车辆车牌
+      - name: first_alert
+        in: query
+        type: integer
+        description: 可空,  1第一次提醒
+      - name: second_alert
+        in: query
+        type: integer
+        description: 可空, 1第二次提醒
       - name: page
         in: query
         type: integer
@@ -93,51 +88,77 @@ def order_list(user_id, data):
                     id:
                       type: integer
                       description: PK
-                    stu_no:
-                      type: string
-                      description: 身份证号
-                    stu_name:
-                      type: string
-                      description: 学生名字
-                    school_name:
-                      type: string
-                      description: 学校名字
-                    order_type:
-                      type: integer
-                      description: 订单类型 1 上学上车 2上学下车 3 放学上车 4 放学下车
-                    gps:
-                      type: string
-                      description: gps
                     license_plate_number:
                       type: string
                       description: 车牌
+                    worker_name_1:
+                      type: string
+                      description: 驾驶员
+                    worker_name_2:
+                      type: stirng
+                      description: 照顾员
+                    company_name:
+                      type: string
+                      description: 公司名字
+                    people_number:
+                      type: string
+                      description: 遗漏人数
+                    people_info:
+                      type: string
+                      description: 遗漏人员信息
+                    first_alert:
+                      type: string
+                      description: 第一次提醒 1已提醒 0没有
+                    second_alert:
+                      type: string
+                      description: 第二次提醒
+                    alert_start_time:
+                      type: string
+                      description: 第一次提醒时间
+                    alert_second_time:
+                      type: string
+                      description: 第二次提醒时间
+                    alert_location:
+                      type: string
+                      description: gps
+                    status:
+                      type: string
+                      description: 状态1 正在报警  2 已解除
+                    cancel_info:
+                      type: string
+                      description: 解除捷报信息
+
     """
-    school_id = data.get('school_id', None)
-    order_type = data.get('order_type', None)
+    status = data.get('alert_info_type', None)
     start_date = data.get('start_date', None)
     end_date = data.get('end_date', None)
     query_str = data.get('query_str', None)
+    first_alert = data.get('first_alert', None)
+    second_alert = data.get('second_alert', None)
     page = data['page']
     size = data['size']
+
     if start_date and end_date:
         try:
             start_date = datetime.strptime(start_date, '%Y-%m-%d')
             end_date = datetime.strptime(end_date, '%Y-%m-%d')
         except ValueError:
             raise AppError(*GlobalErrorCode.PARAM_ERROR)
-    return OrderService.order_list(school_id, query_str, order_type,
-                                   start_date, end_date, page, size)
+
+    return AlertInfoService.alert_info_list(
+        query_str, status, start_date, end_date, first_alert,
+        second_alert, page, size)
 
 
-@bp.route('/order/export', methods=['GET'])
+@bp.route('/alert_info/export', methods=['GET'])
 @post_require_check_with_user([])
-def order_export(user_id, data):
+def alert_info_export(user_id, data):
     """
-    导出乘车记录
-    导出乘车记录，需要先登录
+    导出报警记录
+    导出报警记录，需要先登录
     ---
     tags:
-      - 订单
+      - 报警记录
     parameters:
       - name: token
         in: header
@@ -149,15 +170,12 @@ def order_export(user_id, data):
         required: true
         schema:
           properties:
-            school_id:
-              type: integer
-              description: 学校id
             car_id:
               type: integer
               description: 车辆id
-            order_type:
+            alert_info_type:
               type: integer
-              description: 订单类型
+              description: 订单类型 1一次报警 2两次报警
             start_date:
               type: string
               description: 开始日期
@@ -181,24 +199,22 @@ def order_export(user_id, data):
                 id:
                   type: integer
                   description: 新增的task_id
-
-
     """
-    school_id = data.get('school_id')
-    order_type = data.get('order_type')
-    start_date = data.get('start_date')
-    end_date = data.get('end_date')
-    car_id = data.get('car_id')
-
+    status = data.get('status', None)
+    alert_info_type = data.get('alert_info_type', None)
+    start_date = data.get('start_date', None)
+    end_date = data.get('end_date', None)
+    car_id = data.get('car_id', None)
+    
     if start_date and end_date:
         try:
             start_date = datetime.strptime(start_date, '%Y-%m-%d')
             end_date = datetime.strptime(end_date, '%Y-%m-%d')
         except ValueError:
             raise AppError(*GlobalErrorCode.PARAM_ERROR)
-
-    ret = OrderService.order_export(school_id, car_id, order_type,
-                                    start_date, end_date)
+        
+    ret = AlertInfoService.alert_info_export(status, start_date, end_date,
+                                             alert_info_type, car_id)
     if ret == -11:
         raise AppError(*SubErrorCode.ORDER_NUMBER_TOO_BIG)
     if ret == -10:

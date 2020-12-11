@@ -34,3 +34,5 @@ class Config(object):
 
     # encrypt
     SALT = "LFLgi9VU"
+
+    APP_LOG_LEVEL = 'info'
