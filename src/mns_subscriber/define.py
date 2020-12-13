@@ -35,6 +35,12 @@ class RedisKey(object):
     # 设备当前车上人数
     DEVICE_CUR_PEOPLE_NUMBER = "DEVICE_CUR_PEOPLE_NUMBER_HASH"
 
+    # 上传人脸zip的时间戳
+    UPLOAD_ZIP_TIMESTAMP = "UPLOAD_ZIP_TIMESTAMP"
+
+    # OSS上所有的人脸
+    OSS_ID_CARD_SET = "OSS_ID_CARD_SET"
+
 
 grade = [u'小班', u'中班', u'大班', u'学前班', u'一年级', u'二年级', u'三年级',
          u'四年级', u'五年级', u'六年级']

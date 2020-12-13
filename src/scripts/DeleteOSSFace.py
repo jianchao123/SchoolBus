@@ -10,9 +10,9 @@ class OssOperation(object):
         self.bucket = oss2.Bucket(auth, config.OSSEndpoint, 'cdbus-dev')
 
     def delete_prefix_file(self):
-        prefix = "people/face/"
+        prefix = "person/face/"
         for obj in oss2.ObjectIterator(self.bucket, prefix=prefix):
-            self.bucket.delete_object(obj.key)
+            print obj.key
 
 
 if __name__ == '__main__':

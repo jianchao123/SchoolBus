@@ -285,43 +285,40 @@ class FromOssQueryFace(object):
     def from_oss_get_face(self, pgsql_cur):
         """从oss获取人脸"""
         print u"==================从oss获取人脸====================="
-        print datetime.now()
         start = time.time()
         # 获取未绑定的人脸
         mysql_db = db.PgsqlDbUtil
-        sql = "SELECT F.id,F.emp_no FROM face AS F \
-    INNER JOIN user_profile AS UP ON UP.id=F.user_id WHERE " \
-              "F.status=-2 AND UP.status=1 order by rand()"
+        rds_conn = db.rds_conn
+
+        # 最近是否上传人脸zip
+        if start - int(rds_conn.get(RedisKey.UPLOAD_ZIP_TIMESTAMP)) > 600:
+            return
+
+        sql = "SELECT F.id,F.stu_no FROM face AS F \
+    INNER JOIN student AS STU ON STU.id=F.stu_id WHERE " \
+              "F.status=1 AND STU.status=1"
         results = mysql_db.query(pgsql_cur, sql)
-        emp_no_pk_map = {}
+        stu_no_pk_map = {}
         server_face_list = []       # 服务器上的工号列表
         for row in results:
             pk = row[0]
-            emp_no = row[1]
-            server_face_list.append(emp_no)
-            emp_no_pk_map[emp_no] = pk
+            stu_no = row[1]
+            server_face_list.append(stu_no)
+            stu_no_pk_map[stu_no] = pk
 
-        print server_face_list
         if server_face_list:
-            oss_face = []       # oss上的工号列表
-            for obj in oss2.ObjectIterator(self.bucket, prefix='people/face/'):
-                slash_arr = obj.key.split("/")
-                if slash_arr and len(slash_arr) == 3:
-                    comma_arr = slash_arr[-1].split('.')
-                    if comma_arr and len(comma_arr) == 2 \
-                            and comma_arr[-1] == 'jpg':
-                        oss_face.append(comma_arr[0])
-            oss_face_set = set(oss_face)
-            server_face_set = set(server_face_list)
-            intersection = list(oss_face_set & server_face_set)
-            intersection = intersection[:100]
+            rds_conn.sadd(RedisKey.OSS_ID_CARD_SET + "CP", *server_face_list)
+            intersection = list(rds_conn.sinter(
+                RedisKey.OSS_ID_CARD_SET, RedisKey.OSS_ID_CARD_SET + "CP"))
+            intersection = intersection[:1000]
             for row in intersection:
                 d = {
-                    'id': emp_no_pk_map[row],
-                    'oss_url': config.OSSDomain + "/people/face/" + row + ".jpg",
+                    'id': stu_no_pk_map[row],
+                    'oss_url': config.OSSDomain + "/person/face/" + row + ".jpg",
                     'status': -1  # 未处理
                 }
                 mysql_db.update(pgsql_cur, d, table_name='face')
+            rds_conn.delete(RedisKey.OSS_ID_CARD_SET + "CP")
         end = time.time()
         print end - start
 
@@ -341,11 +338,20 @@ class EveryFewMinutesExe(object):
         每五分钟执行一次 删除不规则人脸
         :return:
         """
+        rds_conn = db.rds_conn
         try:
-            # 删除不规则的人脸
-            for obj in oss2.ObjectIterator(self.bucket, prefix='people/face/'):
-                is_del = 0
+
+            for obj in oss2.ObjectIterator(self.bucket, prefix='person/face/'):
                 slash_arr = obj.key.split("/")
+                # 将oss上的图片名字保存到redis
+                if slash_arr and len(slash_arr) == 3:
+                    comma_arr = slash_arr[-1].split('.')
+                    if comma_arr and len(comma_arr) == 2 \
+                            and comma_arr[-1] == 'jpg':
+                        rds_conn.sadd(RedisKey.OSS_ID_CARD_SET, comma_arr[0])
+
+                # 删除不规则的人脸
+                is_del = 0
                 if slash_arr and len(slash_arr) != 3:
                     is_del = 1
                 if slash_arr and len(slash_arr) == 3 and not is_del:

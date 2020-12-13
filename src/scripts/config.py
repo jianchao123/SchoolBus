@@ -62,6 +62,7 @@ else:
     OSSDomain = 'https://cdbus-dev.oss-cn-shanghai.aliyuncs.com'
     OSSAccessKeyId = 'LTAIWE5CGeOiozf7'
     OSSAccessKeySecret = 'IGuoRIxwMlPQqJ9ujWyTvSq2em4RDj'
+    OSSEndpoint = 'http://oss-cn-shanghai.aliyuncs.com'
 
     # MNS
     MNSEndpoint = 'http://1162097573951650.mns.cn-shanghai.aliyuncs.com/'
@@ -77,6 +78,6 @@ else:
 
 redis_conf = dict(host="127.0.0.1", port=6379, db=0, decode_responses=True)
 pgsql_conf = dict(host=pgsql_host, database=pgsql_db, port=pgsql_port,
-                  user=pgsql_user, password=pgsql_passwd, charset="utf8")
+                  user=pgsql_user, password=pgsql_passwd)
 
 print env

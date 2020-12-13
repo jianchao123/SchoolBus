@@ -103,7 +103,7 @@ class Test(object):
         self.pub_msg('newdev', msg)
 
     def register_to_device(self):
-        d = {'ttsurl': 'https://cdbus-dev.oss-cn-shanghai.aliyuncs.com/people/video/qsc.aac',
+        d = {'ttsurl': 'https://cdbus-dev.oss-cn-shanghai.aliyuncs.com/person/video/qsc.aac',
              'go_station': '',
              'return_station': '',
              'faceurl': '',
@@ -186,11 +186,16 @@ class Test(object):
         }
         self.pub_msg("dev_77", jdata)
 
+    def testest(self):
+        start = time.time()
+        rds = db.rds_conn
+        print len(list(rds.sinter('test', 'test1')))
+
 
 if __name__ == '__main__':
     t = Test(config.Productkey, config.MNSAccessKeyId,
         config.MNSAccessKeySecret)
-    t.reset()
+    t.testest()
     # import struct
     #
     # fid_dict = {}

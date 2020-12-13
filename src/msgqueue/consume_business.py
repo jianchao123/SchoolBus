@@ -59,60 +59,45 @@ class StudentBusiness(object):
     @transaction(is_commit=True)
     def batch_add_student(self, pgsql_cur, data):
         """批量添加学生
-        身份证号,姓名,性别,家长1姓名,家长1手机号,家长2姓名,家长2手机号,家庭地址,备注,学校,年级,班级,截止时间,车牌
+        身份证号,姓名,性别id,家长1姓名,家长1手机号,家长2姓名,家长2手机号,家庭地址,备注,学校id,年级id,班级id,截止时间,车辆id
         """
         pgsql_db = PgsqlDbUtil
-        school_sql = 'SELECT id,school_name FROM school'
-        car_sql = 'SELECT id,license_plate_number FROM car'
+
         stu_sql = "SELECT id FROM student WHERE stu_no='{}' LIMIT 1"
         for row in data:
-            stu_no = row['stu_no']
-            nickname = row['nickname']
-            gender = row['gender']
-            parents1_name = row['parents1_name']
-            parents1_mobile = row['parents1_mobile']
-            parents2_name = row['parents2_name']
-            parents2_mobile = row['parents2_mobile']
-            address = row['address']
-            remarks = row['remarks']
-            school_name = row['school_name']
-            grade_name = row['grade_name']
-            classes_name = row['classes_name']
-            end_time = row['end_time']
-            license_plate_number = row['license_plate_number']
-
-            # 所有学校
-            results = pgsql_db.query(school_sql)
-            school_dict = {}
-            for school in results:
-                school_dict[school[1]] = school[0]
-
-            # 性别
-            gender_dict = {u'男': 1, u'女': 2}
-
-            # 车辆
-            results = pgsql_db.query(car_sql)
-            car_dict = {}
-            for car in results:
-                car_dict[car[1]] = car[0]
+            stu_no = row[0]
+            nickname = row[1]
+            gender = row[2]
+            parents1_name = row[3]
+            parents1_mobile = row[4]
+            parents2_name = row[5]
+            parents2_mobile = row[6]
+            address = row[7]
+            remarks = row[8]
+            school_id = row[9]
+            grade_id = row[10]
+            classes_id = row[11]
+            end_time = row[12]
+            car_id = row[13]
+            license_plate_number = row[14]
 
             student = pgsql_db.get(stu_sql.format(stu_no))
             d = {
                 'stu_no': stu_no,
                 'nickname': nickname,
-                'gender': gender_dict[gender],
+                'gender': gender,
                 'parents_1': parents1_name,
                 'mobile_1': parents1_mobile,
                 'parents_2': parents2_name,
                 'mobile_2': parents2_mobile,
                 'address': address,
                 'remarks': remarks,
-                'school_id': school_dict[school_name],
-                'grade_id': grade.index(grade_name),
-                'class_id': classes.index(classes_name),
+                'school_id': school_id,
+                'grade_id': grade_id,
+                'class_id': classes_id,
                 'end_time': "to_date('{}', 'yyyy-MM-dd')".format(end_time),
-                'car_id': car_dict[license_plate_number],
-                'license_plate_number': license_plate_number,
+                'car_id': car_id,
+                'license_plate_number': license_plate_number
             }
 
             if student:
