@@ -13,6 +13,7 @@ class Worker(db.Model):
     remarks = db.Column(db.String(16))
     company_name = db.Column(db.String(16))
     department_name = db.Column(db.String(16))
-    duty_id = db.Column(db.Integer) # 职务id  1驾驶员 2照管员
+    duty_id = db.Column(db.Integer)     # 职务id  1驾驶员 2照管员
     car_id = db.Column(db.Integer)
     license_plate_number = db.Column(db.String(16))
+    status = db.Column(db.Integer)      # 1有效

@@ -41,8 +41,9 @@ class RedisKey(object):
     OSS_ID_CARD_SET = "OSS_ID_CARD_SET"
 
 
-grade = [u'小班', u'中班', u'大班', u'学前班', u'一年级', u'二年级', u'三年级',
+grade = [u"TBD", u'小班', u'中班', u'大班', u'学前班', u'一年级', u'二年级', u'三年级',
          u'四年级', u'五年级', u'六年级']
-classes = [u'一班', u'二班', u'三班', u'四班', u'五班', u'六班',
+classes = [u"TBD", u'一班', u'二班', u'三班', u'四班', u'五班', u'六班',
            u'七班', u'八班', u'九班', u'十班']
-gender = [u'男', u'女']
+gender = [u"TBD", u'男', u'女']
+duty = [u"TBD", u'驾驶员', u'照管员']

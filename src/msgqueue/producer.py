@@ -86,62 +86,24 @@ def export_alert_info_msg(status, start_date, end_date,
 
 def batch_add_student(data):
     """批量添加学生"""
-    # data = {
-    #     'stu_no': stu_no,
-    #     'nickname': nickname,
-    #     'gender': gender,
-    #     'parents1_name': parents1_name,
-    #     'parents1_mobile': parents1_mobile,
-    #     'parents2_name': parents2_name,
-    #     'parents2_mobile': parents2_mobile,
-    #     'address': address,
-    #     'remarks': remarks,
-    #     'school_name': school_name,
-    #     'grade_name': grade_name,
-    #     'classes_name': classes_name,
-    #     'end_time': end_time,
-    #     'license_plate_number': license_plate_number
-    # }
     _publish_msg('student_exchange', 'student.batchaddstudent',
                  json.dumps(data))
 
 
 def batch_add_worker(data):
     """批量添加工作者"""
-    # data = {
-    #     'emp_no': emp_no,
-    #     'nickname': nickname,
-    #     'gender': gender,
-    #     'mobile': mobile,
-    #     'remarks': remarks,
-    #     'company_name': company_name,
-    #     'department_name': department_name,
-    #     'duty_id': duty_id,
-    #     'car_id': car_id,
-    #     'license_plate_number': license_plate_number,
-    # }
     _publish_msg('student_exchange', 'student.batchaddworker',
                  json.dumps(data))
 
 
 def batch_add_car(data):
     """批量添加车辆"""
-    # data = {
-    #     'license_plate_number': license_plate_number,
-    #     'capacity': capacity,
-    #     'company_name': company_name
-    # }
     _publish_msg('student_exchange', 'student.batchaddcar',
                  json.dumps(data))
 
 
 def batch_add_school(data):
     """批量添加学校"""
-    # data = {
-    #     'license_plate_number': license_plate_number,
-    #     'capacity': capacity,
-    #     'company_name': company_name
-    # }
     _publish_msg('student_exchange', 'student.batchaddschool',
                  json.dumps(data))
 
@@ -150,6 +112,28 @@ def heartbeat():
     """msg心跳"""
     _publish_msg('heartbeat_exchange', 'heartbeat',
                  json.dumps({'heartbeat': 1}))
+
+
+def worker_insert(worker_id, car_id, nickname, duty_id, duty_name):
+    d = {
+        'worker_id': worker_id,
+        'car_id': car_id,
+        'nickname': nickname,
+        'duty_id': duty_id,
+        'duty_name': duty_name
+    }
+    _publish_msg('cascade_exchange', 'cascade.workerinsert', json.dumps(d))
+
+
+def worker_update(worker_id, car_id, nickname, duty_id, duty_name):
+    d = {
+        'worker_id': worker_id,
+        'car_id': car_id,
+        'nickname': nickname,
+        'duty_id': duty_id,
+        'duty_name': duty_name
+    }
+    _publish_msg('cascade_exchange', 'cascade.workerupdate', json.dumps(d))
 
 
 # 测试用户创建

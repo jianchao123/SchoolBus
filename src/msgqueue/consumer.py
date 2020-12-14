@@ -19,6 +19,7 @@ from msgqueue.consume_business import StudentConsumer
 from msgqueue.consume_business import DeviceConsumer
 from msgqueue.consume_business import ExportExcelConsumer
 from msgqueue.consume_business import HeartBeatConsumer
+from msgqueue.consume_business import InsertUpdateConsumer
 
 print("start subscriber")
 
@@ -34,12 +35,14 @@ def start_subscriber():
     channel.exchange_declare(exchange='device_exchange', exchange_type='topic')
     channel.exchange_declare(exchange='excel_exchange', exchange_type='topic')
     channel.exchange_declare(exchange='heartbeat_exchange', exchange_type='topic')
+    channel.exchange_declare(exchange='cascade_exchange', exchange_type='topic')
 
     # 声明消息队列, durable消息队列持久化
     channel.queue_declare(queue="student_queue", durable=True)
     channel.queue_declare(queue="device_queue", durable=True)
     channel.queue_declare(queue="excel_queue", durable=True)
     channel.queue_declare(queue='heartbeat_queue', durable=True)
+    channel.queue_declare(queue='cascade_queue', durable=True)
 
     # 绑定交换机和队列(一个交换机可以绑定多个队列)
     # routing_key路由器(绑定到队列上),携带该路由的消息都将被分发到该消息队列
@@ -55,6 +58,9 @@ def start_subscriber():
     channel.queue_bind(exchange='heartbeat_exchange',
                        queue="heartbeat_queue",
                        routing_key="heartbeat")
+    channel.queue_bind(exchange='cascade_exchange',
+                       queue="cascade_queue",
+                       routing_key="cascade.*")
 
     channel.basic_qos(prefetch_count=1)
 
@@ -78,6 +84,12 @@ def start_subscriber():
     channel.basic_consume(
         queue="heartbeat_queue",
         on_message_callback=heartbeat_consumer.heartbeat_callback,
+        auto_ack=False
+    )
+    insert_update_consumer = InsertUpdateConsumer()
+    channel.basic_consume(
+        queue="cascade_queue",
+        on_message_callback=insert_update_consumer.insert_update_callback,
         auto_ack=False
     )
 

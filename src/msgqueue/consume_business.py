@@ -13,7 +13,8 @@ from aliyunsdkcore.client import AcsClient
 from aliyunsdkiot.request.v20180120.RegisterDeviceRequest import \
     RegisterDeviceRequest
 from aliyunsdkiot.request.v20180120.PubRequest import PubRequest
-from define import grade, classes
+from define import grade, classes, gender, duty
+import producer
 
 
 class HeartBeatConsumer(object):
@@ -26,6 +27,53 @@ class HeartBeatConsumer(object):
             format(method.delivery_tag)
         # 消息确认
         ch.basic_ack(delivery_tag=method.delivery_tag)
+
+
+class InsertUpdateConsumer(object):
+
+    def __init__(self):
+        self.logger = utils.get_logger(config.log_path)
+        self.business = InsertUpdateBusiness(self.logger)
+
+    def insert_update_callback(self, ch, method, properties, body):
+        print method
+        data = json.loads(body.decode('utf-8'))
+        arr = method.routing_key.split(".")
+        routing_suffix = arr[-1]
+        if routing_suffix == 'workerinsert':
+            self.business.car_field_update(data)
+        if routing_suffix == 'workerupdate':
+            self.business.car_field_update(data)
+
+        # 消息确认
+        ch.basic_ack(delivery_tag=method.delivery_tag)
+
+
+class InsertUpdateBusiness(object):
+
+    def __init__(self, logger):
+        self.logger = logger
+
+    @transaction(is_commit=True)
+    def car_field_update(self, pgsql_cur, data):
+        from collections import defaultdict
+        pgsql_db = PgsqlDbUtil
+        worker_id = data['worker_id']
+        car_id = data['car_id']
+        nickname = data['nickname']
+        duty_id = data['duty_id']
+        duty_name = data['duty_name']
+        d = defaultdict()
+        d['id'] = car_id
+        if duty_id == 1:
+            d['worker_1_id'] = worker_id
+            d['worker_1_nickname'] = nickname
+            d['worker_1_duty_name'] = duty_name
+        elif duty_id == 2:
+            d['worker_2_id'] = worker_id
+            d['worker_2_nickname'] = nickname
+            d['worker_2_duty_name'] = duty_name
+        pgsql_db.insert(pgsql_cur, d, 'car')
 
 
 class StudentConsumer(object):
@@ -67,7 +115,7 @@ class StudentBusiness(object):
         for row in data:
             stu_no = row[0]
             nickname = row[1]
-            gender = row[2]
+            gender_id = row[2]
             parents1_name = row[3]
             parents1_mobile = row[4]
             parents2_name = row[5]
@@ -85,7 +133,7 @@ class StudentBusiness(object):
             d = {
                 'stu_no': stu_no,
                 'nickname': nickname,
-                'gender': gender,
+                'gender': gender_id,
                 'parents_1': parents1_name,
                 'mobile_1': parents1_mobile,
                 'parents_2': parents2_name,
@@ -129,58 +177,42 @@ class StudentBusiness(object):
         批量添加工作者
         """
         pgsql_db = PgsqlDbUtil
-        school_sql = 'SELECT id,school_name FROM school'
-        car_sql = 'SELECT id,license_plate_number FROM car'
         worker_sql = "SELECT id FROM worker WHERE emp_no='{}' LIMIT 1"
         for row in data:
-            emp_no = row['emp_no']
-            nickname = row['nickname']
-            gender = row['gender']
-            mobile = row['mobile']
-            remarks = row['remarks']
-            company_name = row['company_name']
-            department_name = row['department_name']
-            duty_id = row['duty_id']
-            car_id = row['car_id']
-            license_plate_number = row['license_plate_number']
-
-            # 所有学校
-            results = pgsql_db.query(school_sql)
-            school_dict = {}
-            for school in results:
-                school_dict[school[1]] = school[0]
-
-            # 性别
-            gender_dict = {u'男': 1, u'女': 2}
-
-            # 职务
-            duty_dict = {u'驾驶员': 1, u'照管员': 2}
-
-            # 车辆
-            results = pgsql_db.query(car_sql)
-            car_dict = {}
-            for car in results:
-                car_dict[car[1]] = car[0]
+            emp_no = row[0]
+            nickname = row[1]
+            gender_id = row[2]
+            mobile = row[3]
+            remarks = row[4]
+            company_name = row[5]
+            department_name = row[6]
+            duty_id = row[7]
+            car_id = row[8]
+            license_plate_number = row[9]
 
             worker = pgsql_db.get(worker_sql.format(emp_no))
             d = {
                 'emp_no': emp_no,
                 'nickname': nickname,
-                'gender': gender_dict[gender],
+                'gender': gender_id,
                 'mobile': mobile,
                 'remarks': remarks,
                 'company_name': company_name,
                 'department_name': department_name,
-                'duty_id': duty_dict[duty_id],
-                'car_id': car_dict[car_id],
+                'duty_id': duty_id,
+                'car_id': car_id,
                 'license_plate_number': license_plate_number
             }
 
             if worker:
                 d['id'] = worker[0]
                 pgsql_db.update(pgsql_cur, d, 'worker')
+                producer.worker_insert(worker.id, car_id, nickname,
+                                       duty_id, duty[duty_id])
             else:
                 pgsql_db.insert(pgsql_cur, d, 'worker')
+                producer.worker_update(worker.id, car_id, nickname,
+                                       duty_id, duty[duty_id])
 
     @transaction(is_commit=True)
     def batch_add_car(self, pgsql_cur, data):

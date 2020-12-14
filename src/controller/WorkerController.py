@@ -16,7 +16,7 @@ from utils.tools import gen_token, md5_encrypt, mobile_verify
 from utils.defines import SubErrorCode, GlobalErrorCode
 from ext import conf
 
-from service.StudentService import StudentService
+from service.WorkerService import WorkerService
 
 try:
     import requests
@@ -26,20 +26,20 @@ except ImportError:
     client_name = 'httplib'
 
 # """蓝图对象"""
-bp = Blueprint('StudentController', __name__)
+bp = Blueprint('WorkerController', __name__)
 """蓝图url前缀"""
-url_prefix = '/student'
+url_prefix = '/worker'
 
 
-@bp.route('/student/list', methods=['GET'])
+@bp.route('/worker/list', methods=['GET'])
 @get_require_check_with_user(['page', 'size'])
-def student_list(user_id, data):
+def worker_list(user_id, data):
     """
-    学生列表
-    学生列表，需要先登录
+    工作人员列表
+    工作人员列表，需要先登录
     ---
     tags:
-      - 学生
+      - 工作人员
     parameters:
       - name: token
         in: header
@@ -49,27 +49,7 @@ def student_list(user_id, data):
       - name: query_str
         in: query
         type: string
-        description: 学生姓名/身份证号
-      - name: school_id
-        in: query
-        type: integer
-        description: 学校id
-      - name: grade_id
-        in: query
-        type: integer
-        description: 年纪id
-      - name: class_id
-        in: query
-        type: integer
-        description: 班级id
-      - name: start_date
-        in: query
-        type: string
-        description: 开始日期
-      - name: end_date
-        in: query
-        type: string
-        description: 结束日期
+        description: 员工姓名/工号
       - name: page
         in: query
         type: integer
@@ -97,49 +77,42 @@ def student_list(user_id, data):
                     id:
                       type: integer
                       description: PK
-                    stu_no:
+                    emp_no:
                       type: string
-                      description: 身份证号
+                      description: 工号
                     gender:
                       type: integer
                       description: 1男2女
                     license_plate_number:
                       type: string
                       description: 车牌号
-                    face_status:
+                    company_name:
+                      type: string
+                      description: 公司名字
+                    remarks:
+                      type: string
+                      description: 备注
+                    duty_id:
                       type: integer
-                      description: 人脸状态 1没有人脸 2未处理 3处理中 4有效(处理完成) 5生成feature失败 6过期
+                      description: 职务id 1驾驶员 2照管员
+
     """
     query_str = data.get('query_str', None)
-    school_id = data.get('school_id', None)
-    grade_id = data.get('grade_id', None)
-    class_id = data.get('class_id', None)
-    face_status = data.get('face_status', None)
-    start_date = data.get('start_date', None)
-    end_date = data.get('end_date', None)
     page = data['page']
     size = data['size']
 
-    if start_date and end_date:
-        try:
-            start_date = datetime.strptime(start_date, '%Y-%m-%d')
-            end_date = datetime.strptime(end_date, '%Y-%m-%d')
-        except ValueError:
-            raise AppError(*GlobalErrorCode.PARAM_ERROR)
-    return StudentService.student_list(
-        query_str, school_id, grade_id, class_id, face_status,
-        start_date, end_date, page, size)
+    return WorkerService.worker_list(query_str, page, size)
 
 
-@bp.route('/student/add', methods=['POST'])
+@bp.route('/worker/add', methods=['POST'])
 @post_require_check_with_user(['stu_no', 'nickname'])
-def student_add(user_id, data):
+def worker_add(user_id, data):
     """
-    添加学生
-    添加学生，需要先登录
+    添加工作人员
+    添加工作人员，需要先登录
     ---
     tags:
-      - 学生
+      - 工作人员
     parameters:
       - name: token
         in: header
@@ -151,52 +124,33 @@ def student_add(user_id, data):
         required: true
         schema:
           properties:
-            stu_no:
+            emp_no:
               type: string
-              description: 身份证号
+              description: 工号
             nickname:
-              type: integer
+              type: string
               description: 姓名
             gender:
               type: integer
               description: 性别 1男2女
-            parents_1:
-              type: integer
-              description: 家长1
-            mobile_1:
-              type: integer
+            mobile:
+              type: string
               description: 手机号
-            parents_2:
-              type: integer
-              description: 家长2
-            mobil_2:
-              type: integer
-              description: 手机号
-            address:
-              type: integer
-              description: 地址
             remarks:
-              type: integer
+              type: string
               description: 备注
-            school_id:
+            company_name:
+              type: string
+              description: 公司名字
+            department_name:
+              type: string
+              description: 部门名字
+            duty_id:
               type: integer
-              description: 学校id
-            grade_id:
-              type: integer
-              description: 年纪id
-            class_id:
-              type: integer
-              description: 班级id
-            end_time:
-              type: integer
-              description: 截至时间
+              description: 职务id 1驾驶员 2照管员
             license_plate_number:
               type: integer
               description: 车牌号
-            oss_url:
-              type: integer
-              description: oss_url
-
     responses:
       200:
         description: 正常返回http code 200
@@ -213,47 +167,40 @@ def student_add(user_id, data):
               properties:
                 id:
                   type: integer
-                  description: 新增的学生Id
+                  description: 新增的工作人员Id
 
     """
-    stu_no = data['stu_no']
+    emp_no = data['emp_no']
     nickname = data['nickname']
     gender = data['gender']
-    parents_1 = data['parents_1']
-    mobile_1 = data['mobile_1']
-    parents_2 = data['parents_2']
-    mobile_2 = data['mobile_2']
-    address = data['address']
+    mobile = data['mobile']
     remarks = data['remarks']
-    school_id = data['school_id']
-    grade_id = data['grade_id']
-    class_id = data['class_id']
-    end_time = data['end_time']
+    company_name = data['company_name']
+    department_name = data['department_name']
+    duty_id = data['duty_id']
     license_plate_number = data['license_plate_number']
-    oss_url = data['oss_url']
 
-    ret = StudentService.student_add(
-        stu_no, nickname, gender, parents_1, mobile_1, parents_2,
-        mobile_2, address, remarks, school_id, grade_id, class_id,
-        end_time, license_plate_number, oss_url)
+    ret = WorkerService.worker_add(
+        emp_no, nickname, gender, mobile, remarks, company_name, 
+        department_name, duty_id, license_plate_number)
     if ret == -2:
         raise AppError(*GlobalErrorCode.DB_COMMIT_ERR)
     if ret == -10:
-        raise AppError(*SubErrorCode.CAR_NOT_FOUND)
+        raise AppError(*SubErrorCode.WORKER_EMP_NO_ALREADY_EXISTS)
     if ret == -11:
-        raise AppError(*SubErrorCode.STUDENT_ID_CARD_ALREADY_EXISTS)
+        raise AppError(*SubErrorCode.CAR_NOT_FOUND)
     return ret
 
 
-@bp.route('/student/update/<int:pk>', methods=['POST'])
+@bp.route('/worker/update/<int:pk>', methods=['POST'])
 @post_require_check_with_user([])
-def student_update(user_id, data, pk):
+def worker_update(user_id, data, pk):
     """
-    编辑学生
-    编辑学生，需要先登录
+    编辑工作人员
+    编辑工作人员，需要先登录
     ---
     tags:
-      - 学生
+      - 工作人员
     parameters:
       - name: token
         in: header
@@ -265,52 +212,33 @@ def student_update(user_id, data, pk):
         required: true
         schema:
           properties:
-            stu_no:
+            emp_no:
               type: string
-              description: 身份证号
+              description: 工号
             nickname:
-              type: integer
+              type: string
               description: 姓名
             gender:
               type: integer
               description: 性别 1男2女
-            parents_1:
-              type: integer
-              description: 家长1
-            mobile_1:
-              type: integer
+            mobile:
+              type: string
               description: 手机号
-            parents_2:
-              type: integer
-              description: 家长2
-            mobil_2:
-              type: integer
-              description: 手机号
-            address:
-              type: integer
-              description: 地址
             remarks:
-              type: integer
+              type: string
               description: 备注
-            school_id:
+            company_name:
+              type: string
+              description: 公司名字
+            department_name:
+              type: string
+              description: 部门名字
+            duty_id:
               type: integer
-              description: 学校id
-            grade_id:
-              type: integer
-              description: 年纪id
-            class_id:
-              type: integer
-              description: 班级id
-            end_time:
-              type: integer
-              description: 截至时间
+              description: 职务id 1驾驶员 2照管员
             license_plate_number:
               type: integer
               description: 车牌号
-            oss_url:
-              type: integer
-              description: oss_url
-
     responses:
       200:
         description: 正常返回http code 200
@@ -327,49 +255,40 @@ def student_update(user_id, data, pk):
               properties:
                 id:
                   type: integer
-                  description: 新增的学生Id
+                  description: 新增的工作人员Id
 
     """
-    stu_no = data['stu_no']
+    emp_no = data['emp_no']
     nickname = data['nickname']
     gender = data['gender']
-    parents_1 = data['parents_1']
-    mobile_1 = data['mobile_1']
-    parents_2 = data['parents_2']
-    mobile_2 = data['mobile_2']
-    address = data['address']
+    mobile = data['mobile']
     remarks = data['remarks']
-    school_id = data['school_id']
-    grade_id = data['grade_id']
-    class_id = data['class_id']
-    end_time = data['end_time']
+    company_name = data['company_name']
+    department_name = data['department_name']
+    duty_id = data['duty_id']
     license_plate_number = data['license_plate_number']
-    oss_url = data['oss_url']
 
-    ret = StudentService.student_update(
-        pk, stu_no, nickname, gender, parents_1, mobile_1, parents_2,
-        mobile_2, address, remarks, school_id, grade_id, class_id,
-        end_time, license_plate_number, oss_url)
+    ret = WorkerService.worker_update(
+        pk, emp_no, nickname, gender, mobile, remarks, company_name, 
+        department_name, duty_id, license_plate_number)
     if ret == -2:
         raise AppError(*GlobalErrorCode.DB_COMMIT_ERR)
     if ret == -10:
-        raise AppError(*GlobalErrorCode.OBJ_NOT_FOUND_ERROR)
+        raise AppError(*SubErrorCode.WORKER_EMP_NO_ALREADY_EXISTS)
     if ret == -11:
         raise AppError(*SubErrorCode.CAR_NOT_FOUND)
-    if ret == -12:
-        raise AppError(*SubErrorCode.STUDENT_ID_CARD_ALREADY_EXISTS)
     return ret
 
 
-@bp.route('/student/batchadd/<int:pk>', methods=['POST'])
+@bp.route('/worker/batchadd/<int:pk>', methods=['POST'])
 @form_none_param_with_permissions()
-def student_batch_add(user_id, data):
+def worker_batch_add(user_id, data):
     """
-    批量添加学生
-    批量添加学生，需要先登录
+    批量添加工作人员
+    批量添加工作人员，需要先登录
     ---
     tags:
-      - 学生
+      - 工作人员
     parameters:
       - name: token
         in: header
@@ -407,5 +326,5 @@ def student_batch_add(user_id, data):
     fd = request.files['fd']
 
     # "c": 1, "msg": err_str}
-    data = StudentService.batch_add_student(fd)
+    data = WorkerService.batch_add_worker(fd)
     return data

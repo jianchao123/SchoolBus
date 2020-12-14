@@ -379,5 +379,10 @@ class StudentService(object):
                 license_plate_number])
         # 发送消息
         print student_list
-        producer.batch_add_student(student_list)
+        start = 0
+        end = 1000
+        send_list = student_list[start: end]
+        while send_list:
+            producer.batch_add_student(send_list)
+            send_list = student_list[start + 1000: end + 1000]
         return {"c": 0, 'msg': ''}
