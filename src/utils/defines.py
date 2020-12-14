@@ -39,6 +39,9 @@ class SubErrorCode(object):
     WORKER_EMP_NO_ALREADY_EXISTS = (200040, u"工号已经存在")
 
     CAR_NOT_FOUND = (200050, u"车辆未找到")
+    CAR_CHEPAI_ALREADY_EXISTS = (200051, u"车牌已经存在")
+
+    SCHOOL_NAME_ALREADY_EXISTS = (200060, u"学校名字已经存在")
 
 
 class RedisKey(object):

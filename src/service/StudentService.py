@@ -23,7 +23,7 @@ class StudentService(object):
 
     @staticmethod
     def student_list(query_str, school_id, grade_id, class_id, face_status,
-                     start_date, end_date, page, size):
+                     start_date, end_date, car_id, page, size):
         """
         学生姓名/身份证号
         """
@@ -49,6 +49,9 @@ class StudentService(object):
             end_date = end_date + timedelta(days=1)
             query = query.filter(or_(Student.create_time > start_date,
                                      Student.create_time < end_date))
+        if car_id:
+            query = query.filter(Student.car_id == car_id)
+
         count = query.count()
         results = query.offset(offset).limit(size).all()
 
@@ -133,7 +136,7 @@ class StudentService(object):
             face.end_timestamp = time.mktime(end_time.timetuple())
             db.session.add(face)
             db.session.commit()
-            return new_id
+            return {'id': new_id}
         except SQLAlchemyError:
             db.session.rollback()
             return -2
@@ -153,7 +156,7 @@ class StudentService(object):
         student = db.session.query(Student).filter(
             Student.id == pk).first()
         if not student:
-            return -10  # 未找到学生
+            return -1  # 未找到学生
         face = db.session.query(Face).filter(
             Face.stu_id == student.id).first()
         if stu_no:
@@ -206,8 +209,9 @@ class StudentService(object):
             student.end_time = end_time
             face.end_timestamp = time.mktime(end_time.timetuple())
         try:
+            d = {'id': student.id}
             db.session.commit()
-            return student.id
+            return d
         except SQLAlchemyError:
             db.session.rollback()
             return -2

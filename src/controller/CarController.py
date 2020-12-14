@@ -16,7 +16,7 @@ from utils.tools import gen_token, md5_encrypt, mobile_verify
 from utils.defines import SubErrorCode, GlobalErrorCode
 from ext import conf
 
-from service.WorkerService import WorkerService
+from service.CarService import CarService
 
 try:
     import requests
@@ -26,20 +26,20 @@ except ImportError:
     client_name = 'httplib'
 
 # """蓝图对象"""
-bp = Blueprint('WorkerController', __name__)
+bp = Blueprint('CarController', __name__)
 """蓝图url前缀"""
-url_prefix = '/worker'
+url_prefix = '/car'
 
 
-@bp.route('/worker/list', methods=['GET'])
+@bp.route('/car/list', methods=['GET'])
 @get_require_check_with_user(['page', 'size'])
-def worker_list(user_id, data):
+def car_list(user_id, data):
     """
-    工作人员列表
-    工作人员列表，需要先登录
+    车辆列表
+    车辆列表，需要先登录
     ---
     tags:
-      - 工作人员
+      - 车辆
     parameters:
       - name: token
         in: header
@@ -49,7 +49,11 @@ def worker_list(user_id, data):
       - name: query_str
         in: query
         type: string
-        description: 员工姓名/工号
+        description: 车牌/设备Id
+      - name: face_status
+        in: query
+        type: integer
+        description: 人脸状态 1已创建虚拟设备 2已关联车辆 3已设置工作模式 4已设置oss信息 5已初始化人员
       - name: page
         in: query
         type: integer
@@ -77,42 +81,45 @@ def worker_list(user_id, data):
                     id:
                       type: integer
                       description: PK
-                    emp_no:
-                      type: string
-                      description: 工号
-                    gender:
+                    worker_1_id:
                       type: integer
-                      description: 1男2女
-                    license_plate_number:
+                      description: 车辆id
+                    worker_1_nickname:
                       type: string
-                      description: 车牌号
+                      description: 车辆昵称
+                    worker_1_duty_name:
+                      type: string
+                      description: 职务名字
                     company_name:
                       type: string
                       description: 公司名字
-                    remarks:
-                      type: string
-                      description: 备注
-                    duty_id:
+                    capacity:
                       type: integer
-                      description: 职务id 1驾驶员 2照管员
+                      description: 载客量
+                    device_iid:
+                      type: string
+                      description: 设备标签id
+                    license_plate_number:
+                      type: stirng
+                      description: 车牌
 
     """
     query_str = data.get('query_str', None)
+    device_status = data.get('device_status', None)
     page = data['page']
     size = data['size']
+    return CarService.car_list(query_str, device_status, page, size)
 
-    return WorkerService.worker_list(query_str, page, size)
 
-
-@bp.route('/worker/add', methods=['POST'])
+@bp.route('/car/add', methods=['POST'])
 @post_require_check_with_user(['stu_no', 'nickname'])
-def worker_add(user_id, data):
+def car_add(user_id, data):
     """
-    添加工作人员
-    添加工作人员，需要先登录
+    添加车辆
+    添加车辆，需要先登录
     ---
     tags:
-      - 工作人员
+      - 车辆
     parameters:
       - name: token
         in: header
@@ -124,30 +131,12 @@ def worker_add(user_id, data):
         required: true
         schema:
           properties:
-            emp_no:
-              type: string
-              description: 工号
-            nickname:
-              type: string
-              description: 姓名
-            gender:
-              type: integer
-              description: 性别 1男2女
-            mobile:
-              type: string
-              description: 手机号
-            remarks:
-              type: string
-              description: 备注
             company_name:
               type: string
               description: 公司名字
-            department_name:
-              type: string
-              description: 部门名字
-            duty_id:
+            capacity:
               type: integer
-              description: 职务id 1驾驶员 2照管员
+              description: 载客量
             license_plate_number:
               type: integer
               description: 车牌号
@@ -167,40 +156,30 @@ def worker_add(user_id, data):
               properties:
                 id:
                   type: integer
-                  description: 新增的工作人员Id
+                  description: 新增的车辆Id
 
     """
-    emp_no = data['emp_no']
-    nickname = data['nickname']
-    gender = data['gender']
-    mobile = data['mobile']
-    remarks = data['remarks']
     company_name = data['company_name']
-    department_name = data['department_name']
-    duty_id = data['duty_id']
+    capacity = data['capacity']
     license_plate_number = data['license_plate_number']
 
-    ret = WorkerService.worker_add(
-        emp_no, nickname, gender, mobile, remarks, company_name, 
-        department_name, duty_id, license_plate_number)
+    ret = CarService.car_add(license_plate_number, capacity, company_name)
     if ret == -2:
         raise AppError(*GlobalErrorCode.DB_COMMIT_ERR)
     if ret == -10:
-        raise AppError(*SubErrorCode.WORKER_EMP_NO_ALREADY_EXISTS)
-    if ret == -11:
-        raise AppError(*SubErrorCode.CAR_NOT_FOUND)
+        raise AppError(*SubErrorCode.CAR_CHEPAI_ALREADY_EXISTS)
     return ret
 
 
-@bp.route('/worker/update/<int:pk>', methods=['POST'])
+@bp.route('/car/update/<int:pk>', methods=['POST'])
 @post_require_check_with_user([])
-def worker_update(user_id, data, pk):
+def car_update(user_id, data, pk):
     """
-    编辑工作人员
-    编辑工作人员，需要先登录
+    编辑车辆
+    编辑车辆，需要先登录
     ---
     tags:
-      - 工作人员
+      - 车辆
     parameters:
       - name: token
         in: header
@@ -212,30 +191,12 @@ def worker_update(user_id, data, pk):
         required: true
         schema:
           properties:
-            emp_no:
-              type: string
-              description: 工号
-            nickname:
-              type: string
-              description: 姓名
-            gender:
-              type: integer
-              description: 性别 1男2女
-            mobile:
-              type: string
-              description: 手机号
-            remarks:
-              type: string
-              description: 备注
             company_name:
               type: string
               description: 公司名字
-            department_name:
-              type: string
-              description: 部门名字
-            duty_id:
+            capacity:
               type: integer
-              description: 职务id 1驾驶员 2照管员
+              description: 载客量
             license_plate_number:
               type: integer
               description: 车牌号
@@ -255,42 +216,32 @@ def worker_update(user_id, data, pk):
               properties:
                 id:
                   type: integer
-                  description: 新增的工作人员Id
+                  description: 新增的车辆Id
 
     """
-    emp_no = data['emp_no']
-    nickname = data['nickname']
-    gender = data['gender']
-    mobile = data['mobile']
-    remarks = data['remarks']
-    company_name = data['company_name']
-    department_name = data['department_name']
-    duty_id = data['duty_id']
-    license_plate_number = data['license_plate_number']
+    company_name = data.get('company_name', None)
+    capacity = data.get('capacity', None)
+    license_plate_number = data.get('license_plate_number', None)
 
-    ret = WorkerService.worker_update(
-        pk, emp_no, nickname, gender, mobile, remarks, company_name, 
-        department_name, duty_id, license_plate_number)
+    ret = CarService.car_update(pk, license_plate_number, capacity, company_name)
     if ret == -1:
         raise AppError(*GlobalErrorCode.OBJ_NOT_FOUND_ERROR)
     if ret == -2:
         raise AppError(*GlobalErrorCode.DB_COMMIT_ERR)
     if ret == -10:
-        raise AppError(*SubErrorCode.WORKER_EMP_NO_ALREADY_EXISTS)
-    if ret == -11:
-        raise AppError(*SubErrorCode.CAR_NOT_FOUND)
+        raise AppError(*SubErrorCode.CAR_CHEPAI_ALREADY_EXISTS)
     return ret
 
 
-@bp.route('/worker/batchadd/<int:pk>', methods=['POST'])
+@bp.route('/car/batchadd/<int:pk>', methods=['POST'])
 @form_none_param_with_permissions()
-def worker_batch_add(user_id, data):
+def car_batch_add(user_id, data):
     """
-    批量添加工作人员
-    批量添加工作人员，需要先登录
+    批量添加车辆
+    批量添加车辆，需要先登录
     ---
     tags:
-      - 工作人员
+      - 车辆
     parameters:
       - name: token
         in: header
@@ -328,5 +279,5 @@ def worker_batch_add(user_id, data):
     fd = request.files['fd']
 
     # "c": 1, "msg": err_str}
-    data = WorkerService.batch_add_worker(fd)
+    data = CarService.batch_add_car(fd)
     return data

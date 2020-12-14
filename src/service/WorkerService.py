@@ -86,7 +86,7 @@ class WorkerService(object):
             db.session.add(worker)
             new_id = worker.id
             db.session.commit()
-            return new_id
+            return {'id': new_id}
         except SQLAlchemyError:
             db.session.rollback()
             return -2
@@ -99,12 +99,13 @@ class WorkerService(object):
                       license_plate_number):
         worker = db.session.query(Worker).filter(
             Worker.pk == pk).first()
-        if worker:
+        if not worker:
             return -1
-        cnt = db.session.query(Worker).filter(
-            Worker.pk != pk, Worker.emp_no == emp_no).count()
-        if cnt:
-            return -10  # 工号已经存在
+        if emp_no:
+            cnt = db.session.query(Worker).filter(
+                Worker.pk != pk, Worker.emp_no == emp_no).count()
+            if cnt:
+                return -10  # 工号已经存在
         if nickname:
             worker.nickname = nickname
         if gender:
@@ -131,9 +132,9 @@ class WorkerService(object):
                 worker.id, worker.car_id, worker.nickname, worker.duty_id,
                 defines.duty[worker.duty_id])
         try:
-            db.session.add(worker)
+            d = {'id': worker.id}
             db.session.commit()
-            return worker.id
+            return d
         except SQLAlchemyError:
             db.session.rollback()
             return -2
@@ -264,6 +265,6 @@ class WorkerService(object):
         end = 1000
         send_list = worker_list[start: end]
         while send_list:
-            producer.batch_add_student(send_list)
+            producer.batch_add_worker(send_list)
             send_list = worker_list[start + 1000: end + 1000]
         return {"c": 0, 'msg': ''}

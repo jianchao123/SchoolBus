@@ -42,8 +42,20 @@ class CarService(object):
         count = query.count()
         results = query.offset(offset).limit(size).all()
 
+        now = int(time.time())
         data = []
         for row in results:
+            is_online = u"未绑定设备"
+            device = db.session.query(Device).filter(
+                Device.car_id == row.id).first()
+            if device:
+                device_timestamp = cache.hget(
+                    defines.RedisKey.DEVICE_CUR_TIMESTAMP, device.device_name)
+                if now - device_timestamp > 30:
+                    is_online = u"离线"
+                else:
+                    is_online = u"在线"
+
             data.append({
                 'id': row.id,
                 'code': row.code,
@@ -57,7 +69,8 @@ class CarService(object):
                 'worker_2_nickname': row.worker_2_nickname,
                 'worker_2_duty_name': row.worker_2_duty_name,
                 'company_name': row.company_name,
-                'status': row.status
+                'status': row.status,
+                'is_online': is_online
             })
         return {'results': data, 'count': count}
 
@@ -83,7 +96,7 @@ class CarService(object):
             db.session.add(car)
             new_id = car.id
             db.session.commit()
-            return new_id
+            return {'id': new_id}
         except SQLAlchemyError:
             db.session.rollback()
             return -2
@@ -94,50 +107,33 @@ class CarService(object):
     def car_update(pk, license_plate_number, capacity, company_name):
         """
 
-    id = db.Column(db.BigInteger, primary_key=True)
-    code = db.Column(db.String(16))
-    license_plate_number = db.Column(db.String(16))
-    capacity = db.Column(db.Integer)
-    device_iid = db.Column(db.String(16))
-    worker_1_id = db.Column(db.Integer)
-    worker_1_nickname = db.Column(db.String(32))
-    worker_1_duty_name = db.Column(db.Integer)
-    worker_2_id = db.Column(db.Integer)
-    worker_2_nickname = db.Column(db.String(32))
-    worker_2_duty_name = db.Column(db.Integer)
-    company_name = db.Column(db.String(16))     # 车辆所属公司
-    status = db.Column(db.Integer)              # 1有效
         """
         car = db.session.query(Car).filter(
             Car.pk == pk).first()
-        if car:
+        if not car:
             return -1
-        cnt = db.session.query(Car).filter(
-            Car.pk != pk, Car.emp_no == emp_no).count()
-        if cnt:
-            return -10  # 工号已经存在
+        if license_plate_number:
+            cnt = db.session.query(Car).filter(
+                Car.pk != pk,
+                Car.license_plate_number == license_plate_number).count()
+            if cnt:
+                return -10  # 车牌已经存在
+            # 是否绑定设备
+            device = db.session.query(Device).filter(
+                Device.car_id == car.id).first()
+            if device:
+                producer.update_chepai(device.device_name,
+                                       device.license_plate_number,
+                                       device.sound_volume)
 
         if company_name:
             car.company_name = company_name
-        if department_name:
-            car.department_name = department_name
-        if duty_id:
-            car.duty_id = duty_id
-        if license_plate_number:
-            car = db.session.query(Car).filter(
-                Car.license_plate_number == license_plate_number).first()
-            if not car:
-                return -11  # 车辆未找到
-            car.car_id = car.id
-            car.license_plate_number = license_plate_number
-        if nickname or duty_id:
-            producer.car_update(
-                car.id, car.car_id, car.nickname, car.duty_id,
-                defines.duty[car.duty_id])
+        if capacity:
+            car.capacity = capacity
         try:
-            db.session.add(car)
+            d = {'id': car.id}
             db.session.commit()
-            return car.id
+            return d
         except SQLAlchemyError:
             db.session.rollback()
             return -2
@@ -146,7 +142,8 @@ class CarService(object):
 
     @staticmethod
     def batch_add_car(excel_file):
-        """工号 姓名 性别 手机号 备注 公司 部门职务 车牌
+        """
+        车牌 载客量 公司
         """
         db.session.commit()
 
@@ -157,15 +154,15 @@ class CarService(object):
             return {"c": 1, "msg": u"excel数据最大10000条"}
 
         if cache.get('batch_add_car'):
-            return -10  # 导入工作人员执行中
+            return -10  # 导入车辆执行中
 
         cache.set('batch_add_car', 1)
         cache.expire('batch_add_car', 300)
 
-        emp_no_list = []
+        chepai_list = []
         results = db.session.query(Car).filter(Car.status == 1).all()
         for row in results:
-            emp_no_list.append(row.emp_no)
+            chepai_list.append(row.license_plate_number)
 
         # 查询所有车辆
         car_dict = {}
@@ -178,63 +175,28 @@ class CarService(object):
             is_err = 0
 
             row_data = table.row_values(index)
-            emp_no = str(row_data[0]).strip()
-            nickname = str(row_data[1]).strip()
-            gender_name = str(row_data[2]).strip()
-            mobile = str(row_data[3]).strip()
-            remarks = str(row_data[4]).strip()
-            company_name = str(row_data[5]).strip()
-            department_name = str(row_data[6]).strip()
-            duty_name = str(row_data[7]).strip()
-            license_plate_number = str(row_data[8]).strip()
+            license_plate_number = str(row_data[0]).strip()
+            capacity = str(row_data[1]).strip()
+            company_name = str(row_data[2]).strip()
 
             err_str = u"\n第{}行,".format(index + 1)
             # 先检查是否为空
-            if not emp_no:
-                err_str += u"工号为空,"
-                is_err = 1
-            if not nickname:
-                err_str += u"姓名为空,"
-                is_err = 1
-            if not gender_name:
-                err_str += u"性别为空,"
-                is_err = 1
-            if not mobile:
-                err_str += u"手机号为空,"
-                is_err = 1
-            if not remarks:
-                err_str += u"备注为空,"
+            if not capacity:
+                err_str += u"载客量为空,"
                 is_err = 1
             if not company_name:
-                err_str += u"公司名为空,"
-                is_err = 1
-            if not department_name:
-                err_str += u"部门名为空,"
-                is_err = 1
-            if not duty_name:
-                err_str += u"职务名为空,"
+                err_str += u"公司名字为空,"
                 is_err = 1
             if not license_plate_number:
                 err_str += u"车牌号为空,"
                 is_err = 1
 
-            # 检查格式
-            if gender_name not in defines.gender:
-                err_str += u"性别只有'男'或'女'"
-                is_err = 1
-            if duty_name not in defines.duty:
-                err_str += u"职务只有驾驶员和照管员"
-                is_err = 1
-            if license_plate_number not in car_dict:
-                err_str += u"未知的车牌"
-                is_err = 1
-
             # 检查重复
-            if emp_no in emp_no_list:
-                err_str += u"工号{}重复".format(emp_no)
+            if license_plate_number in chepai_list:
+                err_str += u"车牌{}重复".format(license_plate_number)
                 is_err = 1
             else:
-                emp_no_list.append(emp_no)
+                chepai_list.append(license_plate_number)
 
             if err_str:
                 err_str += "\n"
@@ -247,20 +209,11 @@ class CarService(object):
         car_list = []
         for index in range(1, table.nrows):
             row_data = table.row_values(index)
-            emp_no = str(row_data[0]).strip()
-            nickname = str(row_data[1]).strip()
-            gender_name = str(row_data[2]).strip()
-            mobile = str(row_data[3]).strip()
-            remarks = str(row_data[4]).strip()
-            company_name = str(row_data[5]).strip()
-            department_name = str(row_data[6]).strip()
-            duty_name = str(row_data[7]).strip()
-            license_plate_number = str(row_data[8]).strip()
+            license_plate_number = str(row_data[0]).strip()
+            capacity = str(row_data[1]).strip()
+            company_name = str(row_data[2]).strip()
 
-            l = [emp_no, nickname, defines.gender.index(gender_name),
-                 mobile, remarks, company_name, department_name,
-                 defines.duty.index(duty_name), car_dict[license_plate_number],
-                 license_plate_number]
+            l = [license_plate_number, capacity, company_name]
             car_list.append(l)
         # 发送消息
         print car_list
@@ -268,6 +221,6 @@ class CarService(object):
         end = 1000
         send_list = car_list[start: end]
         while send_list:
-            producer.batch_add_student(send_list)
+            producer.batch_add_car(send_list)
             send_list = car_list[start + 1000: end + 1000]
         return {"c": 0, 'msg': ''}

@@ -136,6 +136,24 @@ def worker_update(worker_id, car_id, nickname, duty_id, duty_name):
     _publish_msg('cascade_exchange', 'cascade.workerupdate', json.dumps(d))
 
 
+def car_update(stu_id, license_plate_number):
+    d = {
+        'stu_id': stu_id,
+        'license_plate_number': license_plate_number
+    }
+    _publish_msg('cascade_exchange', 'cascade.carupdate', json.dumps(d))
+
+
+def update_chepai(device_name, chepai, cur_volume):
+    """更新车牌"""
+    data ={
+        "chepai": chepai,
+        "device_name": device_name,
+        "cur_volume": cur_volume
+    }
+    _publish_msg('device_exchange', 'device.updatechepai', json.dumps(data))
+
+
 # 测试用户创建
 if __name__ == "__main__":
     # generate_create_student_msg(12)

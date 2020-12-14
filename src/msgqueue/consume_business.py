@@ -44,7 +44,8 @@ class InsertUpdateConsumer(object):
             self.business.car_field_update(data)
         if routing_suffix == 'workerupdate':
             self.business.car_field_update(data)
-
+        if routing_suffix == 'carupdate':
+            self.business.student_field_update(data)
         # 消息确认
         ch.basic_ack(delivery_tag=method.delivery_tag)
 
@@ -73,7 +74,18 @@ class InsertUpdateBusiness(object):
             d['worker_2_id'] = worker_id
             d['worker_2_nickname'] = nickname
             d['worker_2_duty_name'] = duty_name
-        pgsql_db.insert(pgsql_cur, d, 'car')
+        pgsql_db.update(pgsql_cur, d, 'car')
+
+    @transaction(is_commit=True)
+    def student_field_update(self, pgsql_cur, data):
+        pgsql_db = PgsqlDbUtil
+        stu_id = data['stu_id']
+        license_plate_number = data['license_plate_number']
+        d = {
+            'id': stu_id,
+            'license_plate_number': license_plate_number
+        }
+        pgsql_db.update(pgsql_cur, d, 'student')
 
 
 class StudentConsumer(object):
@@ -129,7 +141,7 @@ class StudentBusiness(object):
             car_id = row[13]
             license_plate_number = row[14]
 
-            student = pgsql_db.get(stu_sql.format(stu_no))
+            student = pgsql_db.get(pgsql_cur, stu_sql.format(stu_no))
             d = {
                 'stu_no': stu_no,
                 'nickname': nickname,
@@ -190,7 +202,7 @@ class StudentBusiness(object):
             car_id = row[8]
             license_plate_number = row[9]
 
-            worker = pgsql_db.get(worker_sql.format(emp_no))
+            worker = pgsql_db.get(pgsql_cur, worker_sql.format(emp_no))
             d = {
                 'emp_no': emp_no,
                 'nickname': nickname,
@@ -221,12 +233,12 @@ class StudentBusiness(object):
         pgsql_db = PgsqlDbUtil
         car_sql = "SELECT id FROM car WHERE license_plate_number='{}' LIMIT 1"
         for row in data:
-            license_plate_number = row['license_plate_number']
-            capacity = row['capacity']
-            company_name = row['company_name']
+            license_plate_number = row[0]
+            capacity = row[1]
+            company_name = row[2]
 
             car_sql = car_sql.format(license_plate_number)
-            car = pgsql_db.get(car_sql)
+            car = pgsql_db.get(pgsql_cur, car_sql)
             if car:
                 d = {
                     'id': car[0],
@@ -252,7 +264,7 @@ class StudentBusiness(object):
         pgsql_db = PgsqlDbUtil
         sql = "SELECT id FROM school WHERE school_name='{}' LIMIT 1"
         for row in data:
-            school_name = row['school_name']
+            school_name = row[0]
             school = pgsql_db.get(pgsql_cur, sql.format(school_name))
             if not school:
                 d = {
@@ -279,6 +291,8 @@ class DeviceConsumer(object):
             self.device_business.device_people_list_save(data)
         if routing_suffix == 'getdevicepeopledata':
             self.device_business.send_get_people_data_msg(data)
+        if routing_suffix == 'updatechepai':
+            self.device_business.update_chepai(data)
         # 消息确认
         ch.basic_ack(delivery_tag=method.delivery_tag)
 
@@ -361,6 +375,45 @@ class DeviceBusiness(object):
         jdata["stream_no"] = stream_no
         k = "mns_list_" + devname
         rds_conn.rpush(k, json.dumps(jdata, encoding="utf-8"))
+
+    def _set_workmode(self, device_name, workmode, chepai, cur_volume):
+        """
+        设置设备工作模式 0车载 1通道闸口 3注册模式
+        :param device_name:
+        :param workmode:
+        :return:
+        """
+        if workmode not in [0, 1, 3]:
+            return -1
+        cur_volume = cur_volume - 94
+        jdata = {
+            "cmd": "syntime",
+            "time": int(time.time()),
+            "chepai": chepai.encode('utf-8'),
+            "workmode": workmode,
+            "delayoff": 10,
+            "leftdetect": 5,
+            "jiange": 10,
+            "cleartime": 2628000,
+            "shxmode": 0,
+            "volume": int(cur_volume),
+            "facesize": 390,
+            "uploadtype": 1,
+            "natstatus": 0,
+            "timezone": 8,
+            "temperature": 0,
+            "noreg": 1,
+            "light_type": 0
+        }
+
+        print jdata
+        return self._pub_msg(device_name, jdata)
+
+    def update_chepai(self, data):
+        chepai = data['chepai']
+        device_name = data['device_name']
+        cur_volume = data['cur_volume']
+        self._set_workmode(device_name, 0, chepai, cur_volume)
 
     @transaction(is_commit=True)
     def device_people_list_save(self, pgsql_cur, data):

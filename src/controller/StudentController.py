@@ -70,6 +70,10 @@ def student_list(user_id, data):
         in: query
         type: string
         description: 结束日期
+      - name: car_id
+        in: query
+        type: integer
+        description: 车辆id
       - name: page
         in: query
         type: integer
@@ -117,6 +121,7 @@ def student_list(user_id, data):
     face_status = data.get('face_status', None)
     start_date = data.get('start_date', None)
     end_date = data.get('end_date', None)
+    car_id = data.get('car_id', None)
     page = data['page']
     size = data['size']
 
@@ -128,7 +133,7 @@ def student_list(user_id, data):
             raise AppError(*GlobalErrorCode.PARAM_ERROR)
     return StudentService.student_list(
         query_str, school_id, grade_id, class_id, face_status,
-        start_date, end_date, page, size)
+        start_date, end_date, car_id, page, size)
 
 
 @bp.route('/student/add', methods=['POST'])
@@ -236,11 +241,13 @@ def student_add(user_id, data):
         stu_no, nickname, gender, parents_1, mobile_1, parents_2,
         mobile_2, address, remarks, school_id, grade_id, class_id,
         end_time, license_plate_number, oss_url)
+    if ret == -1:
+        raise AppError(*GlobalErrorCode.OBJ_NOT_FOUND_ERROR)
     if ret == -2:
         raise AppError(*GlobalErrorCode.DB_COMMIT_ERR)
-    if ret == -10:
-        raise AppError(*SubErrorCode.CAR_NOT_FOUND)
     if ret == -11:
+        raise AppError(*SubErrorCode.CAR_NOT_FOUND)
+    if ret == -12:
         raise AppError(*SubErrorCode.STUDENT_ID_CARD_ALREADY_EXISTS)
     return ret
 

@@ -413,7 +413,8 @@ class AcsManager(object):
                     'mac': mac,
                     'product_key': response['Data']['ProductKey'],
                     'device_secret': response['Data']['DeviceSecret'],
-                    'sound_volume': 6
+                    'sound_volume': 6,
+                    'license_plate_number': ''
                 }
                 pgsql_db.insert(pgsql_cur, d, table_name='device')
 
@@ -438,8 +439,9 @@ class AcsManager(object):
         """
         self._set_workmode(dev_name, workmode, license_plate_number, cur_volume)
 
-    @staticmethod
-    def _init_people(people_list, device_name, pgsql_db, pgsql_cur):
+    @db.transaction(is_commit=False)
+    def _init_people(self, pgsql_cur, people_list, device_name):
+        pgsql_db = db.PgsqlDbUtil
         fid_dict = {}
         for row in people_list:
             data = base64.b64decode(row)
@@ -477,11 +479,24 @@ class AcsManager(object):
             self._upgrade_version(device_name)
 
     @db.transaction(is_commit=True)
-    def init_device_params(self, pgsql_cur, cur_version, device_name, dev_time):
+    def _update_device(self, pgsql_cur, data):
+        pgsql_db = db.PgsqlDbUtil
+        pgsql_db.update(pgsql_cur, data, table_name='device')
+
+    @db.transaction(is_commit=False)
+    def _get_device_info_data(self, pgsql_cur, device_name):
+        pgsql_db = db.PgsqlDbUtil
+
+        sql = "SELECT id,status,version_no,sound_volume," \
+              "license_plate_number,device_type" \
+              " FROM device WHERE device_name='{}' LIMIT 1"
+        device = pgsql_db.get(pgsql_cur, sql.format(device_name))
+        return device[0], device[1], device[2], device[3], device[4], device[5]
+
+    def init_device_params(self, cur_version, device_name, dev_time):
         """
         初始化设备参数
         """
-        pgsql_db = db.PgsqlDbUtil
         rds_conn = db.rds_conn
 
         if cur_version == RedisKey.APPOINT_VERSION_NO:
@@ -491,23 +506,13 @@ class AcsManager(object):
             # 5表示已初始化人员
             if device_status and int(device_status) == 5:
                 return
-            sql = "SELECT id,status,version_no,sound_volume," \
-                  "license_plate_number,device_type" \
-                  " FROM device WHERE device_name='{}' LIMIT 1"
-            device = pgsql_db.get(pgsql_cur, sql.format(device_name))
-            print device
-
-            pk = device[0]
-            status = device[1]
-            version_no = device[2]
-            sound_volume = device[3]
-            license_plate_number = device[4]
-            order_type = device[5]
+            pk, status, version_no, sound_volume, license_plate_number, \
+                device_type = self._get_device_info_data(device_name)
 
             d = {}
             # 已关联车辆
             if status == 2:
-                workmode = 0 if order_type == 1 else 3
+                workmode = 0 if device_type == 1 else 3
                 d['status'] = 3   # 设置工作模式
                 print u"设置工作模式"
                 self._set_device_work_mode(
@@ -522,19 +527,34 @@ class AcsManager(object):
                 d['status'] = 5     # 初始人员
                 print u"初始化人员"
                 rds_conn.hset(RedisKey.DEVICE_CUR_STATUS, device_name, 5)
-                AcsManager._init_people([], device_name, pgsql_db, pgsql_cur)
+                AcsManager._init_people([], device_name)
                 rds_conn.hset(RedisKey.DEVICE_CUR_STATUS, device_name, 5)
 
             if d:
                 d['id'] = pk
-                pgsql_db.update(pgsql_cur, d, table_name='device')
+                self._update_device(d)
 
-    @staticmethod
-    def device_cur_timestamp(dev_name, dev_time, cnt):
+    @db.transaction(is_commit=False)
+    def _get_sound_vol_by_name(self, pgsql_cur, dev_name):
+        pgsql_db = db.PgsqlDbUtil
+        sql = "SELECT sound_volume,license_plate_number " \
+              "FROM device WHERE device_name='{}' LIMIT 1"
+        result = pgsql_db.get(pgsql_cur, sql.format(dev_name))
+        return result[0], result[1]
+
+    def device_cur_timestamp(self, dev_name, dev_time, cnt):
         """设备初始化完成之后才能写入时间戳"""
         rds_conn = db.rds_conn
         cur_status = rds_conn.hget(RedisKey.DEVICE_CUR_STATUS, dev_name)
         if cur_status and cur_status == 6:
+            # 判断设备是否刚开机
+            old_timestamp = rds_conn.hget(
+                RedisKey.DEVICE_CUR_TIMESTAMP, dev_name)
+            if int(time.time()) - int(old_timestamp) > 30:
+                sound_vol, license_plate_number\
+                    = self._get_sound_vol_by_name(dev_name)
+                producer.update_chepai(dev_name, license_plate_number, sound_vol)
+
             rds_conn.hset(RedisKey.DEVICE_CUR_TIMESTAMP, dev_name, dev_time)
             rds_conn.hset(RedisKey.DEVICE_CUR_PEOPLE_NUMBER, cnt)
 
