@@ -12,13 +12,15 @@ sys.path.insert(0, project_src_dir)
 from apscheduler.schedulers.gevent import BlockingScheduler
 
 from timer.RestTimer import GenerateFeature, EveryMinuteExe, \
-    FromOssQueryFace, EveryFewMinutesExe, OrderSendMsg, GenerateAAC
+    FromOssQueryFace, EveryFewMinutesExe, OrderSendMsg, GenerateAAC, \
+    EveryHoursExecute
 
 if __name__ == "__main__":
     generate_feature = GenerateFeature()
     every_minute_exe = EveryMinuteExe()
     from_oss_query_face = FromOssQueryFace()
     every_few_minutes_exe = EveryFewMinutesExe()
+    every_hours_exe = EveryHoursExecute()
     order_send_msg = OrderSendMsg()
     generate_aac = GenerateAAC()
 
@@ -38,7 +40,7 @@ if __name__ == "__main__":
     sched.add_job(func=every_few_minutes_exe.every_few_minutes_execute,
                   trigger='cron', day="*", hour="*", minute="*/5")
     # 每小时执行
-    sched.add_job(func=every_few_minutes_exe.every_hours_execute,
+    sched.add_job(func=every_hours_exe.every_hours_execute,
                   trigger='cron', day="*", hour="*")
     sched.start()
 

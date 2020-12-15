@@ -370,7 +370,7 @@ class EveryFewMinutesExe(object):
 class EveryHoursExecute(object):
     """每小时执行"""
 
-    @db.transaction(is_commit=True)
+    @db.transaction(is_commit=False)
     def every_hours_execute(self, cursor):
         from datetime import timedelta
         rds_conn = db.rds_conn
