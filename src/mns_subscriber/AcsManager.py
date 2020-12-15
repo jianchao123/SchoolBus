@@ -509,10 +509,15 @@ class AcsManager(object):
             pk, status, version_no, sound_volume, license_plate_number, \
                 device_type = self._get_device_info_data(device_name)
 
+            # 设备为生成特征值设备
+            if device_type == 2:
+                license_plate_number = u'生成特征值专用'
+                workmode = 3
+            elif device_type == 1:
+                workmode = 0
             d = {}
             # 已关联车辆
             if status == 2:
-                workmode = 0 if device_type == 1 else 3
                 d['status'] = 3   # 设置工作模式
                 print u"设置工作模式"
                 self._set_device_work_mode(

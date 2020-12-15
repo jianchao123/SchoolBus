@@ -5,8 +5,6 @@ from datetime import timedelta
 
 from sqlalchemy import func, or_
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import aliased
-from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 from database.db import db
 from database.Student import Student
 from database.Face import Face

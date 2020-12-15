@@ -83,7 +83,6 @@ elif env == "PRO":
     BAIDU_SECRET_KEY = 'l8bkk6odc03fXgnLDxrYQuRwe62yFsQ2'
 
 else:
-    # TODO 需要更换配置
     # 物联网
     Productkey = 'a1vperyb2Cg'
     ProductHost = 'a1vperyb2Cg.iot-as-mqtt.cn-shanghai.aliyuncs.com'

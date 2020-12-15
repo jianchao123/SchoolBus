@@ -51,7 +51,6 @@ elif env == "PRO":
     pgsql_passwd = "kIhHAWexFy7pU8qM"
 
 else:
-    # TODO 需要更换配置
     # 物联网
     Productkey = 'a1vperyb2Cg'
     ProductHost = 'a1vperyb2Cg.iot-as-mqtt.cn-shanghai.aliyuncs.com'

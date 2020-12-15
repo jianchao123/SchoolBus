@@ -1,18 +1,8 @@
 # coding:utf-8
 import xlrd
-import time
-from datetime import datetime
-from datetime import timedelta
-
-from sqlalchemy import func, or_
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import aliased
-from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 from database.db import db
 from database.School import School
-from database.Student import Student
-from database.Face import Face
-from utils import defines
 from msgqueue import producer
 from ext import cache
 

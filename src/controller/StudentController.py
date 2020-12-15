@@ -1,20 +1,11 @@
 # coding:utf-8
-
-import time
 from datetime import datetime
-from collections import defaultdict
-from flask import jsonify
 from flask.blueprints import Blueprint
 
-from core.framework import make_error_resp, post_require_check, \
-    get_require_check, parse_page_size_arg, make_correct_resp, \
-    get_require_check_with_user, post_require_check_with_user, \
-    get_require_check_with_permissions, post_require_check_with_permissions, \
-    form_none_param_with_permissions
+from core.framework import get_require_check_with_user, \
+    post_require_check_with_user, form_none_param_with_permissions
 from core.AppError import AppError
-from utils.tools import gen_token, md5_encrypt, mobile_verify
 from utils.defines import SubErrorCode, GlobalErrorCode
-from ext import conf
 
 from service.StudentService import StudentService
 
@@ -31,7 +22,7 @@ bp = Blueprint('StudentController', __name__)
 url_prefix = '/student'
 
 
-@bp.route('/student/list', methods=['GET'])
+@bp.route('/list', methods=['GET'])
 @get_require_check_with_user(['page', 'size'])
 def student_list(user_id, data):
     """
@@ -95,24 +86,23 @@ def student_list(user_id, data):
               description: 状态
             data:
               type: array
-              properties:
-                items:
-                  properties:
-                    id:
-                      type: integer
-                      description: PK
-                    stu_no:
-                      type: string
-                      description: 身份证号
-                    gender:
-                      type: integer
-                      description: 1男2女
-                    license_plate_number:
-                      type: string
-                      description: 车牌号
-                    face_status:
-                      type: integer
-                      description: 人脸状态 1没有人脸 2未处理 3处理中 4有效(处理完成) 5生成feature失败 6过期
+              items:
+                properties:
+                  id:
+                    type: integer
+                    description: PK
+                  stu_no:
+                    type: string
+                    description: 身份证号
+                  gender:
+                    type: integer
+                    description: 1男2女
+                  license_plate_number:
+                    type: string
+                    description: 车牌号
+                  face_status:
+                    type: integer
+                    description: 人脸状态 1没有人脸 2未处理 3处理中 4有效(处理完成) 5生成feature失败 6过期
     """
     query_str = data.get('query_str', None)
     school_id = data.get('school_id', None)
@@ -122,8 +112,8 @@ def student_list(user_id, data):
     start_date = data.get('start_date', None)
     end_date = data.get('end_date', None)
     car_id = data.get('car_id', None)
-    page = data['page']
-    size = data['size']
+    page = int(data['page'])
+    size = int(data['size'])
 
     if start_date and end_date:
         try:
@@ -136,7 +126,7 @@ def student_list(user_id, data):
         start_date, end_date, car_id, page, size)
 
 
-@bp.route('/student/add', methods=['POST'])
+@bp.route('/add', methods=['POST'])
 @post_require_check_with_user(['stu_no', 'nickname'])
 def student_add(user_id, data):
     """
@@ -252,7 +242,7 @@ def student_add(user_id, data):
     return ret
 
 
-@bp.route('/student/update/<int:pk>', methods=['POST'])
+@bp.route('/update/<int:pk>', methods=['POST'])
 @post_require_check_with_user([])
 def student_update(user_id, data, pk):
     """
@@ -368,7 +358,7 @@ def student_update(user_id, data, pk):
     return ret
 
 
-@bp.route('/student/batchadd/<int:pk>', methods=['POST'])
+@bp.route('/batchadd', methods=['POST'])
 @form_none_param_with_permissions()
 def student_batch_add(user_id, data):
     """

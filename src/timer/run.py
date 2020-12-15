@@ -37,6 +37,9 @@ if __name__ == "__main__":
     # 每五分钟执行
     sched.add_job(func=every_few_minutes_exe.every_few_minutes_execute,
                   trigger='cron', day="*", hour="*", minute="*/5")
+    # 每小时执行
+    sched.add_job(func=every_few_minutes_exe.every_hours_execute,
+                  trigger='cron', day="*", hour="*")
     sched.start()
 
     # g = sched.start()

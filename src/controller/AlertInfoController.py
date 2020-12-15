@@ -22,7 +22,7 @@ bp = Blueprint('AlertInfoController', __name__)
 url_prefix = '/alert_info'
 
 
-@bp.route('/alert_info/list', methods=['GET'])
+@bp.route('/list', methods=['GET'])
 @get_require_check_with_user(['page', 'size'])
 def alert_info_list(user_id, data):
     """
@@ -30,7 +30,7 @@ def alert_info_list(user_id, data):
     报警信息列表，需要先登录
     ---
     tags:
-      - 报警信息
+      - 报警
     parameters:
       - name: token
         in: header
@@ -82,51 +82,50 @@ def alert_info_list(user_id, data):
               description: 状态
             data:
               type: array
-              properties:
-                items:
-                  properties:
-                    id:
-                      type: integer
-                      description: PK
-                    license_plate_number:
-                      type: string
-                      description: 车牌
-                    worker_name_1:
-                      type: string
-                      description: 驾驶员
-                    worker_name_2:
-                      type: stirng
-                      description: 照顾员
-                    company_name:
-                      type: string
-                      description: 公司名字
-                    people_number:
-                      type: string
-                      description: 遗漏人数
-                    people_info:
-                      type: string
-                      description: 遗漏人员信息
-                    first_alert:
-                      type: string
-                      description: 第一次提醒 1已提醒 0没有
-                    second_alert:
-                      type: string
-                      description: 第二次提醒
-                    alert_start_time:
-                      type: string
-                      description: 第一次提醒时间
-                    alert_second_time:
-                      type: string
-                      description: 第二次提醒时间
-                    alert_location:
-                      type: string
-                      description: gps
-                    status:
-                      type: string
-                      description: 状态1 正在报警  2 已解除
-                    cancel_info:
-                      type: string
-                      description: 解除捷报信息
+              items:
+                properties:
+                  id:
+                    type: integer
+                    description: PK
+                  license_plate_number:
+                    type: string
+                    description: 车牌
+                  worker_name_1:
+                    type: string
+                    description: 驾驶员
+                  worker_name_2:
+                    type: stirng
+                    description: 照顾员
+                  company_name:
+                    type: string
+                    description: 公司名字
+                  people_number:
+                    type: string
+                    description: 遗漏人数
+                  people_info:
+                    type: string
+                    description: 遗漏人员信息
+                  first_alert:
+                    type: string
+                    description: 第一次提醒 1已提醒 0没有
+                  second_alert:
+                    type: string
+                    description: 第二次提醒
+                  alert_start_time:
+                    type: string
+                    description: 第一次提醒时间
+                  alert_second_time:
+                    type: string
+                    description: 第二次提醒时间
+                  alert_location:
+                    type: string
+                    description: gps
+                  status:
+                    type: string
+                    description: 状态1 正在报警  2 已解除
+                  cancel_info:
+                    type: string
+                    description: 解除捷报信息
 
     """
     status = data.get('alert_info_type', None)
@@ -135,8 +134,8 @@ def alert_info_list(user_id, data):
     query_str = data.get('query_str', None)
     first_alert = data.get('first_alert', None)
     second_alert = data.get('second_alert', None)
-    page = data['page']
-    size = data['size']
+    page = int(data['page'])
+    size = int(data['size'])
 
     if start_date and end_date:
         try:
@@ -150,7 +149,7 @@ def alert_info_list(user_id, data):
         second_alert, page, size)
 
 
-@bp.route('/alert_info/export', methods=['GET'])
+@bp.route('/export', methods=['GET'])
 @post_require_check_with_user([])
 def alert_info_export(user_id, data):
     """
@@ -158,7 +157,7 @@ def alert_info_export(user_id, data):
     导出报警记录，需要先登录
     ---
     tags:
-      - 报警记录
+      - 报警
     parameters:
       - name: token
         in: header

@@ -1,13 +1,9 @@
 # coding:utf-8
-
+import re
 from functools import wraps
-
 from flask import request, jsonify, g
 
-import re
 from utils.defines import GlobalErrorCode
-from service.UserProfileService import UserProfileService
-
 from ext import log
 from AppError import *
 
@@ -419,18 +415,19 @@ def post_require_check_with_user(args_name):
         def __wrapper(**arg):
             try:
                 require_token_check(request, g)
-                if not len(args_name):
-                    return jsonify(
-                        make_correct_resp(fn(g.user_id, None, **arg)))
                 args = post_check_args(request, args_name)
                 return jsonify(make_correct_resp(fn(g.user_id, args, **arg)))
             except AppErrorBase as ex:
+                import traceback
+                print traceback.format_exc()
                 log.error(ex)
                 return jsonify(make_error_resp(
                     ex.error_code,
                     ex.error_msg
                 ))
             except Exception as ex:
+                import traceback
+                print traceback.format_exc()
                 log.error(ex)
                 return jsonify(make_error_resp(*GlobalErrorCode.UNKNOWN_ERR))
         return __wrapper

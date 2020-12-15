@@ -1,20 +1,12 @@
 # coding:utf-8
 
-import time
-from datetime import datetime
-from collections import defaultdict
-from flask import jsonify
 from flask.blueprints import Blueprint
 
-from core.framework import make_error_resp, post_require_check, \
-    get_require_check, parse_page_size_arg, make_correct_resp, \
-    get_require_check_with_user, post_require_check_with_user, \
-    get_require_check_with_permissions, post_require_check_with_permissions, \
+from core.framework import get_require_check_with_user, \
+    post_require_check_with_user, \
     form_none_param_with_permissions
 from core.AppError import AppError
-from utils.tools import gen_token, md5_encrypt, mobile_verify
 from utils.defines import SubErrorCode, GlobalErrorCode
-from ext import conf
 
 from service.WorkerService import WorkerService
 
@@ -31,7 +23,7 @@ bp = Blueprint('WorkerController', __name__)
 url_prefix = '/worker'
 
 
-@bp.route('/worker/list', methods=['GET'])
+@bp.route('/list', methods=['GET'])
 @get_require_check_with_user(['page', 'size'])
 def worker_list(user_id, data):
     """
@@ -71,40 +63,39 @@ def worker_list(user_id, data):
               description: 状态
             data:
               type: array
-              properties:
-                items:
-                  properties:
-                    id:
-                      type: integer
-                      description: PK
-                    emp_no:
-                      type: string
-                      description: 工号
-                    gender:
-                      type: integer
-                      description: 1男2女
-                    license_plate_number:
-                      type: string
-                      description: 车牌号
-                    company_name:
-                      type: string
-                      description: 公司名字
-                    remarks:
-                      type: string
-                      description: 备注
-                    duty_id:
-                      type: integer
-                      description: 职务id 1驾驶员 2照管员
+              items:
+                properties:
+                  id:
+                    type: integer
+                    description: PK
+                  emp_no:
+                    type: string
+                    description: 工号
+                  gender:
+                    type: integer
+                    description: 1男2女
+                  license_plate_number:
+                    type: string
+                    description: 车牌号
+                  company_name:
+                    type: string
+                    description: 公司名字
+                  remarks:
+                    type: string
+                    description: 备注
+                  duty_id:
+                    type: integer
+                    description: 职务id 1驾驶员 2照管员
 
     """
     query_str = data.get('query_str', None)
-    page = data['page']
-    size = data['size']
+    page = int(data['page'])
+    size = int(data['size'])
 
     return WorkerService.worker_list(query_str, page, size)
 
 
-@bp.route('/worker/add', methods=['POST'])
+@bp.route('/add', methods=['POST'])
 @post_require_check_with_user(['stu_no', 'nickname'])
 def worker_add(user_id, data):
     """
@@ -192,7 +183,7 @@ def worker_add(user_id, data):
     return ret
 
 
-@bp.route('/worker/update/<int:pk>', methods=['POST'])
+@bp.route('/update/<int:pk>', methods=['POST'])
 @post_require_check_with_user([])
 def worker_update(user_id, data, pk):
     """
@@ -282,7 +273,7 @@ def worker_update(user_id, data, pk):
     return ret
 
 
-@bp.route('/worker/batchadd/<int:pk>', methods=['POST'])
+@bp.route('/batchadd', methods=['POST'])
 @form_none_param_with_permissions()
 def worker_batch_add(user_id, data):
     """

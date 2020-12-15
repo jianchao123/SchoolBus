@@ -1,20 +1,11 @@
 # coding:utf-8
 
-import time
-from datetime import datetime
-from collections import defaultdict
-from flask import jsonify
 from flask.blueprints import Blueprint
 
-from core.framework import make_error_resp, post_require_check, \
-    get_require_check, parse_page_size_arg, make_correct_resp, \
-    get_require_check_with_user, post_require_check_with_user, \
-    get_require_check_with_permissions, post_require_check_with_permissions, \
-    form_none_param_with_permissions
+from core.framework import get_require_check_with_user, \
+    post_require_check_with_user, form_none_param_with_permissions
 from core.AppError import AppError
-from utils.tools import gen_token, md5_encrypt, mobile_verify
 from utils.defines import SubErrorCode, GlobalErrorCode
-from ext import conf
 
 from service.SchoolService import SchoolService
 
@@ -31,7 +22,7 @@ bp = Blueprint('SchoolController', __name__)
 url_prefix = '/school'
 
 
-@bp.route('/school/list', methods=['GET'])
+@bp.route('/list', methods=['GET'])
 @get_require_check_with_user(['page', 'size'])
 def school_list(user_id, data):
     """
@@ -71,26 +62,25 @@ def school_list(user_id, data):
               description: 状态
             data:
               type: array
-              properties:
-                items:
-                  properties:
-                    id:
-                      type: integer
-                      description: PK
-                    school_name:
-                      type: string
-                      description: 学校名字
+              items:
+                properties:
+                  id:
+                    type: integer
+                    description: PK
+                  school_name:
+                    type: string
+                    description: 学校名字
 
 
     """
     school_name = data.get('school_name', None)
-    page = data['page']
-    size = data['size']
+    page = int(data['page'])
+    size = int(data['size'])
     return SchoolService.school_list(school_name, page, size)
 
 
-@bp.route('/school/add', methods=['POST'])
-@post_require_check_with_user(['stu_no', 'nickname'])
+@bp.route('/add', methods=['POST'])
+@post_require_check_with_user([])
 def school_add(user_id, data):
     """
     添加学校
@@ -141,7 +131,7 @@ def school_add(user_id, data):
     return ret
 
 
-@bp.route('/school/update/<int:pk>', methods=['POST'])
+@bp.route('/update/<int:pk>', methods=['POST'])
 @post_require_check_with_user([])
 def school_update(user_id, data, pk):
     """
@@ -195,7 +185,7 @@ def school_update(user_id, data, pk):
     return ret
 
 
-@bp.route('/school/batchadd/<int:pk>', methods=['POST'])
+@bp.route('/batchadd', methods=['POST'])
 @form_none_param_with_permissions()
 def school_batch_add(user_id, data):
     """

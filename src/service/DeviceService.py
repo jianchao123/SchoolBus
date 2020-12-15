@@ -1,12 +1,6 @@
 # coding:utf-8
-import xlrd
-import time
 from datetime import datetime
-from datetime import timedelta
-
-from sqlalchemy import func, or_
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import aliased
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 from database.db import db
 from database.Device import Device
@@ -14,7 +8,6 @@ from database.DeviceFaceInfo import DeviceFaceInfo
 from database.Student import Student
 from database.Face import Face
 from utils import defines
-from utils import tools
 from msgqueue import producer
 from ext import cache
 
@@ -65,7 +58,8 @@ class DeviceService(object):
         return {'results': data, 'count': count}
 
     @staticmethod
-    def device_update(pk, license_plate_number, car_id, sound_volume):
+    def device_update(pk, license_plate_number, car_id,
+                      sound_volume, device_type):
         """
         设备ID 关联车辆  设备音量
         """
@@ -73,6 +67,10 @@ class DeviceService(object):
             Device.pk == pk).first()
         if not device:
             return -1
+
+        if device.status == 5 and device_type:
+            return -11  # 初始化已完成,不能再修改设备类型
+
         if license_plate_number:
             cnt = db.session.query(Device).filter(
                 Device.pk != pk,
@@ -82,11 +80,17 @@ class DeviceService(object):
 
         if car_id:
             device.car_id = car_id
+            device.status = 2   # 已关联车辆
         if sound_volume:
             device.sound_volume = sound_volume
             producer.update_chepai(device.device_name,
                                    device.license_plate_number,
                                    device.sound_volume)
+        if device_type:
+            device.device_type = device_type
+            # 将设备名字存入缓存
+            cache.sadd(defines.RedisKey.GENERATE_DEVICE_NAMES, device.device_name)
+
         try:
             d = {'id': device.id}
             db.session.commit()

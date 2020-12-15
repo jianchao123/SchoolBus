@@ -367,6 +367,85 @@ class EveryFewMinutesExe(object):
             db.logger.error(traceback.format_exc())
 
 
+class EveryHoursExecute(object):
+    """每小时执行"""
+
+    @db.transaction(is_commit=True)
+    def every_hours_execute(self, cursor):
+        from datetime import timedelta
+        rds_conn = db.rds_conn
+        sql_db = db.PgsqlDbUtil
+        today_str = datetime.today().strftime('%Y-%m-%d')
+        yesterday_str = (datetime.today() -
+                         timedelta(days=1)).strftime('%Y-%m-%d')
+
+        this_week_start = datetime.today() - timedelta(
+            days=datetime.now().isoweekday() - 1)
+        this_week_start_str = this_week_start.strftime('%Y-%m-%d')
+        this_week_end_str = (this_week_start + timedelta(
+            days=6)).strftime('%Y-%m-%d')
+
+        last_week_start = this_week_start - timedelta(days=7)
+        last_week_start_str = last_week_start.strftime('%Y-%m-%d')
+        last_week_end_str = (last_week_start + timedelta(
+            days=6)).strftime('%Y-%m-%d')
+
+        # 今日乘车人次
+        today_toke_bus_number_sql = \
+            "SELECT COUNT(id) FROM order WHERE " \
+            "TO_CHAR(create_time, 'yyyy-MM-dd') = '{}'"
+        result = sql_db.get(cursor, today_toke_bus_number_sql.format(today_str))
+        today_take_bus_number = result[0]
+
+        # 昨日乘车人次
+        yesterday_toke_bus_number_sql = \
+            "SELECT COUNT(id) FROM order WHERE " \
+            "TO_CHAR(create_time, 'yyyy-MM-dd') = '{}'"
+        result = sql_db.get(cursor, yesterday_toke_bus_number_sql.format(yesterday_str))
+        yesterday_take_bus_number = result[0]
+
+        now = int(time.time())
+        # 设备在线台数
+        device_online_number = 0
+        device_offline_number = 0
+        devices = rds_conn.hgetall(RedisKey.DEVICE_CUR_TIMESTAMP)
+        for k, v in devices:
+            if now - int(v) < 31:
+                device_online_number += 1
+        # 查询设备数量
+        device_number_sql = "SELECT COUNT(id) ROM device"
+        result = sql_db.get(cursor, device_number_sql)
+        device_offline_number = result[0] - device_offline_number
+
+        # 周报警数量
+        alert_sql = \
+            "SELECT COUNT(id) FROM alert_info WHERE alert_start_time > " \
+            "to_date('{}', '%Y-%m-%d') and alert_start_time < " \
+            "to_date('{}', '%Y-%m-%d')"
+        this_week_alert_number = sql_db.get(alert_sql.format(
+            this_week_start_str, this_week_end_str))
+        last_week_alert_number = sql_db.get(alert_sql.format(
+            last_week_start_str, last_week_end_str))
+
+        # 今日昨日报警数量
+        alert_sql = "SELECT COUNT(id) FROM alert_info WHERE " \
+                    "TO_CHAR(alert_start_time, 'yyyy-MM-dd') = '{}'"
+        today_alert_number = sql_db.get(alert_sql.format(today_str))
+        yesterday_alert_number = sql_db.get(alert_sql.format(yesterday_str))
+
+        d = {
+            'today_take_bus_number': today_take_bus_number,
+            'yesterday_take_bus_number': yesterday_take_bus_number,
+            'device_online_number': device_online_number,
+            'device_offline_number': device_offline_number,
+            'this_week_alert_number': this_week_alert_number,
+            'last_week_alert_number': last_week_alert_number,
+            'today_alert_number': today_alert_number,
+            'yesterday_alert_number': yesterday_alert_number
+        }
+        rds_conn.hmset(RedisKey.STATISTICS, d)
+
+
 class OrderSendMsg(object):
 
     def __init__(self):

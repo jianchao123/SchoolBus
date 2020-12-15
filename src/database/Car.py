@@ -4,7 +4,7 @@ from db import db
 
 
 class Car(db.Model):
-    __tablename__ = 'school'
+    __tablename__ = 'car'
 
     id = db.Column(db.BigInteger, primary_key=True)
     code = db.Column(db.String(16))

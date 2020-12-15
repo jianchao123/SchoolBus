@@ -12,8 +12,8 @@ class DevelopmentConfig(Config):
     DEBUG = True
 
     # PostgreSQL
-    SQLALCHEMY_DATABASE_URI = \
-        'postgresql://postgres:kIhHAWexFy7pU8qM@127.0.0.1/postgres'
+    #SQLALCHEMY_DATABASE_URI = 'mysql://root:kIhHAWexFy7pU8qM@127.0.0.1/transport?charset=utf8mb4'
+    SQLALCHEMY_DATABASE_URI = 'postgresql://postgres:kIhHAWexFy7pU8qM@127.0.0.1/postgres'
     LOG_PATH = '/home/jianchao/code/transport/logs/main'
 
     # 阿里云OSS

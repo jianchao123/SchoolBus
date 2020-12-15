@@ -1,20 +1,10 @@
 # coding:utf-8
-
-import time
-from datetime import datetime
-from collections import defaultdict
-from flask import jsonify
 from flask.blueprints import Blueprint
 
-from core.framework import make_error_resp, post_require_check, \
-    get_require_check, parse_page_size_arg, make_correct_resp, \
-    get_require_check_with_user, post_require_check_with_user, \
-    get_require_check_with_permissions, post_require_check_with_permissions, \
-    form_none_param_with_permissions
+from core.framework import get_require_check_with_user, \
+    post_require_check_with_user, form_none_param_with_permissions
 from core.AppError import AppError
-from utils.tools import gen_token, md5_encrypt, mobile_verify
 from utils.defines import SubErrorCode, GlobalErrorCode
-from ext import conf
 
 from service.CarService import CarService
 
@@ -31,7 +21,7 @@ bp = Blueprint('CarController', __name__)
 url_prefix = '/car'
 
 
-@bp.route('/car/list', methods=['GET'])
+@bp.route('/list', methods=['GET'])
 @get_require_check_with_user(['page', 'size'])
 def car_list(user_id, data):
     """
@@ -75,43 +65,42 @@ def car_list(user_id, data):
               description: 状态
             data:
               type: array
-              properties:
-                items:
-                  properties:
-                    id:
-                      type: integer
-                      description: PK
-                    worker_1_id:
-                      type: integer
-                      description: 车辆id
-                    worker_1_nickname:
-                      type: string
-                      description: 车辆昵称
-                    worker_1_duty_name:
-                      type: string
-                      description: 职务名字
-                    company_name:
-                      type: string
-                      description: 公司名字
-                    capacity:
-                      type: integer
-                      description: 载客量
-                    device_iid:
-                      type: string
-                      description: 设备标签id
-                    license_plate_number:
-                      type: stirng
-                      description: 车牌
+              items:
+                properties:
+                  id:
+                    type: integer
+                    description: PK
+                  worker_1_id:
+                    type: integer
+                    description: 车辆id
+                  worker_1_nickname:
+                    type: string
+                    description: 车辆昵称
+                  worker_1_duty_name:
+                    type: string
+                    description: 职务名字
+                  company_name:
+                    type: string
+                    description: 公司名字
+                  capacity:
+                    type: integer
+                    description: 载客量
+                  device_iid:
+                    type: string
+                    description: 设备标签id
+                  license_plate_number:
+                    type: string
+                    description: 车牌
 
     """
     query_str = data.get('query_str', None)
     device_status = data.get('device_status', None)
-    page = data['page']
-    size = data['size']
+    page = int(data['page'])
+    size = int(data['size'])
     return CarService.car_list(query_str, device_status, page, size)
 
 
-@bp.route('/car/add', methods=['POST'])
+@bp.route('/add', methods=['POST'])
 @post_require_check_with_user(['stu_no', 'nickname'])
 def car_add(user_id, data):
     """
@@ -171,7 +160,7 @@ def car_add(user_id, data):
     return ret
 
 
-@bp.route('/car/update/<int:pk>', methods=['POST'])
+@bp.route('/update/<int:pk>', methods=['POST'])
 @post_require_check_with_user([])
 def car_update(user_id, data, pk):
     """
@@ -233,7 +222,7 @@ def car_update(user_id, data, pk):
     return ret
 
 
-@bp.route('/car/batchadd/<int:pk>', methods=['POST'])
+@bp.route('/batchadd', methods=['POST'])
 @form_none_param_with_permissions()
 def car_batch_add(user_id, data):
     """

@@ -1,20 +1,11 @@
 # coding:utf-8
-
-import time
 from datetime import datetime
-from collections import defaultdict
-from flask import jsonify
 from flask.blueprints import Blueprint
 
-from core.framework import make_error_resp, post_require_check, \
-    get_require_check, parse_page_size_arg, make_correct_resp, \
-    get_require_check_with_user, post_require_check_with_user, \
-    get_require_check_with_permissions, post_require_check_with_permissions, \
-    form_none_param_with_permissions
+from core.framework import get_require_check_with_user, \
+    post_require_check_with_user
 from core.AppError import AppError
-from utils.tools import gen_token, md5_encrypt, mobile_verify
 from utils.defines import SubErrorCode, GlobalErrorCode
-from ext import conf
 
 from service.OrderService import OrderService
 
@@ -31,7 +22,7 @@ bp = Blueprint('OrderController', __name__)
 url_prefix = '/order'
 
 
-@bp.route('/order/list', methods=['GET'])
+@bp.route('/list', methods=['GET'])
 @get_require_check_with_user(['page', 'size'])
 def order_list(user_id, data):
     """
@@ -87,38 +78,37 @@ def order_list(user_id, data):
               description: 状态
             data:
               type: array
-              properties:
-                items:
-                  properties:
-                    id:
-                      type: integer
-                      description: PK
-                    stu_no:
-                      type: string
-                      description: 身份证号
-                    stu_name:
-                      type: string
-                      description: 学生名字
-                    school_name:
-                      type: string
-                      description: 学校名字
-                    order_type:
-                      type: integer
-                      description: 订单类型 1 上学上车 2上学下车 3 放学上车 4 放学下车
-                    gps:
-                      type: string
-                      description: gps
-                    license_plate_number:
-                      type: string
-                      description: 车牌
+              items:
+                properties:
+                  id:
+                    type: integer
+                    description: PK
+                  stu_no:
+                    type: string
+                    description: 身份证号
+                  stu_name:
+                    type: string
+                    description: 学生名字
+                  school_name:
+                    type: string
+                    description: 学校名字
+                  order_type:
+                    type: integer
+                    description: 订单类型 1 上学上车 2上学下车 3 放学上车 4 放学下车
+                  gps:
+                    type: string
+                    description: gps
+                  license_plate_number:
+                    type: string
+                    description: 车牌
     """
     school_id = data.get('school_id', None)
     order_type = data.get('order_type', None)
     start_date = data.get('start_date', None)
     end_date = data.get('end_date', None)
     query_str = data.get('query_str', None)
-    page = data['page']
-    size = data['size']
+    page = int(data['page'])
+    size = int(data['size'])
     if start_date and end_date:
         try:
             start_date = datetime.strptime(start_date, '%Y-%m-%d')
@@ -129,7 +119,7 @@ def order_list(user_id, data):
                                    start_date, end_date, page, size)
 
 
-@bp.route('/order/export', methods=['GET'])
+@bp.route('/export', methods=['GET'])
 @post_require_check_with_user([])
 def order_export(user_id, data):
     """

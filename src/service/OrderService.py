@@ -1,23 +1,11 @@
 # coding:utf-8
-import oss2
-import random
-from urllib2 import urlopen
-import time
-import json
-import xlrd
-from datetime import datetime
 from datetime import timedelta
 
 from sqlalchemy import func, or_
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import aliased
-from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 from database.db import db
 from database.Order import Order
 from database.ExportTask import ExportTask
-from utils import defines
-from utils import tools
-from ext import cache
 
 
 class OrderService(object):

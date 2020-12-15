@@ -1,22 +1,10 @@
 # coding:utf-8
-import oss2
-import random
-from urllib2 import urlopen
-import time
-import json
-import xlrd
-from datetime import datetime
-from datetime import timedelta
 
-from sqlalchemy import func, or_
-from sqlalchemy.orm import aliased
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
-from database.db import db
-from database.Face import Face
 from database.AdminUser import AdminUser
-from utils import defines
 from utils import tools
 from ext import cache
+from database.db import db
 
 
 class UserProfileService(object):
@@ -41,12 +29,13 @@ class UserProfileService(object):
     @staticmethod
     def get_user_by_username(username):
         """获取用户"""
+
         db.session.commit()
         try:
             user = db.session.query(AdminUser). \
                 filter(AdminUser.username == username).one()
             return dict(id=user.id, username=user.username,
-                        password=user.password)
+                        passwd=user.passwd)
         except (NoResultFound, MultipleResultsFound):
             pass
         return None
@@ -57,14 +46,14 @@ class UserProfileService(object):
         cache.expire(UserProfileService.TOKEN_ID_KEY.format(token), 60 * 60 * 8)
 
     @staticmethod
-    def modify_pwd(user_id, password_raw):
+    def modify_pwd(user_id, passwd_raw):
         """修改密码"""
         db.session.commit()
 
         try:
             user = db.session.query(AdminUser).filter(
                 AdminUser.id == user_id).first()
-            user.password = tools.md5_encrypt(password_raw)
+            user.passwd = tools.md5_encrypt(passwd_raw)
             db.session.add(user)
             db.session.commit()
         except:

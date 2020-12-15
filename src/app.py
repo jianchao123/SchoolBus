@@ -2,12 +2,12 @@
 import sys
 reload(sys)
 sys.setdefaultencoding('utf8')
-
 from werkzeug.utils import ImportStringError
-from flask import Flask
 from werkzeug.utils import find_modules, import_string
-from flasgger import Swagger
+from flask import Flask
+from flask_sqlalchemy import SQLAlchemy
 from flask_cors import *
+from flasgger import Swagger
 
 
 def register_blueprints(root, app):
@@ -36,7 +36,6 @@ def create_app():
     """
     app = Flask(__name__)
 
-    Swagger(app)
     CORS(app, supports_credentials=True)
 
     # 加载配置
@@ -50,8 +49,31 @@ def create_app():
     cache.init_app(app)
 
     register_blueprints('controller', app)
+
+    Swagger(app)
+
+    # 初始化db
+    SQLAlchemy(app)
+
     # from controller import bp
     # app.register_blueprint(bp, url_prefix='/user')
+
+    # from controller.UserProfileController import bp as user_bp
+    # from controller.AlertInfoController import bp as alert_bp
+    # from controller.CarController import bp as car_bp
+    # from controller.DeviceController import bp as device_bp
+    # from controller.OrderController import bp as order_bp
+    # from controller.SchoolController import bp as school_bp
+    # from controller.StudentController import bp as student_bp
+    # from controller.WorkerController import bp as worker_bp
+    # app.register_blueprint(user_bp, url_prefix='/user')
+    # app.register_blueprint(alert_bp, url_prefix='/alert_info')
+    # app.register_blueprint(car_bp, url_prefix='/car')
+    # app.register_blueprint(device_bp, url_prefix='/device')
+    # app.register_blueprint(order_bp, url_prefix='/order')
+    # app.register_blueprint(school_bp, url_prefix='/school')
+    # app.register_blueprint(student_bp, url_prefix='/student')
+    # app.register_blueprint(worker_bp, url_prefix='/worker')
 
     return app
 
@@ -60,4 +82,4 @@ def create_app():
 app = create_app()
 
 if __name__ == '__main__':
-    app.run()
+    app.run(host='0.0.0.0')

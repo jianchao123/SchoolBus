@@ -1,19 +1,11 @@
 # coding:utf-8
-
-import time
-from datetime import datetime
-from collections import defaultdict
-from flask import jsonify
 from flask.blueprints import Blueprint
 
-from core.framework import make_error_resp, post_require_check, \
-    get_require_check, parse_page_size_arg, make_correct_resp, \
-    get_require_check_with_user, post_require_check_with_user, \
-    get_require_check_with_permissions, post_require_check_with_permissions, \
-    form_none_param_with_permissions
+from core.framework import post_require_check, \
+    post_require_check_with_permissions
 from core.AppError import AppError
-from utils.tools import gen_token, md5_encrypt, mobile_verify
-from utils.defines import SubErrorCode, GlobalErrorCode
+from utils.tools import gen_token, md5_encrypt
+from utils.defines import SubErrorCode
 from ext import conf
 
 from service.UserProfileService import UserProfileService
@@ -39,7 +31,7 @@ def user_login(args):
     登录
     ---
     tags:
-      - 用户模块
+      - 用户
     parameters:
       - name: body
         in: body
@@ -94,7 +86,7 @@ def user_login(args):
         raise AppError(*SubErrorCode.USER_PWD_ERR)
 
     password_md5_str = md5_encrypt(password)
-    if user_obj["password"] != password_md5_str:
+    if user_obj["passwd"] != password_md5_str:
         raise AppError(*SubErrorCode.USER_PWD_ERR)
 
     token = gen_token(password, conf.config["SALT"], 3600)
@@ -116,7 +108,7 @@ def change_password(user_id, args):
     修改密码
     ---
     tags:
-      - 用户模块
+      - 用户
     parameters:
       - name: token
         in: header

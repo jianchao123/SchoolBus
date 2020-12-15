@@ -43,6 +43,8 @@ class SubErrorCode(object):
 
     SCHOOL_NAME_ALREADY_EXISTS = (200060, u"学校名字已经存在")
 
+    DEVICE_INITED_NOT_CHANGE = (200070, u"初始化已完成,不能再修改设备类型")
+
 
 class RedisKey(object):
 
@@ -68,7 +70,7 @@ class RedisKey(object):
     # 设备当前状态
     DEVICE_CUR_STATUS = "DEVICE_CUR_STATUS_HASH"
 
-    # 生成特征码的设备集合
+    # 生成特征码的设备集合(设备名字)
     GENERATE_DEVICE_NAMES = "GENERATE_DEVICE_NAMES_HASH"
 
     # ACC关闭HASH
@@ -82,6 +84,9 @@ class RedisKey(object):
 
     # OSS上所有的人脸
     OSS_ID_CARD_SET = "OSS_ID_CARD_SET"
+
+    # 统计
+    STATISTICS = "STATISTICS"
 
 
 grade = [u"TBD", u'小班', u'中班', u'大班', u'学前班', u'一年级', u'二年级', u'三年级',

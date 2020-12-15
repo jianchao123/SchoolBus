@@ -1,14 +1,9 @@
 # coding:utf-8
-
-from functools import wraps
 import json
-
+from functools import wraps
 from flask import request, make_response
-
 from framework import format_exception
 from LogHelper import CLogHelper
-
-log = CLogHelper.logger
 
 
 def mns_request_auth(request):
@@ -28,9 +23,10 @@ def mns_request_auth(request):
     headers = {}
     # if isinstance(req.headers, (werkzeug.datastructures.EnvironHeaders)):
     for k in request.headers:
-	    headers[k[0]] = k[1].encode('utf-8')
-
-    service_str = "\n".join(sorted(["%s:%s" % (k.lower(),v) for k,v in headers.items() if k.lower().startswith("x-mns-")]))
+        headers[k[0]] = k[1].encode('utf-8')
+    l = ["%s:%s" % (k.lower(),v) for k,v in headers.items()
+         if k.lower().startswith("x-mns-")]
+    service_str = "\n".join(sorted(l))
     sign_header_list = []
     for key in ["Content-Md5", "Content-Type", "Date"]:
         if key in headers.keys():
@@ -67,6 +63,7 @@ def mns_request_decorator(fn):
             fn(args, *arg, **kw)
             return make_response('', 204)
         except Exception as ex:
+            log = CLogHelper.logger
             log.critical(format_exception(ex))
             return make_response('', 500)
 
