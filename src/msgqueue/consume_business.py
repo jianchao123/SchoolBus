@@ -155,7 +155,7 @@ class StudentBusiness(object):
                 'school_id': school_id,
                 'grade_id': grade_id,
                 'class_id': classes_id,
-                'end_time': "to_date('{}', 'yyyy-MM-dd')".format(end_time),
+                'end_time': "TO_DATE('{}', 'yyyy-MM-dd')".format(end_time),
                 'car_id': car_id,
                 'license_plate_number': license_plate_number
             }
@@ -168,17 +168,17 @@ class StudentBusiness(object):
                 d['create_time'] = 'now()'
                 d['status'] = 1
                 pgsql_db.insert(pgsql_cur, d, 'student')
-                stu = pgsql_db.get(stu_sql)
+                stu = pgsql_db.get(pgsql_cur, stu_sql.format(stu_no))
                 face_d = {
                     'oss_url': '',
                     'status': 1,  # 没有人脸
                     'feature': '',
                     'nickname': nickname,
                     'stu_no': stu_no,
-                    'feature_crc': '',
                     'update_time': 'now()',
                     'acc_url': '',
-                    'end_timestamp': '',
+                    'end_timestamp': int(time.mktime(
+                        datetime.strptime(end_time, '%Y-%m-%d').timetuple())),
                     'stu_id': stu[0]
                 }
                 pgsql_db.insert(pgsql_cur, face_d, 'face')
@@ -231,7 +231,8 @@ class StudentBusiness(object):
         """批量添加车辆
         """
         pgsql_db = PgsqlDbUtil
-        car_sql = "SELECT id FROM car WHERE license_plate_number='{}' LIMIT 1"
+        car_sql = "SELECT id,capacity,company_name FROM car " \
+                  "WHERE license_plate_number='{}' LIMIT 1"
         for row in data:
             license_plate_number = row[0]
             capacity = row[1]
@@ -605,8 +606,8 @@ class ExportExcelBusiness(object):
             param_str += ' AND O.order_type={} '.format(order_type)
         if start_date and end_date:
             param_str += \
-                "AND O.create_time between to_date('{}','YYYY-MM-DD') and " \
-                "to_date('{}','YYYY-MM-DD')".format(start_date, end_date)
+                "AND O.create_time between TO_DATE('{}','YYYY-MM-DD') and " \
+                "TO_DATE('{}','YYYY-MM-DD')".format(start_date, end_date)
 
         results = pgsql_db.query(pgsql_cur, sql.format(param_str, limit, offset))
         value_title = [u'学生编号', u'学生姓名' u'学校', u'乘车记录类型', 
@@ -687,7 +688,7 @@ class ExportExcelBusiness(object):
         sql = """
         SELECT license_plate_number,worker_name_1,worker_name_2,company_name,
         people_number,people_info,alert_start_time,alert_second_time,
-        status,gps,cancel_info FROM alert_info WHERE 1=1 
+        status,gps FROM alert_info WHERE 1=1 
             """
         if status:
             sql += " AND status={}".format(status)
@@ -699,8 +700,8 @@ class ExportExcelBusiness(object):
         if car_id:
             sql += " AND car_id={}".format(car_id)
         if start_date and end_date:
-            sql += " AND alert_start_time BETWEEN to_date('{}','YYYY-MM-DD') " \
-                   "and to_date('{}','YYYY-MM-DD')".format(start_date, end_date)
+            sql += " AND alert_start_time BETWEEN TO_DATE('{}','YYYY-MM-DD') " \
+                   "and TO_DATE('{}','YYYY-MM-DD')".format(start_date, end_date)
 
         results = pgsql_db.query(pgsql_cur, sql)
         value_title = [u'车牌', u'驾驶员', u'照管员', u'校车公司名字', u'遗漏人数',

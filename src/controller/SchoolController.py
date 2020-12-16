@@ -232,4 +232,6 @@ def school_batch_add(user_id, data):
 
     # "c": 1, "msg": err_str}
     data = SchoolService.batch_add_school(fd)
+    if data == -10:
+        raise AppError(*SubErrorCode.TASK_EXECUTING)
     return data

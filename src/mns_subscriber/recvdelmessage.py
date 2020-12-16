@@ -90,7 +90,7 @@ class ReceiveMessage(object):
                     log_id = int(jdata['gps'].split('|')[0])
                     # acc关闭
                     if log_id == 3:
-                        AcsManager.acc_close(dev_name, )
+                        AcsManager.acc_close(dev_name)
                 else:
                     logger.info(u"添加订单")
                     acs_manager.add_order(jdata['fid'],

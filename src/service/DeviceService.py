@@ -1,4 +1,5 @@
 # coding:utf-8
+import time
 from datetime import datetime
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
@@ -27,20 +28,35 @@ class DeviceService(object):
             query = query.filter(Device.device_iid == device_iid)
         if license_plate_number:
             query = query.filter(Device.license_plate_number == license_plate_number)
+
+        cur_timestamp = int(time.time())
         if status:
-            query = query.filter(Device.status == status)
+            status = int(status)
+            devices = []
+            ks = cache.hgetall(defines.RedisKey.DEVICE_CUR_TIMESTAMP)
+            for device_name, tstmp in ks.items():
+                print device_name, tstmp
+                if status == 1:
+                    if tstmp and (cur_timestamp - int(tstmp)) < 30:
+                        devices.append(device_name)
+                elif status == 2:
+                    print "========================="
+                    if not tstmp or ((cur_timestamp - int(tstmp)) > 30):
+                        devices.append(device_name)
+
+            query = query.filter(Device.device_name.in_(devices))
+        query = query.filter(Device.status != 10)
 
         count = query.count()
         results = query.offset(offset).limit(size).all()
 
-        now = datetime.now()
         data = []
         for row in results:
             device_timestamp = cache.hget(
                 defines.RedisKey.DEVICE_CUR_TIMESTAMP, row.device_name)
-            if now - device_timestamp > 30:
+            if not device_timestamp or (cur_timestamp - int(device_timestamp) > 30):
                 is_online = u"离线"
-            else:
+            elif cur_timestamp - int(device_timestamp) < 30:
                 is_online = u"在线"
             data.append({
                 'id': row.id,

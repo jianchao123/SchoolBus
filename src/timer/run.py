@@ -13,7 +13,7 @@ from apscheduler.schedulers.gevent import BlockingScheduler
 
 from timer.RestTimer import GenerateFeature, EveryMinuteExe, \
     FromOssQueryFace, EveryFewMinutesExe, OrderSendMsg, GenerateAAC, \
-    EveryHoursExecute
+    EveryHoursExecute, CheckAccClose
 
 if __name__ == "__main__":
     generate_feature = GenerateFeature()
@@ -23,6 +23,7 @@ if __name__ == "__main__":
     every_hours_exe = EveryHoursExecute()
     order_send_msg = OrderSendMsg()
     generate_aac = GenerateAAC()
+    check_acc_close = CheckAccClose()
 
     sched = BlockingScheduler()
     # 顺序发送消息
@@ -31,6 +32,8 @@ if __name__ == "__main__":
     sched.add_job(generate_feature.generate_feature, 'interval', seconds=1)
     # 生成aac文件
     sched.add_job(generate_aac.generate_audio, 'interval', seconds=10)
+    # 检查acc熄火key
+    sched.add_job(check_acc_close.check_acc_close, 'interval', seconds=11)
     # 上传人脸zip包到oss,将人脸匹配到记录
     sched.add_job(from_oss_query_face.from_oss_get_face, 'interval', seconds=16)
     # 每分钟执行

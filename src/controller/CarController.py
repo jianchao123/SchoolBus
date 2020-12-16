@@ -75,10 +75,10 @@ def car_list(user_id, data):
                     description: 车辆id
                   worker_1_nickname:
                     type: string
-                    description: 车辆昵称
+                    description: 工作人员名字
                   worker_1_duty_name:
                     type: string
-                    description: 职务名字
+                    description: 工作人员职务名字
                   company_name:
                     type: string
                     description: 公司名字
@@ -101,7 +101,7 @@ def car_list(user_id, data):
 
 
 @bp.route('/add', methods=['POST'])
-@post_require_check_with_user(['stu_no', 'nickname'])
+@post_require_check_with_user([])
 def car_add(user_id, data):
     """
     添加车辆

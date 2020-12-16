@@ -57,7 +57,7 @@ def device_list(user_id, data):
       - name: status
         in: query
         type: integer
-        description: 状态 1已创建虚拟设备 2已关联车辆 3已设置工作模式 4已设置oss信息 5已初始化人员
+        description: 状态 1在线 2离线
       - name: page
         in: query
         type: integer

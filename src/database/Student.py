@@ -6,7 +6,7 @@ class Student(db.Model):
     __tablename__ = 'student'
 
     id = db.Column(db.BigInteger, primary_key=True)
-    stu_no = db.Column(db.String(16))   # 身证号
+    stu_no = db.Column(db.String(32))   # 身证号
     nickname = db.Column(db.String(16))
     gender = db.Column(db.Integer)
     parents_1 = db.Column(db.String(16))
@@ -23,3 +23,5 @@ class Student(db.Model):
     car_id = db.Column(db.Integer)      # 车辆id
     license_plate_number = db.Column(db.String(16))
     status = db.Column(db.Integer)      # 状态 1有效 10删除
+    open_id_1 = db.Column(db.String(32))
+    open_id_2 = db.Column(db.String(32))

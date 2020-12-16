@@ -18,7 +18,8 @@ class SchoolService(object):
         offset = (page - 1) * size
         query = db.session.query(School)
         if school_name:
-            query = query.filter(School.school_name == school_name)
+            query_str = '%{keyword}%'.format(keyword=school_name)
+            query = query.filter(School.school_name.like(query_str))
 
         count = query.count()
         results = query.offset(offset).limit(size).all()
@@ -91,12 +92,6 @@ class SchoolService(object):
         if table.nrows > 10000:
             return {"c": 1, "msg": u"excel数据最大10000条"}
 
-        if cache.get('batch_add_school'):
-            return -10  # 导入车辆执行中
-
-        cache.set('batch_add_school', 1)
-        cache.expire('batch_add_school', 300)
-
         name_list = []
         results = db.session.query(School).filter(School.status == 1).all()
         for row in results:
@@ -107,7 +102,7 @@ class SchoolService(object):
             is_err = 0
 
             row_data = table.row_values(index)
-            school_name = str(row_data[2]).strip()
+            school_name = str(row_data[0]).strip()
 
             err_str = u"\n第{}行,".format(index + 1)
             # 先检查是否为空
@@ -130,11 +125,17 @@ class SchoolService(object):
         if error_msg_list:
             return {"c": 1, "msg": "\n".join(error_msg_list)}
 
+        if cache.get('batch_add_school'):
+            return -10  # 导入车辆执行中
+
+        cache.set('batch_add_school', 1)
+        cache.expire('batch_add_school', 50)
+
         school_list = []
         for index in range(1, table.nrows):
             row_data = table.row_values(index)
             school_name = str(row_data[0]).strip()
             school_list.append([school_name])
         # 发送消息
-        producer.batch_add_car(school_list)
+        producer.batch_add_school(school_list)
         return {"c": 0, 'msg': ''}

@@ -123,9 +123,6 @@ def alert_info_list(user_id, data):
                   status:
                     type: string
                     description: 状态1 正在报警  2 已解除
-                  cancel_info:
-                    type: string
-                    description: 解除捷报信息
 
     """
     status = data.get('alert_info_type', None)

@@ -186,7 +186,7 @@ def student_add(user_id, data):
               type: integer
               description: 截至时间
             license_plate_number:
-              type: integer
+              type: string
               description: 车牌号
             oss_url:
               type: integer
@@ -226,6 +226,11 @@ def student_add(user_id, data):
     end_time = data['end_time']
     license_plate_number = data['license_plate_number']
     oss_url = data['oss_url']
+
+    try:
+        end_time = datetime.strptime(end_time, '%Y-%m-%d %H:%M:%S')
+    except ValueError:
+        raise AppError(*GlobalErrorCode.PARAM_ERROR)
 
     ret = StudentService.student_add(
         stu_no, nickname, gender, parents_1, mobile_1, parents_2,
@@ -405,4 +410,6 @@ def student_batch_add(user_id, data):
 
     # "c": 1, "msg": err_str}
     data = StudentService.batch_add_student(fd)
+    if data == -10:
+        raise AppError(*SubErrorCode.TASK_EXECUTING)
     return data

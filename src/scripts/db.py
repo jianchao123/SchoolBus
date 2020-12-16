@@ -76,8 +76,8 @@ class PgsqlDbUtil(object):
         for k, v in data.items():
             keys += k + ","
             if isinstance(v, (int, float, Decimal, long)) or \
-                    v in time_list or "STR_TO_DATE" in v or \
-                    "str_to_date" in v:
+                    v in time_list or "TO_DATE" in v or \
+                    "TO_DATE" in v:
                 values += str(v) + ","
             else:
                 values += "'" + str(v) + "'" + ","
@@ -98,7 +98,7 @@ class PgsqlDbUtil(object):
                 elif v in ["now()", "NOW()", "current_timestamp",
                            "CURRENT_TIMESTAMP"]:
                     sql += k + "=" + v + ","
-                elif "STR_TO_DATE" in v:
+                elif "TO_DATE" in v:
                     sql += k + "=" + v + ","
                 else:
                     sql += k + "=" + "'" + v + "'" + ","

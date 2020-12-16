@@ -79,7 +79,7 @@ class StudentService(object):
                 'end_time': student.end_time.strftime('%Y-%m-%d'),
                 'car_id': student.car_id,
                 'license_plate_number': student.license_plate_number,
-                'status': row.status,
+                'status': student.status,
                 'face_status': face.status,
                 'school_name': school.school_name,
                 'grade_name': grade[student.grade_id],
@@ -120,15 +120,16 @@ class StudentService(object):
         student.end_time = end_time
         student.car_id = car.id
         student.license_plate_number = license_plate_number
-        student.status = 1  # 有效
+        student.status = 1          # 有效
 
         try:
             db.session.add(student)
             db.session.flush()
             new_id = student.id
             face = Face()
+            face.nickname = nickname
             face.oss_url = oss_url
-            face.status = 2 # 未处理
+            face.status = 2         # 未处理
             face.stu_id = new_id
             face.stu_no = stu_no
             face.end_timestamp = time.mktime(end_time.timetuple())
@@ -136,6 +137,8 @@ class StudentService(object):
             db.session.commit()
             return {'id': new_id}
         except SQLAlchemyError:
+            import traceback
+            print traceback.format_exc()
             db.session.rollback()
             return -2
         finally:
@@ -226,12 +229,6 @@ class StudentService(object):
         if table.nrows > 10000:
             return {"c": 1, "msg": u"excel数据最大10000条"}
 
-        if cache.get('batch_add_student'):
-            return -10  # 导入学生任务执行中
-
-        cache.set('batch_add_student', 1)
-        cache.expire('batch_add_student', 300)
-
         stu_no_list = []
         results = db.session.query(Student).filter(Student.status == 1).all()
         for row in results:
@@ -245,10 +242,10 @@ class StudentService(object):
 
         # 查询所有车辆
         car_dict = {}
-        results = db.session.query(Car).all()
+        results = db.session.query(Car).filter(Car.status == 1).all()
         for row in results:
             car_dict[row.license_plate_number] = row.id
-
+        print car_dict
         error_msg_list = []
         for index in range(1, table.nrows):
             is_err = 0
@@ -327,7 +324,8 @@ class StudentService(object):
             if class_name not in classes:
                 err_str += u"未知的班级名字"
                 is_err = 1
-            if license_plate_number not in car_dict:
+            print license_plate_number
+            if license_plate_number.decode('utf8') not in car_dict:
                 err_str += u"未知的车牌"
                 is_err = 1
 
@@ -355,6 +353,13 @@ class StudentService(object):
         if error_msg_list:
             return {"c": 1, "msg": "\n".join(error_msg_list)}
 
+        if cache.get('batch_add_student'):
+            return -10  # 导入学生任务执行中
+
+        cache.set('batch_add_student', 1)
+        cache.expire('batch_add_student', 300)
+
+        print grade, classes
         student_list = []
         for index in range(1, table.nrows):
             row_data = table.row_values(index)
@@ -376,8 +381,10 @@ class StudentService(object):
             student_list.append([
                 stu_no, nickname, gender.index(gender_name), parents_1, mobile_1,
                 parents_2, mobile_2, address, remarks,
-                school_dict[school_name], grade.index(grade_name),
-                classes.index(class_name), end_time, car_dict[license_plate_number],
+                school_dict[school_name.decode('utf8')],
+                grade.index(grade_name.decode('utf8')),
+                classes.index(class_name.decode('utf8')), end_time,
+                car_dict[license_plate_number.decode('utf8')],
                 license_plate_number])
         # 发送消息
         print student_list

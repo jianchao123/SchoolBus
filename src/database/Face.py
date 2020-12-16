@@ -12,7 +12,7 @@ class Face(db.Model):
     feature = db.Column(db.Text())
     nickname = db.Column(db.String(16))
     stu_id = db.Column(db.Integer)
-    stu_no = db.Column(db.String(16))
+    stu_no = db.Column(db.String(32))
     feature_crc = db.Column(db.Numeric(11, 6))
     update_time = db.Column(db.DateTime, default=datetime.now)
     acc_url = db.Column(db.String(128))

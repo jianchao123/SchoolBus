@@ -102,7 +102,7 @@ else:
     MNSAccessKeySecret = 'vhuBLJpqlOsSisnuUQ1xvE02GCXhIC'
 
     # LOG
-    log_path = project_dir + "/logs/mns"
+    log_path = project_dir + "/logs/msgqueue"
 
     # PGSQL
     pgsql_host = '127.0.0.1'

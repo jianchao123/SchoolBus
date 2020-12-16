@@ -17,7 +17,7 @@ class RedisKey(object):
     # 订单ID递增
     ORDER_ID_INCR = "ORDER_ID_INCR"
 
-    # 学生上车集合
+    # 学生上车集合{device_name}
     STUDENT_SET = 'STUDENT_SET:{}'
 
     # 每个设备当前时间戳
@@ -43,6 +43,9 @@ class RedisKey(object):
 
     # 统计
     STATISTICS = "STATISTICS"
+
+    # 微信access_token
+    WECHAT_ACCESS_TOKEN = "WECHAT_ACCESS_TOKEN"
 
 
 grade = [u"TBD", u'小班', u'中班', u'大班', u'学前班', u'一年级', u'二年级', u'三年级',

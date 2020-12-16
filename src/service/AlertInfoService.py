@@ -56,8 +56,7 @@ class AlertInfoService(object):
                 'alert_second_time':
                     row.alert_second_time.strftime('%Y-%m-%d %H:%M:%S'),
                 'alert_location': row.gps,
-                'status': row.status,
-                'cancel_info': row.cancel_info
+                'status': row.status
             })
         return {'results': data, 'count': count}
 

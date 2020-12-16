@@ -7,7 +7,7 @@ class Car(db.Model):
     __tablename__ = 'car'
 
     id = db.Column(db.BigInteger, primary_key=True)
-    code = db.Column(db.String(16))
+    code = db.Column(db.String(32))
     license_plate_number = db.Column(db.String(16))
     capacity = db.Column(db.Integer)
     device_iid = db.Column(db.String(16))

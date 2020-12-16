@@ -603,3 +603,5 @@ class AcsManager(object):
         rds_conn = db.rds_conn
         # TODO 日志是否有devtime
         rds_conn.hset(RedisKey.ACC_CLOSE, device_name, int(time.time()))
+        # 将STUDENT_SET设置过期时间100s
+        rds_conn.expire(RedisKey.STUDENT_SET.format(device_name), 100)

@@ -3,6 +3,7 @@ import xlrd
 import time
 from datetime import datetime
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy import or_
 from database.db import db
 from database.Car import Car
 from database.Device import Device
@@ -16,17 +17,18 @@ class CarService(object):
     @staticmethod
     def car_list(query_str, device_status, page, size):
         db.session.commit()
-
+        print query_str, device_status, page, size
         offset = (page - 1) * size
         query = db.session.query(Car)
         if query_str:
             query_str = '%{keyword}%'.format(keyword=query_str)
-            query = query.filter(Car.license_plate_number.like(query_str))
 
             results = db.session.query(Device).filter(
                 Device.device_iid.like(query_str)).all()
             car_ids = [row.car_id for row in results]
-            query = query.filter(Car.id.in_(car_ids))
+
+            query = query.filter(or_(
+                Car.id.in_(car_ids), Car.license_plate_number.like(query_str)))
         if device_status:
             results = db.session.query(Device).filter(
                 Device.status == device_status).all()
@@ -44,7 +46,7 @@ class CarService(object):
             if device:
                 device_timestamp = cache.hget(
                     defines.RedisKey.DEVICE_CUR_TIMESTAMP, device.device_name)
-                if now - device_timestamp > 30:
+                if not device_timestamp or (now - int(device_timestamp) > 30):
                     is_online = u"离线"
                 else:
                     is_online = u"在线"
@@ -71,6 +73,7 @@ class CarService(object):
     def car_add(license_plate_number, capacity, company_name):
         """
         车辆编码 车牌号 载客量 公司
+
         """
         car = db.session.query(Car).filter(
             Car.license_plate_number == license_plate_number).first()
@@ -91,6 +94,8 @@ class CarService(object):
             db.session.commit()
             return {'id': new_id}
         except SQLAlchemyError:
+            import traceback
+            print traceback.format_exc()
             db.session.rollback()
             return -2
         finally:
@@ -146,12 +151,6 @@ class CarService(object):
         if table.nrows > 10000:
             return {"c": 1, "msg": u"excel数据最大10000条"}
 
-        if cache.get('batch_add_car'):
-            return -10  # 导入车辆执行中
-
-        cache.set('batch_add_car', 1)
-        cache.expire('batch_add_car', 300)
-
         chepai_list = []
         results = db.session.query(Car).filter(Car.status == 1).all()
         for row in results:
@@ -198,6 +197,12 @@ class CarService(object):
                 error_msg_list.append(err_str)
         if error_msg_list:
             return {"c": 1, "msg": "\n".join(error_msg_list)}
+
+        if cache.get('batch_add_car'):
+            return -10  # 导入车辆执行中
+
+        cache.set('batch_add_car', 1)
+        cache.expire('batch_add_car', 50)
 
         car_list = []
         for index in range(1, table.nrows):

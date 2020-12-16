@@ -142,12 +142,6 @@ class WorkerService(object):
         if table.nrows > 10000:
             return {"c": 1, "msg": u"excel数据最大10000条"}
 
-        if cache.get('batch_add_worker'):
-            return -10  # 导入工作人员执行中
-
-        cache.set('batch_add_worker', 1)
-        cache.expire('batch_add_worker', 300)
-
         emp_no_list = []
         results = db.session.query(Worker).filter(Worker.status == 1).all()
         for row in results:
@@ -229,6 +223,12 @@ class WorkerService(object):
                 error_msg_list.append(err_str)
         if error_msg_list:
             return {"c": 1, "msg": "\n".join(error_msg_list)}
+
+        if cache.get('batch_add_worker'):
+            return -10  # 导入工作人员执行中
+
+        cache.set('batch_add_worker', 1)
+        cache.expire('batch_add_worker', 300)
 
         worker_list = []
         for index in range(1, table.nrows):

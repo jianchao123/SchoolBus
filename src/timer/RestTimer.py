@@ -90,87 +90,96 @@ class CheckAccClose(object):
     def post_wechat_msg(self, car_id, company_name, dev_name,
                         license_plate_number, pgsql_cur, pgsql_db, rds_conn,
                         time_diff):
-        if 30 < time_diff:
-            if time_diff < 300:
-                number = int(rds_conn.hget(
-                    RedisKey.DEVICE_CUR_PEOPLE_NUMBER, dev_name))
-                if number:
-                    # 工作人员
-                    sql = "SELECT id,nickname,duty_id FROM worker " \
-                          "WHERE car_id={} LIMIT 1".format(car_id)
-                    results = pgsql_db.query(sql.format(dev_name))
-                    worker_id_1 = None
-                    worker_name_1 = None
-                    worker_id_2 = None
-                    worker_name_2 = None
-                    for row in results:
-                        if row[2] == 1:
-                            worker_id_1 = row[0]
-                            worker_name_2 = row[1]
-                        elif row[2] == 2:
-                            worker_id_2 = row[0]
-                            worker_name_2 = row[1]
+        if time_diff < 35:
+            return
+        if time_diff < 300:
+            number = int(rds_conn.hget(
+                RedisKey.DEVICE_CUR_PEOPLE_NUMBER, dev_name))
+            if number:
+                # 工作人员
+                sql = "SELECT id,nickname,duty_id FROM worker " \
+                      "WHERE car_id={} LIMIT 1".format(car_id)
+                results = pgsql_db.query(sql.format(dev_name))
+                worker_id_1 = None
+                worker_name_1 = None
+                worker_id_2 = None
+                worker_name_2 = None
+                for row in results:
+                    if row[2] == 1:
+                        worker_id_1 = row[0]
+                        worker_name_2 = row[1]
+                    elif row[2] == 2:
+                        worker_id_2 = row[0]
+                        worker_name_2 = row[1]
 
-                    # 取出滞留人员
-                    fids = rds_conn.smembers(RedisKey.STUDENT_SET)
-                    fids = ','.join(list(fids))
-                    sql = "SELECT STU.nickname,SHL.school_name,STU.grade_id," \
-                          "STU.class_id,STU.mobile_1,STU.mobile_2 FROM " \
-                          "face F INNER JOIN student STU ON STU.id=F.stu_id " \
-                          "INNER JOIN school SHL ON SHL.id=STU.school_id " \
-                          "WHERE F.id in ({})".format(','.join(fids))
-                    results = pgsql_db.query(sql.format(fids))
-                    infos = []
-                    for row in results:
-                        info = defaultdict()
-                        info['nickname'] = row[0]
-                        info['school_name'] = row[1]
-                        info['grade_name'] = grade[row[2]]
-                        info['class_name'] = classes[row[3]]
-                        info['mobile_1'] = row[4]
-                        info['mobile_2'] = row[5]
-                        infos.append(info)
-                    people_info = ""
-                    for info in infos:
-                        people_info += '{},{},{},{},{}|'.format(
-                            info['nickname'], info['school_name'],
-                            info['grade_name'], info['class_name'],
-                            info['mobile_1'], info['mobile_2'])
-                    d = {
-                        'car_id': car_id,
-                        'license_plate_number': license_plate_number,
-                        'worker_id_1': worker_id_1,
-                        'worker_name_1': worker_name_1,
-                        'worker_id_2': worker_id_2,
-                        'worker_name_2': worker_name_2,
-                        'company_name': company_name,
-                        'people_number': number,
-                        'people_info': people_info,
-                        'first_alert': 1,
-                        'second_alert': 0,
-                        'alert_start_time': 'now()',
-                        'alert_location': '',
-                        'status': 1,
-                        'cancel_info': ''
-                    }
-                    pgsql_db.insert(pgsql_cur, d, 'alert_info')
-                    # TODO 推送第一次公众号消息
-            else:
-                # 判断报警状态是否修改
-                sql = "SELECT status FROM alert_info WHERE car_id={} " \
-                      "ORDER BY id DESC LIMIT 1"
-                result = pgsql_db.get(sql.format(car_id))
-                # 大于5分钟还处于报警中就推送第二次消息
-                if result and result[0] == 1:
-                    # TODO 推送第二次公众号消息
-                    d = {
-                        'id': car_id,
-                        'second_alert': 1,
-                        'alert_second_time': 'now()'
-                    }
-                    pgsql_db.update(pgsql_cur, d, 'alert_info')
-                # 大于5分钟直接删除Key
-                rds_conn.srem(RedisKey.ACC_CLOSE, dev_name)
+                # 取出滞留人员
+                fids = rds_conn.smembers(RedisKey.STUDENT_SET)
+                fids = ','.join(list(fids))
+                sql = "SELECT STU.nickname,SHL.school_name,STU.grade_id," \
+                      "STU.class_id,STU.mobile_1,STU.mobile_2 FROM " \
+                      "face F INNER JOIN student STU ON STU.id=F.stu_id " \
+                      "INNER JOIN school SHL ON SHL.id=STU.school_id " \
+                      "WHERE F.id in ({})".format(','.join(fids))
+                results = pgsql_db.query(sql.format(fids))
+                infos = []
+                for row in results:
+                    info = defaultdict()
+                    info['nickname'] = row[0]
+                    info['school_name'] = row[1]
+                    info['grade_name'] = grade[row[2]]
+                    info['class_name'] = classes[row[3]]
+                    info['mobile_1'] = row[4]
+                    info['mobile_2'] = row[5]
+                    infos.append(info)
+                people_info = ""
+                for info in infos:
+                    people_info += '{},{},{},{},{}|'.format(
+                        info['nickname'], info['school_name'],
+                        info['grade_name'], info['class_name'],
+                        info['mobile_1'], info['mobile_2'])
+                d = {
+                    'car_id': car_id,
+                    'license_plate_number': license_plate_number,
+                    'worker_id_1': worker_id_1,
+                    'worker_name_1': worker_name_1,
+                    'worker_id_2': worker_id_2,
+                    'worker_name_2': worker_name_2,
+                    'company_name': company_name,
+                    'people_number': number,
+                    'people_info': people_info,
+                    'first_alert': 1,
+                    'second_alert': 0,
+                    'alert_start_time': 'now()',
+                    'alert_location': '',
+                    'status': 1         # 正在报警
+                }
+                pgsql_db.insert(pgsql_cur, d, 'alert_info')
+                # TODO 推送第一次公众号消息
+        else:
+            # 判断报警状态是否修改
+            sql = "SELECT status FROM alert_info WHERE car_id={} " \
+                  "ORDER BY id DESC LIMIT 1"
+            result = pgsql_db.get(sql.format(car_id))
+            # 大于5分钟还处于报警中就推送第二次消息
+            if result and result[0] == 1:
+                # TODO 推送第二次公众号消息
+                d = {
+                    'id': car_id,
+                    'second_alert': 1,
+                    'alert_second_time': 'now()'
+                }
+                pgsql_db.update(pgsql_cur, d, 'alert_info')
+            # 大于5分钟直接删除Key
+            rds_conn.hdel(RedisKey.ACC_CLOSE, dev_name)
+            rds_conn.delete(RedisKey.STUDENT_SET.format(dev_name))
+
+
+class RefreshWxAccessToken(object):
+    """刷新微信token"""
+
+    def refresh_wechat_token(self):
+        """"""
+        pass
 
 
 class GenerateFeature(object):
@@ -420,8 +429,8 @@ class EveryHoursExecute(object):
         # 周报警数量
         alert_sql = \
             "SELECT COUNT(id) FROM alert_info WHERE alert_start_time > " \
-            "to_date('{}', '%Y-%m-%d') and alert_start_time < " \
-            "to_date('{}', '%Y-%m-%d')"
+            "TO_DATE('{}', '%Y-%m-%d') and alert_start_time < " \
+            "TO_DATE('{}', '%Y-%m-%d')"
         this_week_alert_number = sql_db.get(alert_sql.format(
             this_week_start_str, this_week_end_str))
         last_week_alert_number = sql_db.get(alert_sql.format(
