@@ -182,6 +182,7 @@ class StudentBusiness(object):
                     'stu_id': stu[0]
                 }
                 pgsql_db.insert(pgsql_cur, face_d, 'face')
+        rds_conn.delete('batch_add_student')
 
     @transaction(is_commit=True)
     def batch_add_worker(self, pgsql_cur, data):
@@ -225,6 +226,7 @@ class StudentBusiness(object):
                 pgsql_db.insert(pgsql_cur, d, 'worker')
                 producer.worker_update(worker.id, car_id, nickname,
                                        duty_id, duty[duty_id])
+        rds_conn.delete('batch_add_worker')
 
     @transaction(is_commit=True)
     def batch_add_car(self, pgsql_cur, data):
@@ -249,15 +251,17 @@ class StudentBusiness(object):
                 }
                 pgsql_db.update(pgsql_cur, d, 'car')
             else:
+
                 d = {
                     'code': datetime.now().strftime('%Y%m%d%H%M%S%f'),
                     'license_plate_number': license_plate_number,
                     'capacity': capacity,
                     'device_iid': '',
-                    'worker_str': '',
-                    'company_name': company_name
+                    'company_name': company_name,
+                    'status': 1
                 }
                 pgsql_db.insert(pgsql_cur, d, 'car')
+        rds_conn.delete('batch_add_car')
 
     @transaction(is_commit=True)
     def batch_add_school(self, pgsql_cur, data):
@@ -272,6 +276,7 @@ class StudentBusiness(object):
                     'school_name': school_name
                 }
                 pgsql_db.insert(pgsql_cur, d, 'school')
+        rds_conn.delete('batch_add_school')
 
 
 class DeviceConsumer(object):

@@ -547,7 +547,7 @@ class AcsManager(object):
         result = pgsql_db.get(pgsql_cur, sql.format(dev_name))
         return result[0], result[1]
 
-    def device_cur_timestamp(self, dev_name, dev_time, cnt):
+    def device_cur_timestamp(self, dev_name, dev_time, cnt, gps):
         """设备初始化完成之后才能写入时间戳"""
         rds_conn = db.rds_conn
         cur_status = rds_conn.hget(RedisKey.DEVICE_CUR_STATUS, dev_name)
@@ -562,6 +562,7 @@ class AcsManager(object):
 
             rds_conn.hset(RedisKey.DEVICE_CUR_TIMESTAMP, dev_name, dev_time)
             rds_conn.hset(RedisKey.DEVICE_CUR_PEOPLE_NUMBER, cnt)
+            rds_conn.hset(RedisKey.DEVICE_CUR_GPS, dev_name, gps)
 
     @db.transaction(is_commit=True)
     def save_imei(self, pgsql_cur, device_name, imei):

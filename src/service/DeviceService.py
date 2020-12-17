@@ -58,6 +58,9 @@ class DeviceService(object):
                 is_online = u"离线"
             elif cur_timestamp - int(device_timestamp) < 30:
                 is_online = u"在线"
+
+            device_gps = cache.hget(
+                defines.RedisKey.DEVICE_CUR_GPS, row.device_name)
             data.append({
                 'id': row.id,
                 'device_name': row.device_name,
@@ -69,7 +72,9 @@ class DeviceService(object):
                 'sound_volume': row.sound_volume,
                 'device_type': row.device_type,
                 'mac': row.mac,
-                'is_online': is_online
+                'is_online': is_online,
+                'device_timestamp': device_timestamp,
+                'gps': device_gps
             })
         return {'results': data, 'count': count}
 
@@ -80,16 +85,16 @@ class DeviceService(object):
         设备ID 关联车辆  设备音量
         """
         device = db.session.query(Device).filter(
-            Device.pk == pk).first()
+            Device.id == pk).first()
         if not device:
             return -1
 
-        if device.status == 5 and device_type:
+        if (device.status == 5 and device_type) or (device.device_type):
             return -11  # 初始化已完成,不能再修改设备类型
 
         if license_plate_number:
             cnt = db.session.query(Device).filter(
-                Device.pk != pk,
+                Device.id != pk,
                 Device.license_plate_number == license_plate_number).count()
             if cnt:
                 return -10  # 车牌已经存在

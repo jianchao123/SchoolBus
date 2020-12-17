@@ -22,7 +22,7 @@ class SchoolService(object):
             query = query.filter(School.school_name.like(query_str))
 
         count = query.count()
-        results = query.offset(offset).limit(size).all()
+        results = query.order_by(School.id.desc()).offset(offset).limit(size).all()
 
         data = []
         for row in results:
@@ -60,7 +60,7 @@ class SchoolService(object):
         """
         db.session.commit()
         school = db.session.query(School).filter(
-            School.pk == pk).first()
+            School.id == pk).first()
         if not school:
             return -1
 

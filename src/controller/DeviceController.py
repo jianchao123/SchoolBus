@@ -153,6 +153,9 @@ def device_update(user_id, data, pk):
             license_plate_number:
               type: integer
               description: 车牌号
+            device_type:
+              type: integer
+              description: 设备类型 1刷脸 2生成特征值
     responses:
       200:
         description: 正常返回http code 200
@@ -177,7 +180,7 @@ def device_update(user_id, data, pk):
     license_plate_number = data.get('license_plate_number', None)
     device_type = data.get('device_type', None)
 
-    if device_type not in [1, 2]:
+    if device_type and int(device_type) not in [1, 2]:
         raise AppError(*GlobalErrorCode.PARAM_ERROR)
 
     ret = DeviceService.device_update(

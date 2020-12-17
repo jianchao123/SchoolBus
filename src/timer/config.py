@@ -44,6 +44,14 @@ if env == "TEST":
     BAIDU_API_KEY = 'e8ZnYfnzvlptbcxdAYcYtTVI'
     BAIDU_SECRET_KEY = 'l8bkk6odc03fXgnLDxrYQuRwe62yFsQ2'
 
+    # 微信公众号
+    MP_ID = 'gh_949a03d359ca'
+    MP_APP_ID = 'wxfe59baf99b8ff1d4'
+    MP_APP_SECRET = 'bf3e50ed4b549fc007d5ad39634cdc4d'
+    MP_TOKEN = 'gK9gY3cV2bM6pH9gF7vJ5uC8vN9cI0cL'
+    MP_ENCODING_AES_KEY = 'CAmGrrm1rJ0HqgcbIBQbhKAHLUKGGbv3RJTTFnixTaC'
+
+
 elif env == "PRO":
     # 物联网
     Productkey = ''
@@ -81,6 +89,14 @@ elif env == "PRO":
     BAIDU_API_KEY = 'e8ZnYfnzvlptbcxdAYcYtTVI'
     BAIDU_SECRET_KEY = 'l8bkk6odc03fXgnLDxrYQuRwe62yFsQ2'
 
+    # 微信公众号
+    MP_ID = 'gh_949a03d359ca'
+    MP_APP_ID = 'wxfe59baf99b8ff1d4'
+    MP_APP_SECRET = 'bf3e50ed4b549fc007d5ad39634cdc4d'
+    MP_TOKEN = 'gK9gY3cV2bM6pH9gF7vJ5uC8vN9cI0cL'
+    MP_ENCODING_AES_KEY = 'CAmGrrm1rJ0HqgcbIBQbhKAHLUKGGbv3RJTTFnixTaC'
+
+
 else:
     # 物联网
     Productkey = 'a1vperyb2Cg'
@@ -117,6 +133,13 @@ else:
     BAIDU_APP_ID = '23117459'
     BAIDU_API_KEY = 'e8ZnYfnzvlptbcxdAYcYtTVI'
     BAIDU_SECRET_KEY = 'l8bkk6odc03fXgnLDxrYQuRwe62yFsQ2'
+
+    # 微信公众号
+    MP_ID = 'gh_949a03d359ca'
+    MP_APP_ID = 'wxfe59baf99b8ff1d4'
+    MP_APP_SECRET = 'bf3e50ed4b549fc007d5ad39634cdc4d'
+    MP_TOKEN = 'gK9gY3cV2bM6pH9gF7vJ5uC8vN9cI0cL'
+    MP_ENCODING_AES_KEY = 'CAmGrrm1rJ0HqgcbIBQbhKAHLUKGGbv3RJTTFnixTaC'
 
 redis_conf = dict(host="127.0.0.1", port=6379, db=0, decode_responses=True)
 pgsql_conf = dict(host=pgsql_host, database=pgsql_db, port=pgsql_port,

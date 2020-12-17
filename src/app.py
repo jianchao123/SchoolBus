@@ -74,7 +74,6 @@ def create_app():
     # app.register_blueprint(school_bp, url_prefix='/school')
     # app.register_blueprint(student_bp, url_prefix='/student')
     # app.register_blueprint(worker_bp, url_prefix='/worker')
-
     return app
 
 

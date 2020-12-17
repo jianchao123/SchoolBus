@@ -13,7 +13,7 @@ from apscheduler.schedulers.gevent import BlockingScheduler
 
 from timer.RestTimer import GenerateFeature, EveryMinuteExe, \
     FromOssQueryFace, EveryFewMinutesExe, OrderSendMsg, GenerateAAC, \
-    EveryHoursExecute, CheckAccClose
+    EveryHoursExecute, CheckAccClose, RefreshWxAccessToken
 
 if __name__ == "__main__":
     generate_feature = GenerateFeature()
@@ -24,6 +24,7 @@ if __name__ == "__main__":
     order_send_msg = OrderSendMsg()
     generate_aac = GenerateAAC()
     check_acc_close = CheckAccClose()
+    refresh_wx_access_token = RefreshWxAccessToken()
 
     sched = BlockingScheduler()
     # 顺序发送消息
@@ -36,6 +37,9 @@ if __name__ == "__main__":
     sched.add_job(check_acc_close.check_acc_close, 'interval', seconds=11)
     # 上传人脸zip包到oss,将人脸匹配到记录
     sched.add_job(from_oss_query_face.from_oss_get_face, 'interval', seconds=16)
+    # 刷新微信access token
+    sched.add_job(refresh_wx_access_token.refresh_wechat_token,
+                  'interval', seconds=30)
     # 每分钟执行
     sched.add_job(func=every_minute_exe.every_minute_execute,
                   trigger='cron', day="*", hour="*", minute="*")

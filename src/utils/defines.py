@@ -35,6 +35,7 @@ class SubErrorCode(object):
     ORDER_EXPORTING = (200021, u"订单导出中")
 
     STUDENT_ID_CARD_ALREADY_EXISTS = (200030, u"学生身份证号已经存在")
+    STUDENT_NOT_FOUND_PARENTS_MOBILE = (200031, u"找不到家长手机号")
 
     WORKER_EMP_NO_ALREADY_EXISTS = (200040, u"工号已经存在")
 
@@ -92,6 +93,9 @@ class RedisKey(object):
 
     # 微信access_token
     WECHAT_ACCESS_TOKEN = "WECHAT_ACCESS_TOKEN"
+
+    # 设备当前gps
+    DEVICE_CUR_GPS = "DEVICE_CUR_GPS_HASH"
 
 
 grade = [u"TBD", u'小班', u'中班', u'大班', u'学前班', u'一年级', u'二年级', u'三年级',

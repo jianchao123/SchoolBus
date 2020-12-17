@@ -63,7 +63,7 @@ class ReceiveMessage(object):
                         jdata['version'], dev_name, jdata['devtime'])
 
                     acs_manager.device_cur_timestamp(
-                        dev_name, jdata['devtime'], jdata['cnt'])
+                        dev_name, jdata['devtime'], jdata['cnt'], jdata['gps'])
 
             elif cmd == 'devwhitelist2':
                 logger.info(u"人员列表")

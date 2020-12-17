@@ -348,6 +348,11 @@ def student_update(user_id, data, pk):
     license_plate_number = data['license_plate_number']
     oss_url = data['oss_url']
 
+    try:
+        end_time = datetime.strptime(end_time, '%Y-%m-%d %H:%M:%S')
+    except ValueError:
+        raise AppError(*GlobalErrorCode.PARAM_ERROR)
+
     ret = StudentService.student_update(
         pk, stu_no, nickname, gender, parents_1, mobile_1, parents_2,
         mobile_2, address, remarks, school_id, grade_id, class_id,

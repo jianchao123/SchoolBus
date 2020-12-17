@@ -47,6 +47,9 @@ class RedisKey(object):
     # 微信access_token
     WECHAT_ACCESS_TOKEN = "WECHAT_ACCESS_TOKEN"
 
+    # 设备当前gps
+    DEVICE_CUR_GPS = "DEVICE_CUR_GPS_HASH"
+
 
 grade = [u"TBD", u'小班', u'中班', u'大班', u'学前班', u'一年级', u'二年级', u'三年级',
          u'四年级', u'五年级', u'六年级']

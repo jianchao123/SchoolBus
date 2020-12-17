@@ -35,7 +35,7 @@ class CarService(object):
             car_ids = [row.car_id for row in results]
             query = query.filter(Car.id.in_(car_ids))
         count = query.count()
-        results = query.offset(offset).limit(size).all()
+        results = query.order_by(Car.id.desc()).offset(offset).limit(size).all()
 
         now = int(time.time())
         data = []
@@ -107,12 +107,12 @@ class CarService(object):
 
         """
         car = db.session.query(Car).filter(
-            Car.pk == pk).first()
+            Car.id == pk).first()
         if not car:
             return -1
         if license_plate_number:
             cnt = db.session.query(Car).filter(
-                Car.pk != pk,
+                Car.id != pk,
                 Car.license_plate_number == license_plate_number).count()
             if cnt:
                 return -10  # 车牌已经存在
@@ -207,8 +207,9 @@ class CarService(object):
         car_list = []
         for index in range(1, table.nrows):
             row_data = table.row_values(index)
+            print row_data[1], type(row_data[1])
             license_plate_number = str(row_data[0]).strip()
-            capacity = str(row_data[1]).strip()
+            capacity = str(int(row_data[1])).strip()
             company_name = str(row_data[2]).strip()
 
             l = [license_plate_number, capacity, company_name]

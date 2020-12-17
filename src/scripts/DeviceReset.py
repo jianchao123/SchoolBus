@@ -71,7 +71,7 @@ class Test(object):
 
     def reset(self):
         d = {"cmd": "reset000"}
-        self.pub_msg('dev_53', d)
+        self.pub_msg('dev_54', d)
 
     @db.transaction(is_commit=True)
     def init_all_people(self):
@@ -195,7 +195,7 @@ class Test(object):
 if __name__ == '__main__':
     t = Test(config.Productkey, config.MNSAccessKeyId,
         config.MNSAccessKeySecret)
-    t.testest()
+    t.reset()
     # import struct
     #
     # fid_dict = {}
