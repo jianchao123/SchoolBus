@@ -55,6 +55,11 @@ class WorkerService(object):
             Car.license_plate_number == license_plate_number).first()
         if not car:
             return -11  # 车辆未找到
+        # 该车辆是否已经有该职务的工作人员
+        cnt = db.session.query(Worker).filter(
+            Worker.car_id == car.id, Worker.duty_id == duty_id).count()
+        if cnt:
+            return -12  # 该车辆已有该职务工作人员
 
         worker = Worker()
         worker.emp_no = emp_no
@@ -68,13 +73,16 @@ class WorkerService(object):
         worker.car_id = car.id
         worker.license_plate_number = license_plate_number
         worker.status = 1   # 有效
-        producer.worker_insert(
-            worker.id, worker.car_id, worker.nickname, worker.duty_id,
-            defines.duty[worker.duty_id])
+
         try:
             db.session.add(worker)
+            db.session.flush()
             new_id = worker.id
+            producer.worker_insert(new_id, worker.car_id,
+                                   worker.nickname, worker.duty_id,
+                                   defines.duty[worker.duty_id])
             db.session.commit()
+
             return {'id': new_id}
         except SQLAlchemyError:
             db.session.rollback()
@@ -87,12 +95,12 @@ class WorkerService(object):
                       company_name, department_name, duty_id,
                       license_plate_number):
         worker = db.session.query(Worker).filter(
-            Worker.pk == pk).first()
+            Worker.id == pk).first()
         if not worker:
             return -1
         if emp_no:
             cnt = db.session.query(Worker).filter(
-                Worker.pk != pk, Worker.emp_no == emp_no).count()
+                Worker.id != pk, Worker.emp_no == emp_no).count()
             if cnt:
                 return -10  # 工号已经存在
         if nickname:
@@ -108,6 +116,9 @@ class WorkerService(object):
         if department_name:
             worker.department_name = department_name
         if duty_id:
+            # 查询工作人员是否绑定车辆，如果绑定就不能修改职务,需要先解绑
+            if worker.car_id and worker.duty_id != duty_id:
+                return -12
             worker.duty_id = duty_id
         if license_plate_number:
             car = db.session.query(Car).filter(
@@ -143,9 +154,18 @@ class WorkerService(object):
             return {"c": 1, "msg": u"excel数据最大10000条"}
 
         emp_no_list = []
-        results = db.session.query(Worker).filter(Worker.status == 1).all()
+        car_duty_d = {}
+        results = db.session.query(Worker, Car).join(
+            Car, Car.id == Worker.car_id).filter(Worker.status == 1).all()
         for row in results:
-            emp_no_list.append(row.emp_no)
+            worker = row[0]
+            car = row[1]
+            emp_no_list.append(worker.emp_no)
+            if car.license_plate_number in car_duty_d:
+                duty_id_list = car_duty_d[car.license_plate_number]
+                duty_id_list.append(worker.duty_id)
+            else:
+                car_duty_d[car.license_plate_number] = [worker.duty_id]
 
         # 查询所有车辆
         car_dict = {}
@@ -205,10 +225,21 @@ class WorkerService(object):
             if duty_name not in defines.duty:
                 err_str += u"职务只有驾驶员和照管员"
                 is_err = 1
-            if license_plate_number not in car_dict:
+            if license_plate_number.decode('utf8') not in car_dict:
                 err_str += u"未知的车牌"
                 is_err = 1
-
+            print car_duty_d
+            print license_plate_number.decode('utf8')
+            print license_plate_number
+            print license_plate_number.decode('utf8') in car_duty_d
+            print license_plate_number in car_duty_d
+            if license_plate_number.decode('utf8') in car_duty_d:
+                duty_id_list = car_duty_d[license_plate_number.decode('utf8')]
+                print defines.duty
+                print duty_name.decode('utf8')
+                if defines.duty.index(duty_name.decode('utf8')) in duty_id_list:
+                    err_str += u"该车辆{}工作人员{}重复".format(license_plate_number, emp_no)
+                    is_err = 1
             # 检查重复
             if emp_no in emp_no_list:
                 err_str += u"工号{}重复".format(emp_no)
@@ -243,9 +274,11 @@ class WorkerService(object):
             duty_name = str(row_data[7]).strip()
             license_plate_number = str(row_data[8]).strip()
 
-            l = [emp_no, nickname, defines.gender.index(gender_name),
+            l = [emp_no, nickname,
+                 defines.gender.index(gender_name.decode('utf8')),
                  mobile, remarks, company_name, department_name,
-                 defines.duty.index(duty_name), car_dict[license_plate_number],
+                 defines.duty.index(duty_name.decode('utf8')),
+                 car_dict[license_plate_number.decode('utf8')],
                  license_plate_number]
             worker_list.append(l)
         # 发送消息

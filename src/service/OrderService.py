@@ -93,7 +93,8 @@ class OrderService(object):
             new_id = et.id
             db.session.commit()
             export_order_excel_msg(school_id, car_id, order_type,
-                                   start_date, end_date, new_id)
+                                   start_date.strftime('%Y-%m-%d'),
+                                   end_date.strftime('%Y-%m-%d'), new_id)
             return new_id
         except SQLAlchemyError:
             db.session.rollback()

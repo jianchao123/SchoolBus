@@ -146,7 +146,7 @@ def alert_info_list(user_id, data):
         second_alert, page, size)
 
 
-@bp.route('/export', methods=['GET'])
+@bp.route('/export', methods=['POST'])
 @post_require_check_with_user([])
 def alert_info_export(user_id, data):
     """
@@ -178,6 +178,9 @@ def alert_info_export(user_id, data):
             end_date:
               type: string
               description: 结束日期
+            status:
+              type: integer
+              description: 1 正在报警 2已解除
     responses:
       200:
         description: 正常返回http code 200

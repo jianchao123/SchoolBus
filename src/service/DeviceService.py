@@ -8,6 +8,7 @@ from database.Device import Device
 from database.DeviceFaceInfo import DeviceFaceInfo
 from database.Student import Student
 from database.Face import Face
+from database.Car import Car
 from utils import defines
 from msgqueue import producer
 from ext import cache
@@ -89,28 +90,37 @@ class DeviceService(object):
         if not device:
             return -1
 
-        if (device.status == 5 and device_type) or (device.device_type):
-            return -11  # 初始化已完成,不能再修改设备类型
-
         if license_plate_number:
-            cnt = db.session.query(Device).filter(
-                Device.id != pk,
-                Device.license_plate_number == license_plate_number).count()
-            if cnt:
-                return -10  # 车牌已经存在
+            # 这里只能修改设备上的车牌,需要先在车辆修改车牌
+            cnt = db.session.query(Car).filter(
+                Car.license_plate_number == license_plate_number).count()
+            if not cnt:
+                return -10  # 车牌找不到
 
-        if car_id:
-            device.car_id = car_id
-            device.status = 2   # 已关联车辆
         if sound_volume:
             device.sound_volume = sound_volume
             producer.update_chepai(device.device_name,
                                    device.license_plate_number,
                                    device.sound_volume)
+
         if device_type:
-            device.device_type = device_type
-            # 将设备名字存入缓存
-            cache.sadd(defines.RedisKey.GENERATE_DEVICE_NAMES, device.device_name)
+            # 当前已创建虚拟设备
+            if device.status == 1:
+                device.device_type = device_type
+                # 如果设备是生成特征值
+                if device.device_type == 2:
+                    # 将设备名字存入缓存
+                    cache.sadd(defines.RedisKey.GENERATE_DEVICE_NAMES,
+                               device.device_name)
+            else:
+                if device.device_type != device_type:
+                    return -11  # 初始化已完成,不能再修改设备类型
+
+        if car_id:
+            device.car_id = car_id
+            # 如果用户关联设备和车辆,判断状态是否为1,为1就修改到2
+            if device.status == 1:
+                device.status = 2
 
         try:
             d = {'id': device.id}

@@ -404,6 +404,7 @@ class AcsManager(object):
                 request.set_DeviceName(dev_name)
                 response = self.client.do_action_with_exception(request)
                 response = json.loads(response)
+                print response
                 if not response['Success']:
                     return None
                 # 添加记录
@@ -491,9 +492,10 @@ class AcsManager(object):
               "license_plate_number,device_type" \
               " FROM device WHERE device_name='{}' LIMIT 1"
         device = pgsql_db.get(pgsql_cur, sql.format(device_name))
+        print device
         return device[0], device[1], device[2], device[3], device[4], device[5]
 
-    def init_device_params(self, cur_version, device_name, dev_time):
+    def init_device_params(self, cur_version, device_name, dev_time, shd_devid):
         """
         初始化设备参数
         """
@@ -503,9 +505,12 @@ class AcsManager(object):
 
             device_status = rds_conn.hget(
                 RedisKey.DEVICE_CUR_STATUS, device_name)
+            # 如果没有找到这个设备直接消费掉消息
+            if not device_status:
+                return -10
             # 5表示已初始化人员
             if device_status and int(device_status) == 5:
-                return
+                return 0
             pk, status, version_no, sound_volume, license_plate_number, \
                 device_type = self._get_device_info_data(device_name)
 
@@ -515,6 +520,8 @@ class AcsManager(object):
                 workmode = 3
             elif device_type == 1:
                 workmode = 0
+            print "---------------------"
+            print status, type(status)
             d = {}
             # 已关联车辆
             if status == 2:
@@ -530,11 +537,15 @@ class AcsManager(object):
                 rds_conn.hset(RedisKey.DEVICE_CUR_STATUS, device_name, 4)
             elif status == 4:       # 设置oss信息
                 d['status'] = 5     # 初始人员
+                d['device_iid'] = shd_devid
                 print u"初始化人员"
-                rds_conn.hset(RedisKey.DEVICE_CUR_STATUS, device_name, 5)
-                AcsManager._init_people([], device_name)
-                rds_conn.hset(RedisKey.DEVICE_CUR_STATUS, device_name, 5)
-
+                try:
+                    rds_conn.hset(RedisKey.DEVICE_CUR_STATUS, device_name, 5)
+                    self._init_people([], device_name)
+                    rds_conn.hset(RedisKey.DEVICE_CUR_STATUS, device_name, 5)
+                except:
+                    import traceback
+                    print traceback.format_exc()
             if d:
                 d['id'] = pk
                 self._update_device(d)
@@ -551,7 +562,7 @@ class AcsManager(object):
         """设备初始化完成之后才能写入时间戳"""
         rds_conn = db.rds_conn
         cur_status = rds_conn.hget(RedisKey.DEVICE_CUR_STATUS, dev_name)
-        if cur_status and cur_status == 6:
+        if cur_status and cur_status == 5:
             # 判断设备是否刚开机
             old_timestamp = rds_conn.hget(
                 RedisKey.DEVICE_CUR_TIMESTAMP, dev_name)

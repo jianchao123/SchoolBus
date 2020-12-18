@@ -59,6 +59,7 @@ class InsertUpdateBusiness(object):
     def car_field_update(self, pgsql_cur, data):
         from collections import defaultdict
         pgsql_db = PgsqlDbUtil
+        print data
         worker_id = data['worker_id']
         car_id = data['car_id']
         nickname = data['nickname']
@@ -74,6 +75,7 @@ class InsertUpdateBusiness(object):
             d['worker_2_id'] = worker_id
             d['worker_2_nickname'] = nickname
             d['worker_2_duty_name'] = duty_name
+        print d
         pgsql_db.update(pgsql_cur, d, 'car')
 
     @transaction(is_commit=True)
@@ -85,6 +87,7 @@ class InsertUpdateBusiness(object):
             'id': stu_id,
             'license_plate_number': license_plate_number
         }
+        print d
         pgsql_db.update(pgsql_cur, d, 'student')
 
 
@@ -204,6 +207,10 @@ class StudentBusiness(object):
             license_plate_number = row[9]
 
             worker = pgsql_db.get(pgsql_cur, worker_sql.format(emp_no))
+            if emp_no.isdigit():
+                emp_no = str(int(float(emp_no)))
+            if mobile.isdigit():
+                mobile = str(int(float(mobile)))
             d = {
                 'emp_no': emp_no,
                 'nickname': nickname,
@@ -214,17 +221,21 @@ class StudentBusiness(object):
                 'department_name': department_name,
                 'duty_id': duty_id,
                 'car_id': car_id,
-                'license_plate_number': license_plate_number
+                'license_plate_number': license_plate_number,
+                'status': 1
             }
 
             if worker:
                 d['id'] = worker[0]
                 pgsql_db.update(pgsql_cur, d, 'worker')
-                producer.worker_insert(worker.id, car_id, nickname,
+                producer.worker_update(worker.id, car_id, nickname,
                                        duty_id, duty[duty_id])
             else:
                 pgsql_db.insert(pgsql_cur, d, 'worker')
-                producer.worker_update(worker.id, car_id, nickname,
+                # 查询
+                new_worker = pgsql_db.get(pgsql_cur, worker_sql.format(emp_no))
+                print new_worker
+                producer.worker_insert(new_worker[0], car_id, nickname,
                                        duty_id, duty[duty_id])
         rds_conn.delete('batch_add_worker')
 

@@ -66,11 +66,9 @@ def authorize_str(args):
               properties:
                 oss:
                   properties:
-                    id:
+                    url:
                       type: string
-                      description: KEY
-
-
+                      description: 授权url
     """
     menu_name = args['menu_name']
     s = "https://open.weixin.qq.com/connect/oauth2/authorize?appid={}" \

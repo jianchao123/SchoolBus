@@ -16,6 +16,6 @@ class Device(db.Model):
     imei = db.Column(db.String(32))
     car_id = db.Column(db.Integer)      # 车辆id
     license_plate_number = db.Column(db.String(16))
-    status = db.Column(db.Integer)      # 1已创建虚拟设备 2已关联车辆 3已设置工作模式 4已设置oss信息 5已初始化人员
+    status = db.Column(db.Integer)      # 1已创建虚拟设备 2已关联车辆 3已设置工作模式 4已设置oss信息 5已初始化人员 10删除
     sound_volume = db.Column(db.Integer)
     device_type = db.Column(db.Integer)  # 1刷脸 2生成特征值

@@ -119,7 +119,7 @@ def order_list(user_id, data):
                                    start_date, end_date, page, size)
 
 
-@bp.route('/export', methods=['GET'])
+@bp.route('/export', methods=['POST'])
 @post_require_check_with_user([])
 def order_export(user_id, data):
     """

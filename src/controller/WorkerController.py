@@ -96,7 +96,7 @@ def worker_list(user_id, data):
 
 
 @bp.route('/add', methods=['POST'])
-@post_require_check_with_user(['stu_no', 'nickname'])
+@post_require_check_with_user([])
 def worker_add(user_id, data):
     """
     添加工作人员
@@ -180,6 +180,8 @@ def worker_add(user_id, data):
         raise AppError(*SubErrorCode.WORKER_EMP_NO_ALREADY_EXISTS)
     if ret == -11:
         raise AppError(*SubErrorCode.CAR_NOT_FOUND)
+    if ret == -12:
+        raise AppError(*SubErrorCode.WORKER_ALREADY_EXISTS_DUTY)
     return ret
 
 
@@ -270,6 +272,8 @@ def worker_update(user_id, data, pk):
         raise AppError(*SubErrorCode.WORKER_EMP_NO_ALREADY_EXISTS)
     if ret == -11:
         raise AppError(*SubErrorCode.CAR_NOT_FOUND)
+    if ret == -12:
+        raise AppError(*SubErrorCode.WORKER_NO_CHANGE_DUTY)
     return ret
 
 

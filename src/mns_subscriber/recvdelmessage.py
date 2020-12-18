@@ -6,11 +6,11 @@ sys.setdefaultencoding('utf8')
 
 import json
 import base64
-from mns.queue import *
 from mns.account import Account
 from AcsManager import AcsManager
 import config
 from utils import get_logger
+from define import RedisKey
 
 
 class ReceiveMessage(object):
@@ -46,7 +46,8 @@ class ReceiveMessage(object):
         #         acs_manager.device_close(jdata['deviceName'], jdata['lastTime'])
 
         acs_manager.check_cur_stream_no(dev_name, jdata)
-        print jdata
+        print json.dumps(jdata)
+
         if 'cmd' in jdata:
             cmd = jdata['cmd']
             if cmd == 'syndata':
@@ -58,12 +59,17 @@ class ReceiveMessage(object):
                 else:
                     acs_manager.check_version(
                         dev_name, jdata['version'], jdata['devtime'])
+                    print jdata['version'], type(jdata['version'])
+                    if jdata['version'] == RedisKey.APPOINT_VERSION_NO:
 
-                    acs_manager.init_device_params(
-                        jdata['version'], dev_name, jdata['devtime'])
-
-                    acs_manager.device_cur_timestamp(
-                        dev_name, jdata['devtime'], jdata['cnt'], jdata['gps'])
+                        ret = acs_manager.init_device_params(
+                            jdata['version'], dev_name, jdata['devtime'],
+                            jdata['shd_devid'])
+                        # 非0直接跳过
+                        if not ret:
+                            acs_manager.device_cur_timestamp(
+                                dev_name, jdata['devtime'], jdata['cnt'],
+                                jdata['gps'])
 
             elif cmd == 'devwhitelist2':
                 logger.info(u"人员列表")
@@ -139,10 +145,10 @@ class ReceiveMessage(object):
                 # import traceback
                 # print traceback.format_exc()
                 logger.error(e.message)
-                if e.type == u"QueueNotExist":
+                if hasattr(e, 'type') and e.type == u"QueueNotExist":
                     print("Queue not exist!")
                     sys.exit(0)
-                elif e.type == u"MessageNotExist":
+                elif  hasattr(e, 'type') and e.type == u"MessageNotExist":
                     print("Queue is empty")
 
 

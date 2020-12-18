@@ -28,8 +28,8 @@ class Test(object):
         topic = '/' + self.product_key + '/' + devname + '/user/get'
         print topic
         request.set_TopicFullName(topic)
-
         message = json.dumps(jdata, encoding="utf-8")
+        print message
         message = base64.b64encode(message)
         request.set_MessageContent(message)
         request.set_ProductKey(self.product_key)
@@ -71,7 +71,7 @@ class Test(object):
 
     def reset(self):
         d = {"cmd": "reset000"}
-        self.pub_msg('dev_54', d)
+        self.pub_msg('dev_40', d)
 
     @db.transaction(is_commit=True)
     def init_all_people(self):
@@ -167,35 +167,48 @@ class Test(object):
         jdata = {
             "cmd": "syntime",
             "time": int(time.time()),
-            "chepai": '',
-            "workmode": 0,
-            "delayoff": 1,
-            "leftdetect": 1,
+            "chepai": "test",
+            "workmode": 3,
+            "delayoff": 10,
+            "leftdetect": 5,
             "jiange": 10,
             "cleartime": 2628000,
-            "shxmode": 1,
-            "volume": 6,
+            "shxmode": 0,
+            "volume": -20,
             "facesize": 390,
             "uploadtype": 1,
             "natstatus": 0,
             "timezone": 8,
             "temperature": 0,
-            "lcd_rotation": 0,
             "noreg": 1,
             "light_type": 0
         }
-        self.pub_msg("dev_77", jdata)
+        self.pub_msg("dev_55", jdata)
 
     def testest(self):
         start = time.time()
         rds = db.rds_conn
         print len(list(rds.sinter('test', 'test1')))
 
+    def set_oss(self):
+        OSSDomain = 'https://cdbus-dev.oss-cn-shanghai.aliyuncs.com'
+        OSSAccessKeyId = 'LTAIWE5CGeOiozf7'
+        OSSAccessKeySecret = 'IGuoRIxwMlPQqJ9ujWyTvSq2em4RDj'
+        jdata = {
+            "cmd": "ossinfo",
+            "ossdomain": OSSDomain,
+            "osskeyid": OSSAccessKeyId,
+            "osskeysecret": OSSAccessKeySecret[12:] + OSSAccessKeySecret[:12]
+        }
+        self.pub_msg("dev_55", jdata)
+
 
 if __name__ == '__main__':
     t = Test(config.Productkey, config.MNSAccessKeyId,
-        config.MNSAccessKeySecret)
+             config.MNSAccessKeySecret)
+    #t.ddddddddd()
     t.reset()
+
     # import struct
     #
     # fid_dict = {}

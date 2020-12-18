@@ -190,7 +190,7 @@ def device_update(user_id, data, pk):
     if ret == -2:
         raise AppError(*GlobalErrorCode.DB_COMMIT_ERR)
     if ret == -10:
-        raise AppError(*SubErrorCode.CAR_CHEPAI_ALREADY_EXISTS)
+        raise AppError(*SubErrorCode.DEVICE_CHEPAI_NOT_FOUND)
     if ret == -11:
         raise AppError(*SubErrorCode.DEVICE_INITED_NOT_CHANGE)
     return ret

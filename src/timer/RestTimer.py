@@ -260,12 +260,14 @@ class EveryMinuteExe(object):
             format(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         print datetime.now()
         mysql_db = db.PgsqlDbUtil
+        rds_conn = db.rds_conn
 
+        cur_date = datetime.now().strftime('%Y-%m-%d')
         # 过期人脸更新状态
-        expire_sql = """SELECT F.id FROM user_profile AS UP 
-        INNER JOIN face AS F ON F.user_id=UP.id 
-        WHERE UP.deadline < {} """
-        results = mysql_db.query(pgsql_cur, expire_sql.format(time.time()))
+        expire_sql = """SELECT F.id FROM student AS STU 
+        INNER JOIN face AS F ON F.stu_id=STU.id 
+        WHERE STU.end_time < TO_DATE('{}', 'yyyy-MM-dd') """
+        results = mysql_db.query(pgsql_cur, expire_sql.format(cur_date))
         for row in results:
             face_id = row[0]
             d = {
@@ -273,6 +275,36 @@ class EveryMinuteExe(object):
                 'status': 2  # 过期
             }
             mysql_db.update(pgsql_cur, d, table_name='face')
+
+        # 从redis删除没有的设备名字
+        sql = "SELECT device_name FROM device WHERE status != 10"
+        results = mysql_db.query(pgsql_cur, sql)
+        device_names = []
+        for row in results:
+            device_names.append(row[0])
+        devices = rds_conn.hgetall(RedisKey.DEVICE_CUR_GPS)
+        print devices
+        for k, v in devices.items():
+            if k not in device_names:
+                rds_conn.hdel(RedisKey.DEVICE_CUR_GPS, k)
+
+        devices = rds_conn.hgetall(RedisKey.DEVICE_CUR_TIMESTAMP)
+        print devices
+        for k, v in devices.items():
+            if k not in device_names:
+                rds_conn.hdel(RedisKey.DEVICE_CUR_TIMESTAMP, k)
+
+        devices = rds_conn.hgetall(RedisKey.DEVICE_CUR_PEOPLE_NUMBER)
+        print devices
+        for k, v in devices.items():
+            if k not in device_names:
+                rds_conn.hdel(RedisKey.DEVICE_CUR_PEOPLE_NUMBER, k)
+
+        devices = rds_conn.hgetall(RedisKey.DEVICE_CUR_STATUS)
+        print devices
+        for k, v in devices.items():
+            if k not in device_names:
+                rds_conn.hdel(RedisKey.DEVICE_CUR_STATUS, k)
 
         # msgqueue的心跳包
         try:
@@ -304,7 +336,8 @@ class FromOssQueryFace(object):
         rds_conn = db.rds_conn
 
         # 最近是否上传人脸zip
-        if start - int(rds_conn.get(RedisKey.UPLOAD_ZIP_TIMESTAMP)) > 600:
+        upload_timestamp = rds_conn.get(RedisKey.UPLOAD_ZIP_TIMESTAMP)
+        if upload_timestamp and (start - int(upload_timestamp) > 600):
             return
 
         sql = "SELECT F.id,F.stu_no FROM face AS F \

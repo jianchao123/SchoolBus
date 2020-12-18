@@ -38,6 +38,8 @@ class SubErrorCode(object):
     STUDENT_NOT_FOUND_PARENTS_MOBILE = (200031, u"找不到家长手机号")
 
     WORKER_EMP_NO_ALREADY_EXISTS = (200040, u"工号已经存在")
+    WORKER_ALREADY_EXISTS_DUTY = (200041, u"该车辆已经存在该职务的工作人员")
+    WORKER_NO_CHANGE_DUTY = (200042, u"工作人员已绑车辆,不能修改职务,需先解绑")
 
     CAR_NOT_FOUND = (200050, u"车辆未找到")
     CAR_CHEPAI_ALREADY_EXISTS = (200051, u"车牌已经存在")
@@ -45,6 +47,7 @@ class SubErrorCode(object):
     SCHOOL_NAME_ALREADY_EXISTS = (200060, u"学校名字已经存在")
 
     DEVICE_INITED_NOT_CHANGE = (200070, u"初始化已完成,不能再修改设备类型")
+    DEVICE_CHEPAI_NOT_FOUND = (200071, u"需要先在车辆列表修改车牌")
 
     TASK_EXECUTING = (200071, u"任务执行中")
 
