@@ -31,7 +31,7 @@ class WxCallbackService(object):
                 row.open_id_2 = open_id
         try:
             db.session.commit()
-            return {}
+            return {'id': 1}
         except SQLAlchemyError:
             import traceback
             print traceback.format_exc()

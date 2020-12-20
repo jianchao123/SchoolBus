@@ -281,6 +281,42 @@ def worker_update(user_id, data, pk):
 @post_require_check_with_user([])
 def worker_delete(user_id, data):
     """
+    删除工作员
+    删除工作员，需要先登录
+    ---
+    tags:
+      - 工作人员
+    parameters:
+      - name: token
+        in: header
+        type: string
+        required: true
+        description: TOKEN
+      - name: body
+        in: body
+        required: true
+        schema:
+          properties:
+            car_ids:
+              type: string
+              description: 工作员id串 例1,2,3,4
+    responses:
+      200:
+        description: 正常返回http code 200
+        schema:
+          properties:
+            msg:
+              type: string
+              description: 错误消息
+            status:
+              type: integer
+              description: 状态
+            data:
+              type: object
+              properties:
+                id:
+                  type: integer
+                  description: 新Id
     """
     worker_ids = data['worker_ids']
     ret = WorkerService.delete_workers(worker_ids)

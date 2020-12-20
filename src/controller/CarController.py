@@ -230,7 +230,7 @@ def car_delete(user_id, data):
     删除车辆，需要先登录
     ---
     tags:
-      - 订单模块
+      - 车辆
     parameters:
       - name: token
         in: header
