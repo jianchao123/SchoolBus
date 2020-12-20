@@ -24,6 +24,7 @@ class WorkerService(object):
                 Worker.emp_no.like(query_str),
                 Worker.nickname.like(query_str)))
 
+        query = query.filter(Worker.status == 1)
         count = query.count()
         results = query.offset(offset).limit(size).all()
 
@@ -46,18 +47,19 @@ class WorkerService(object):
 
     @staticmethod
     def worker_add(emp_no, nickname, gender, mobile, remarks, company_name,
-                   department_name, duty_id, license_plate_number):
+                   department_name, duty_id, car_id):
         worker = db.session.query(Worker).filter(
             Worker.emp_no == emp_no).first()
         if worker:
             return -10  # 工号已经存在
         car = db.session.query(Car).filter(
-            Car.license_plate_number == license_plate_number).first()
+            Car.id == car_id).first()
         if not car:
             return -11  # 车辆未找到
         # 该车辆是否已经有该职务的工作人员
         cnt = db.session.query(Worker).filter(
-            Worker.car_id == car.id, Worker.duty_id == duty_id).count()
+            Worker.car_id == car.id,
+            Worker.duty_id == duty_id).count()
         if cnt:
             return -12  # 该车辆已有该职务工作人员
 
@@ -71,7 +73,7 @@ class WorkerService(object):
         worker.department_name = department_name
         worker.duty_id = duty_id
         worker.car_id = car.id
-        worker.license_plate_number = license_plate_number
+        worker.license_plate_number = car.license_plate_number
         worker.status = 1   # 有效
 
         try:
@@ -93,7 +95,7 @@ class WorkerService(object):
     @staticmethod
     def worker_update(pk, emp_no, nickname, gender, mobile, remarks,
                       company_name, department_name, duty_id,
-                      license_plate_number):
+                      car_id):
         worker = db.session.query(Worker).filter(
             Worker.id == pk).first()
         if not worker:
@@ -120,13 +122,18 @@ class WorkerService(object):
             if worker.car_id and worker.duty_id != duty_id:
                 return -12
             worker.duty_id = duty_id
-        if license_plate_number:
-            car = db.session.query(Car).filter(
-                Car.license_plate_number == license_plate_number).first()
-            if not car:
-                return -11  # 车辆未找到
-            worker.car_id = car.id
-            worker.license_plate_number = license_plate_number
+        if car_id:
+            if car_id == -10:
+                worker.car_id = None
+                worker.license_plate_number = None
+            else:
+                car = db.session.query(Car).filter(
+                    Car.id == car_id).first()
+                if not car:
+                    return -11  # 车辆未找到
+                worker.car_id = car.id
+                worker.license_plate_number = car.license_plate_number
+        # 异步更新车辆里携带的工作人员信息
         if nickname or duty_id:
             producer.worker_update(
                 worker.id, worker.car_id, worker.nickname, worker.duty_id,
@@ -135,6 +142,32 @@ class WorkerService(object):
             d = {'id': worker.id}
             db.session.commit()
             return d
+        except SQLAlchemyError:
+            db.session.rollback()
+            return -2
+        finally:
+            db.session.close()
+
+    @staticmethod
+    def delete_workers(worker_ids):
+        """
+        worker_ids 1,2,3
+        """
+        db.session.commit()
+
+        worker_id_list = worker_ids.split(",")
+        # 1.如果工作人员已经绑定了车辆不能删除该工作人员
+        cnt = db.session.query(Worker).filter(
+            Worker.id.is_(worker_id_list)).filter(
+            Worker.car_id.isnot(None)).count()
+        if cnt:
+            return -10
+
+        try:
+            db.session.query(Worker).filter(
+                Worker.id.in_(worker_id_list)).update({Worker.status: 10})
+            db.session.commit()
+            return {'id': 1}
         except SQLAlchemyError:
             db.session.rollback()
             return -2

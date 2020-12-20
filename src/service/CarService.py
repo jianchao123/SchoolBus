@@ -6,7 +6,9 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import or_
 from database.db import db
 from database.Car import Car
+from database.Student import Student
 from database.Device import Device
+from database.Worker import Worker
 from utils import defines
 from msgqueue import producer
 from ext import cache
@@ -34,6 +36,8 @@ class CarService(object):
                 Device.status == device_status).all()
             car_ids = [row.car_id for row in results]
             query = query.filter(Car.id.in_(car_ids))
+
+        query = query.filter(Car.status == 1)
         count = query.count()
         results = query.order_by(Car.id.desc()).offset(offset).limit(size).all()
 
@@ -103,9 +107,6 @@ class CarService(object):
 
     @staticmethod
     def car_update(pk, license_plate_number, capacity, company_name):
-        """
-
-        """
         car = db.session.query(Car).filter(
             Car.id == pk).first()
         if not car:
@@ -116,6 +117,9 @@ class CarService(object):
                 Car.license_plate_number == license_plate_number).count()
             if cnt:
                 return -10  # 车牌已经存在
+            # 更新学生关于车辆的信息
+            producer.car_update(car.id, license_plate_number)
+
             # 是否绑定设备
             device = db.session.query(Device).filter(
                 Device.car_id == car.id).first()
@@ -132,6 +136,39 @@ class CarService(object):
             d = {'id': car.id}
             db.session.commit()
             return d
+        except SQLAlchemyError:
+            db.session.rollback()
+            return -2
+        finally:
+            db.session.close()
+
+    @staticmethod
+    def delete_cars(car_ids):
+        """
+        car_ids 1,2,3
+        """
+        db.session.commit()
+
+        car_id_list = car_ids.split(",")
+        # 1.查询车辆是否已经被绑定学生或设备或工作人员
+        cnt = db.session.query(Student).filter(
+            Student.car_id.in_(car_id_list)).count()
+        if cnt:
+            return -10
+        cnt = db.session.query(Device).filter(
+            Device.car_id.in_(car_id_list)).count()
+        if cnt:
+            return -11
+        cnt = db.session.query(Worker).filter(
+            Worker.car_id.in_(car_id_list)).count()
+        if cnt:
+            return -12
+
+        try:
+            db.session.query(Car).filter(
+                Car.id.in_(car_id_list)).update({Car.status: 10})
+            db.session.commit()
+            return {'id': 1}
         except SQLAlchemyError:
             db.session.rollback()
             return -2

@@ -90,11 +90,11 @@ class StudentService(object):
     @staticmethod
     def student_add(stu_no, nickname, gender, parents_1, mobile_1, parents_2,
                     mobile_2, address, remarks, school_id, grade_id, class_id,
-                    end_time, license_plate_number, oss_url):
+                    end_time, car_id, oss_url):
         """增加学生"""
         db.session.commit()
         car = db.session.query(Car).filter(
-            Car.license_plate_number == license_plate_number).first()
+            Car.id == car_id).first()
         if not car:
             return -10 # 找不到车辆
 
@@ -119,7 +119,7 @@ class StudentService(object):
         student.create_time = datetime.now()
         student.end_time = end_time
         student.car_id = car.id
-        student.license_plate_number = license_plate_number
+        student.license_plate_number = car.license_plate_number
         student.status = 1          # 有效
 
         try:
@@ -147,7 +147,7 @@ class StudentService(object):
     @staticmethod
     def student_update(pk,  stu_no, nickname, gender, parents_1, mobile_1,
                        parents_2, mobile_2, address, remarks, school_id,
-                       grade_id, class_id, end_time, license_plate_number,
+                       grade_id, class_id, end_time, car_id,
                        oss_url):
         """更新学生
         stu_no 身份证号不能修改
@@ -194,13 +194,17 @@ class StudentService(object):
         if class_id:
             student.class_id = class_id
 
-        if license_plate_number:
-            car = db.session.query(Car).filter(
-                Car.license_plate_number == license_plate_number).first()
-            if not car:
-                return -11  # 找不到车辆
-            student.car_id = car.id
-            student.license_plate_number = license_plate_number
+        if car_id:
+            if car_id == -10:
+                student.car_id = None
+                student.license_plate_number = None
+            else:
+                car = db.session.query(Car).filter(
+                    Car.id == car_id).first()
+                if not car:
+                    return -11  # 找不到车辆
+                student.car_id = car.id
+                student.license_plate_number = car.license_plate_number
         if oss_url:
             face.oss_url = oss_url
             face.status = 2

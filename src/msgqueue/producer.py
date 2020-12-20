@@ -136,9 +136,9 @@ def worker_update(worker_id, car_id, nickname, duty_id, duty_name):
     _publish_msg('cascade_exchange', 'cascade.workerupdate', json.dumps(d))
 
 
-def car_update(stu_id, license_plate_number):
+def car_update(car_id, license_plate_number):
     d = {
-        'stu_id': stu_id,
+        'id': car_id,
         'license_plate_number': license_plate_number
     }
     _publish_msg('cascade_exchange', 'cascade.carupdate', json.dumps(d))

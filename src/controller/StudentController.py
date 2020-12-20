@@ -185,9 +185,9 @@ def student_add(user_id, data):
             end_time:
               type: integer
               description: 截至时间
-            license_plate_number:
-              type: string
-              description: 车牌号
+            car_id:
+              type: integer
+              description: 车辆id
             oss_url:
               type: integer
               description: oss_url
@@ -224,7 +224,7 @@ def student_add(user_id, data):
     grade_id = data['grade_id']
     class_id = data['class_id']
     end_time = data['end_time']
-    license_plate_number = data['license_plate_number']
+    car_id = data['car_id']
     oss_url = data['oss_url']
 
     try:
@@ -235,7 +235,7 @@ def student_add(user_id, data):
     ret = StudentService.student_add(
         stu_no, nickname, gender, parents_1, mobile_1, parents_2,
         mobile_2, address, remarks, school_id, grade_id, class_id,
-        end_time, license_plate_number, oss_url)
+        end_time, car_id, oss_url)
     if ret == -1:
         raise AppError(*GlobalErrorCode.OBJ_NOT_FOUND_ERROR)
     if ret == -2:
@@ -306,9 +306,9 @@ def student_update(user_id, data, pk):
             end_time:
               type: integer
               description: 截至时间
-            license_plate_number:
+            car_id:
               type: integer
-              description: 车牌号
+              description: 车辆id (-10为清空,类型为Int)
             oss_url:
               type: integer
               description: oss_url
@@ -345,7 +345,7 @@ def student_update(user_id, data, pk):
     grade_id = data['grade_id']
     class_id = data['class_id']
     end_time = data['end_time']
-    license_plate_number = data['license_plate_number']
+    car_id = data['car_id']
     oss_url = data['oss_url']
 
     try:
@@ -356,7 +356,7 @@ def student_update(user_id, data, pk):
     ret = StudentService.student_update(
         pk, stu_no, nickname, gender, parents_1, mobile_1, parents_2,
         mobile_2, address, remarks, school_id, grade_id, class_id,
-        end_time, license_plate_number, oss_url)
+        end_time, car_id, oss_url)
     if ret == -2:
         raise AppError(*GlobalErrorCode.DB_COMMIT_ERR)
     if ret == -10:

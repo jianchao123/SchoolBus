@@ -2,6 +2,7 @@
 import time
 from datetime import datetime
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy import or_
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 from database.db import db
 from database.Device import Device
@@ -84,6 +85,7 @@ class DeviceService(object):
                       sound_volume, device_type):
         """
         设备ID 关联车辆  设备音量
+        license_plate_number 似乎没有使用
         """
         device = db.session.query(Device).filter(
             Device.id == pk).first()
@@ -117,10 +119,22 @@ class DeviceService(object):
                     return -11  # 初始化已完成,不能再修改设备类型
 
         if car_id:
-            device.car_id = car_id
-            # 如果用户关联设备和车辆,判断状态是否为1,为1就修改到2
-            if device.status == 1:
-                device.status = 2
+            # 清空
+            if car_id == -10:
+                device.car_id = None
+            else:
+                # 该车辆是否已经绑定工作人员
+                cnt = db.session.query(Car).filter(
+                    Car.id == car_id).filter(
+                    or_(Car.worker_1_id == None, Car.worker_2_id == None)
+                ).count()
+                if cnt:
+                    return -12
+
+                device.car_id = car_id
+                # 如果用户关联设备和车辆,判断状态是否为1,为1就修改到2
+                if device.status == 1:
+                    device.status = 2
 
         try:
             d = {'id': device.id}

@@ -149,7 +149,7 @@ def device_update(user_id, data, pk):
               description: 音量 0 - 100
             car_id:
               type: integer
-              description: 车辆id
+              description: 车辆id  (-10为清空,类型为int)
             license_plate_number:
               type: integer
               description: 车牌号
@@ -193,6 +193,8 @@ def device_update(user_id, data, pk):
         raise AppError(*SubErrorCode.DEVICE_CHEPAI_NOT_FOUND)
     if ret == -11:
         raise AppError(*SubErrorCode.DEVICE_INITED_NOT_CHANGE)
+    if ret == -12:
+        raise AppError(*SubErrorCode.DEVICE_FIRST_BOUNDING_WORKER)
     return ret
 
 

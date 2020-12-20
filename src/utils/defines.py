@@ -40,14 +40,19 @@ class SubErrorCode(object):
     WORKER_EMP_NO_ALREADY_EXISTS = (200040, u"工号已经存在")
     WORKER_ALREADY_EXISTS_DUTY = (200041, u"该车辆已经存在该职务的工作人员")
     WORKER_NO_CHANGE_DUTY = (200042, u"工作人员已绑车辆,不能修改职务,需先解绑")
+    WORKER_ALREADY_BOUNDING_CAR = (200043, u"工作人员已经绑定了A车辆,需要先将A车辆的工作员位置填补后才能删除这个工作员")
 
     CAR_NOT_FOUND = (200050, u"车辆未找到")
     CAR_CHEPAI_ALREADY_EXISTS = (200051, u"车牌已经存在")
+    CAR_BOUNDING_TO_STUDENT = (200052, u"车辆已经绑定了学生,不能删除,请先解除学生对车辆的绑定")
+    CAR_BOUNDING_TO_DEVICE = (200053, u"车辆已经绑定了设备,不能删除,请先解除设备对车辆的绑定")
+    CAR_BOUNDING_TO_WORKER = (200054, u"车辆已经绑定了工作人员,请先解除工作人员对车辆的绑定")
 
     SCHOOL_NAME_ALREADY_EXISTS = (200060, u"学校名字已经存在")
 
     DEVICE_INITED_NOT_CHANGE = (200070, u"初始化已完成,不能再修改设备类型")
     DEVICE_CHEPAI_NOT_FOUND = (200071, u"需要先在车辆列表修改车牌")
+    DEVICE_FIRST_BOUNDING_WORKER = (200072, u"需要先绑定工作人员")
 
     TASK_EXECUTING = (200071, u"任务执行中")
 

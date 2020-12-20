@@ -41,10 +41,13 @@ class InsertUpdateConsumer(object):
         arr = method.routing_key.split(".")
         routing_suffix = arr[-1]
         if routing_suffix == 'workerinsert':
+            # 更新工作人员关联车辆的信息
             self.business.car_field_update(data)
         if routing_suffix == 'workerupdate':
+            # 更新工作人员关联车辆的信息
             self.business.car_field_update(data)
         if routing_suffix == 'carupdate':
+            # 更新关联到该车辆的学生信息
             self.business.student_field_update(data)
         # 消息确认
         ch.basic_ack(delivery_tag=method.delivery_tag)
@@ -81,14 +84,17 @@ class InsertUpdateBusiness(object):
     @transaction(is_commit=True)
     def student_field_update(self, pgsql_cur, data):
         pgsql_db = PgsqlDbUtil
-        stu_id = data['stu_id']
+        car_id = data['id']
         license_plate_number = data['license_plate_number']
-        d = {
-            'id': stu_id,
-            'license_plate_number': license_plate_number
-        }
-        print d
-        pgsql_db.update(pgsql_cur, d, 'student')
+        sql = "SELECT id FROM student WHERE car_id={}"
+        results = pgsql_db.query(pgsql_cur, sql.format(car_id))
+        for row in results:
+            stu_id = row[0]
+            d = {
+                'id': stu_id,
+                'license_plate_number': license_plate_number
+            }
+            pgsql_db.update(pgsql_cur, d, 'student')
 
 
 class StudentConsumer(object):

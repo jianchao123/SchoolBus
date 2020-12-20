@@ -139,9 +139,9 @@ def worker_add(user_id, data):
             duty_id:
               type: integer
               description: 职务id 1驾驶员 2照管员
-            license_plate_number:
+            car_id:
               type: integer
-              description: 车牌号
+              description: 车辆id
     responses:
       200:
         description: 正常返回http code 200
@@ -169,11 +169,11 @@ def worker_add(user_id, data):
     company_name = data['company_name']
     department_name = data['department_name']
     duty_id = data['duty_id']
-    license_plate_number = data['license_plate_number']
+    car_id = data['car_id']
 
     ret = WorkerService.worker_add(
         emp_no, nickname, gender, mobile, remarks, company_name, 
-        department_name, duty_id, license_plate_number)
+        department_name, duty_id, car_id)
     if ret == -2:
         raise AppError(*GlobalErrorCode.DB_COMMIT_ERR)
     if ret == -10:
@@ -229,9 +229,9 @@ def worker_update(user_id, data, pk):
             duty_id:
               type: integer
               description: 职务id 1驾驶员 2照管员
-            license_plate_number:
+            car_id:
               type: integer
-              description: 车牌号
+              description: 车辆id (-10为清空)
     responses:
       200:
         description: 正常返回http code 200
@@ -259,11 +259,11 @@ def worker_update(user_id, data, pk):
     company_name = data['company_name']
     department_name = data['department_name']
     duty_id = data['duty_id']
-    license_plate_number = data['license_plate_number']
+    car_id = data['car_id']
 
     ret = WorkerService.worker_update(
         pk, emp_no, nickname, gender, mobile, remarks, company_name, 
-        department_name, duty_id, license_plate_number)
+        department_name, duty_id, car_id)
     if ret == -1:
         raise AppError(*GlobalErrorCode.OBJ_NOT_FOUND_ERROR)
     if ret == -2:
@@ -274,6 +274,20 @@ def worker_update(user_id, data, pk):
         raise AppError(*SubErrorCode.CAR_NOT_FOUND)
     if ret == -12:
         raise AppError(*SubErrorCode.WORKER_NO_CHANGE_DUTY)
+    return ret
+
+
+@bp.route('/delete', methods=['POST'])
+@post_require_check_with_user([])
+def worker_delete(user_id, data):
+    """
+    """
+    worker_ids = data['worker_ids']
+    ret = WorkerService.delete_workers(worker_ids)
+    if ret == -2:
+        raise AppError(*GlobalErrorCode.DB_COMMIT_ERR)
+    if ret == -10:
+        raise AppError(*SubErrorCode.WORKER_ALREADY_BOUNDING_CAR)
     return ret
 
 

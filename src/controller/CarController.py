@@ -127,7 +127,7 @@ def car_add(user_id, data):
               type: integer
               description: 载客量
             license_plate_number:
-              type: integer
+              type: string
               description: 车牌号
     responses:
       200:
@@ -151,7 +151,7 @@ def car_add(user_id, data):
     company_name = data['company_name']
     capacity = data['capacity']
     license_plate_number = data['license_plate_number']
-
+    print type(capacity), capacity
     ret = CarService.car_add(license_plate_number, capacity, company_name)
     if ret == -2:
         raise AppError(*GlobalErrorCode.DB_COMMIT_ERR)
@@ -222,6 +222,59 @@ def car_update(user_id, data, pk):
     return ret
 
 
+@bp.route('/delete', methods=['POST'])
+@post_require_check_with_user([])
+def car_delete(user_id, data):
+    """
+    删除车辆
+    删除车辆，需要先登录
+    ---
+    tags:
+      - 订单模块
+    parameters:
+      - name: token
+        in: header
+        type: string
+        required: true
+        description: TOKEN
+      - name: body
+        in: body
+        required: true
+        schema:
+          properties:
+            car_ids:
+              type: string
+              description: 车辆id串 例1,2,3,4
+    responses:
+      200:
+        description: 正常返回http code 200
+        schema:
+          properties:
+            msg:
+              type: string
+              description: 错误消息
+            status:
+              type: integer
+              description: 状态
+            data:
+              type: object
+              properties:
+                id:
+                  type: integer
+                  description: 新Id
+    """
+    car_ids = data['car_ids']
+    ret = CarService.delete_cars(car_ids)
+    if ret == -2:
+        raise AppError(*GlobalErrorCode.DB_COMMIT_ERR)
+    elif ret == -10:
+        raise AppError(*SubErrorCode.CAR_BOUNDING_TO_STUDENT)
+    elif ret == -11:
+        raise AppError(*SubErrorCode.CAR_BOUNDING_TO_DEVICE)
+    elif ret == -12:
+        raise AppError(*SubErrorCode.CAR_BOUNDING_TO_WORKER)
+
+
 @bp.route('/batchadd', methods=['POST'])
 @form_none_param_with_permissions()
 def car_batch_add(user_id, data):
@@ -270,3 +323,5 @@ def car_batch_add(user_id, data):
     # "c": 1, "msg": err_str}
     data = CarService.batch_add_car(fd)
     return data
+
+
