@@ -48,18 +48,22 @@ class GenerateAAC(object):
 
             begin = time.time()
             oss_key = 'audio/' + row[2] + '.aac'
-            aip_word_to_audio(row[1], oss_key)
-            end = time.time()
-            print end - begin
+            try:
+                aip_word_to_audio(row[1], oss_key)
+                end = time.time()
+                print "generate_audio========================"
+                print end - begin
 
-            d = {
-                'id': row[0],
-                'aac_url': config.OSSDomain + '/' + oss_key
-            }
-            # feature不为空则修改状态
-            if feature:
-                d['status'] = 4
-            pgsql_db.update(pgsql_cur, d, 'face')
+                d = {
+                    'id': row[0],
+                    'aac_url': config.OSSDomain + '/' + oss_key
+                }
+                # feature不为空则修改状态
+                if feature:
+                    d['status'] = 4
+                pgsql_db.update(pgsql_cur, d, 'face')
+            except:
+                print u"生成aac失败"
 
 
 class CheckAccClose(object):
@@ -281,7 +285,7 @@ class EveryMinuteExe(object):
             face_id = row[0]
             d = {
                 'id': face_id,
-                'status': 2  # 过期
+                'status': 6  # 过期
             }
             mysql_db.update(pgsql_cur, d, table_name='face')
 

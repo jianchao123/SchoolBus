@@ -179,13 +179,10 @@ class StudentBusiness(object):
                 pgsql_db.insert(pgsql_cur, d, 'student')
                 stu = pgsql_db.get(pgsql_cur, stu_sql.format(stu_no))
                 face_d = {
-                    'oss_url': '',
                     'status': 1,  # 没有人脸
-                    'feature': '',
                     'nickname': nickname,
                     'stu_no': stu_no,
                     'update_time': 'now()',
-                    'acc_url': '',
                     'end_timestamp': int(time.mktime(
                         datetime.strptime(end_time, '%Y-%m-%d').timetuple())),
                     'stu_id': stu[0]

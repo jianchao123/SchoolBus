@@ -129,7 +129,7 @@ class StudentService(object):
             face = Face()
             face.nickname = nickname
             face.oss_url = oss_url
-            face.status = 2         # 未处理
+            face.status = 1         # 没有人脸
             face.stu_id = new_id
             face.stu_no = stu_no
             face.end_timestamp = time.mktime(end_time.timetuple())
@@ -207,8 +207,7 @@ class StudentService(object):
                 student.license_plate_number = car.license_plate_number
         if oss_url:
             face.oss_url = oss_url
-            face.status = 2
-            face.feature = ""
+            face.status = 2     # 未处理
 
         if end_time:
             student.end_time = end_time
