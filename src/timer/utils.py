@@ -134,16 +134,23 @@ def get_location(longitude, latitude):
             poi['address'].encode('utf8'))
     return None
 
+from timer.config import project_dir
+
 
 def aip_word_to_audio(text, oss_key):
     """文字转语音"""
     import os
+    import time
+
     result = aip_client.synthesis(text, 'zh', 1, {
         'vol': 5,
     })
-    aac_path = 'temp/' + '5103225679.aac'
+    temp_dir = project_dir + '/src/timer/temp/'
+
+    aac_path = temp_dir + '{}.aac'.format(int(time.time()))
     if not isinstance(result, dict):
-        mp3_path = 'temp/' + str(int(time.time())) + '.mp3'
+        mp3_path = temp_dir + str(int(time.time())) + '.mp3'
+
         with open(mp3_path, 'wb') as f:
             f.write(result)
         os.system('ffmpeg -i {} -codec:a aac -b:a 32k {}'

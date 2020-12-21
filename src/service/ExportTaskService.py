@@ -10,7 +10,8 @@ from database.ExportTask import ExportTask
 
 class ExportTaskService(object):
 
-    def export_task_list(self, page, size):
+    @staticmethod
+    def export_task_list(page, size):
         db.session.commit()
         offset = (page - 1) * size
         query = db.session.query(ExportTask).filter(ExportTask.status != 10)

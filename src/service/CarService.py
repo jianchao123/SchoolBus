@@ -124,9 +124,10 @@ class CarService(object):
             device = db.session.query(Device).filter(
                 Device.car_id == car.id).first()
             if device:
-                producer.update_chepai(device.device_name,
-                                       device.license_plate_number,
-                                       device.sound_volume)
+                if device.device_type == 1:
+                    producer.update_chepai(device.device_name,
+                                           device.license_plate_number,
+                                           device.sound_volume)
 
         if company_name:
             car.company_name = company_name
@@ -166,10 +167,13 @@ class CarService(object):
 
         try:
             db.session.query(Car).filter(
-                Car.id.in_(car_id_list)).update({Car.status: 10})
+                Car.id.in_(car_id_list)).update(
+                {Car.status: 10}, synchronize_session=False)
             db.session.commit()
             return {'id': 1}
         except SQLAlchemyError:
+            import traceback
+            print traceback.format_exc()
             db.session.rollback()
             return -2
         finally:

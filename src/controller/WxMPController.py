@@ -7,7 +7,7 @@ from weixin import WeixinMsg
 from ext import conf
 from core.AppError import AppError
 from utils.defines import SubErrorCode, GlobalErrorCode
-from service.WxCallbackService import WxCallbackService
+from service.WxMPService import WxMPService
 from core.framework import get_require_check, post_require_check
 
 
@@ -19,7 +19,7 @@ except ImportError:
     client_name = 'httplib'
 
 # """蓝图对象"""
-bp = Blueprint('WxCallbackController', __name__)
+bp = Blueprint('WxMPController', __name__)
 """蓝图url前缀"""
 url_prefix = '/wxmp'
 
@@ -127,7 +127,7 @@ def save_mobile(args):
     """
     mobile = args['mobile']
     code = args['code']
-    ret = WxCallbackService.save_mobile(mobile, code)
+    ret = WxMPService.save_mobile(mobile, code)
     if ret == -10:
         raise AppError(*SubErrorCode.STUDENT_NOT_FOUND_PARENTS_MOBILE)
     return ret

@@ -65,6 +65,7 @@ class ReceiveMessage(object):
                         ret = acs_manager.init_device_params(
                             jdata['version'], dev_name, jdata['devtime'],
                             jdata['shd_devid'])
+                        print 'ret={}'.format(ret)
                         # 非0直接跳过
                         if not ret:
                             acs_manager.device_cur_timestamp(
@@ -80,7 +81,7 @@ class ReceiveMessage(object):
             elif cmd == 'addface':
                 # 生成特征值返回的信息
                 if 'feature_type' in jdata:
-                    AcsManager.save_feature(
+                    acs_manager.save_feature(
                         dev_name, jdata['fid'], jdata['feature'])
                     if jdata['feature']:
                         logger.info(u'生成特征值成功{}'.format(jdata['fid']))

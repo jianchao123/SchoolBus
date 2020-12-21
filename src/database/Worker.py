@@ -17,3 +17,4 @@ class Worker(db.Model):
     car_id = db.Column(db.Integer)
     license_plate_number = db.Column(db.String(16))
     status = db.Column(db.Integer)      # 1有效 10删除
+    open_id = db.Column(db.String(32))

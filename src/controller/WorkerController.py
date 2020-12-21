@@ -297,7 +297,7 @@ def worker_delete(user_id, data):
         required: true
         schema:
           properties:
-            car_ids:
+            worker_ids:
               type: string
               description: 工作员id串 例1,2,3,4
     responses:

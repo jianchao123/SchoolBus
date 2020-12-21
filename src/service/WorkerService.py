@@ -165,7 +165,8 @@ class WorkerService(object):
 
         try:
             db.session.query(Worker).filter(
-                Worker.id.in_(worker_id_list)).update({Worker.status: 10})
+                Worker.id.in_(worker_id_list)).update(
+                {Worker.status: 10}, synchronize_session=False)
             db.session.commit()
             return {'id': 1}
         except SQLAlchemyError:

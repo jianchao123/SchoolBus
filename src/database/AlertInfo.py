@@ -20,10 +20,11 @@ class AlertInfo(db.Model):
     second_alert = db.Column(db.Integer)        # 第二次报警 1是 0否
     alert_start_time = db.Column(db.DateTime, default=datetime.now) # 报警开始时间
     alert_second_time = db.Column(db.DateTime, default=datetime.now)
-    alert_location = db.Column(db.String(16))   # 报警定位 现在填写gps
+    alert_location = db.Column(db.String(16))   # 报警定位
     status = db.Column(db.Integer)              # 1 正在报警 2已解除
     cancel_worker_id = db.Column(db.Integer)    # 取消的工作人员id
     cancel_worker_name = db.Column(db.String(16))   # 工作人员名字
     cancel_type_id = db.Column(db.Integer)      # 取消类型 1其他 2无学生解除 3有学生解除
     cancel_time = db.Column(db.DateTime)        # 取消时间
     cancel_reason = db.Column(db.Integer)       # cancel_type_id=1时需要此项
+    gps = db.Column(db.String(16))

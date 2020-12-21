@@ -101,9 +101,10 @@ class DeviceService(object):
 
         if sound_volume:
             device.sound_volume = sound_volume
-            producer.update_chepai(device.device_name,
-                                   device.license_plate_number,
-                                   device.sound_volume)
+            if Device.device_type == 1:
+                producer.update_chepai(device.device_name,
+                                       device.license_plate_number,
+                                       device.sound_volume)
 
         if device_type:
             # 当前已创建虚拟设备
@@ -111,6 +112,7 @@ class DeviceService(object):
                 device.device_type = device_type
                 # 如果设备是生成特征值
                 if device.device_type == 2:
+                    device.status = 2   # 直接修改为2
                     # 将设备名字存入缓存
                     cache.sadd(defines.RedisKey.GENERATE_DEVICE_NAMES,
                                device.device_name)
@@ -131,7 +133,9 @@ class DeviceService(object):
                 if cnt:
                     return -12
 
+                car = db.session.query(Car).filter(Car.id == car_id).first()
                 device.car_id = car_id
+                device.license_plate_number = car.license_plate_number
                 # 如果用户关联设备和车辆,判断状态是否为1,为1就修改到2
                 if device.status == 1:
                     device.status = 2

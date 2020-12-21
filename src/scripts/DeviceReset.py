@@ -71,7 +71,7 @@ class Test(object):
 
     def reset(self):
         d = {"cmd": "reset000"}
-        self.pub_msg('dev_40', d)
+        self.pub_msg('dev_59', d)
 
     @db.transaction(is_commit=True)
     def init_all_people(self):

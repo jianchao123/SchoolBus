@@ -41,7 +41,7 @@ class GenerateAAC(object):
         pgsql_db = db.PgsqlDbUtil
 
         sql = "SELECT id,nickname,stu_no,feature FROM face " \
-              "WHERE acc_url IS NULL LIMIT 30"
+              "WHERE aac_url IS NULL LIMIT 30"
         results = pgsql_db.query(pgsql_cur, sql)
         for row in results:
             feature = row[3]
@@ -151,6 +151,7 @@ class CheckAccClose(object):
                     'second_alert': 0,
                     'alert_start_time': 'now()',
                     'alert_location': '',
+                    'gps': rds_conn.hget(RedisKey.DEVICE_CUR_GPS, dev_name),
                     'status': 1         # 正在报警
                 }
                 pgsql_db.insert(pgsql_cur, d, 'alert_info')
@@ -190,35 +191,43 @@ class GenerateFeature(object):
     """生成feature 1秒执行一次"""
 
     def generate_feature(self):
-        rds_conn = db.rds_conn
-        cur_timestamp = int(time.time())
+        try:
+            rds_conn = db.rds_conn
+            cur_timestamp = int(time.time())
 
-        # 获取在线设备
-        online_devices = []
-        devices = rds_conn.hgetall(RedisKey.DEVICE_CUR_TIMESTAMP)
-        for k, v in devices:
-            if cur_timestamp - int(v) <= 30:
-                online_devices.append(k)
+            # 获取在线设备
+            online_devices = []
+            devices = rds_conn.hgetall(RedisKey.DEVICE_CUR_TIMESTAMP)
+            for k, v in devices.items():
+                if cur_timestamp - int(v) <= 30:
+                    online_devices.append(k)
 
-        # 获取生成特征值的设备(编辑设备的时候存入)
-        generate_devices = rds_conn.smembers(RedisKey.GENERATE_DEVICE_NAMES)
+            # 获取生成特征值的设备(编辑设备的时候存入)
+            generate_devices = rds_conn.smembers(RedisKey.GENERATE_DEVICE_NAMES)
+            print "000000000000000000000000000"
+            print online_devices
+            print generate_devices
+            # 交集
+            online_generate_devices = list(set(online_devices)
+                                           & generate_devices)
 
-        # 交集
-        online_generate_devices = list(set(online_devices)
-                                       & generate_devices)
+            if not online_generate_devices:
+                return
 
-        if not online_generate_devices:
-            return
-
-        used_devices = []
-        # 获取闲置中的设备
-        devices = rds_conn.hgetall(RedisKey.DEVICE_USED)
-        for k, v in devices:
-            used_devices.append(k)
-        unused_devices = list(set(online_generate_devices) - set(used_devices))
-        if not unused_devices:
-            return
-        self.execute(rds_conn, unused_devices)
+            used_devices = []
+            # 获取闲置中的设备
+            devices = rds_conn.hgetall(RedisKey.DEVICE_USED)
+            for k, v in devices:
+                used_devices.append(k)
+            unused_devices = list(set(online_generate_devices) - set(used_devices))
+            print "--------------------------------------"
+            print unused_devices
+            if not unused_devices:
+                return
+            self.execute(rds_conn, unused_devices)
+        except:
+            import traceback
+            print traceback.format_exc()
 
     @db.transaction(is_commit=True)
     def execute(self, pgsql_cur, rds_conn, unused_devices):
@@ -232,7 +241,7 @@ class GenerateFeature(object):
         }
 
         sql = "SELECT id,oss_url FROM face " \
-              "WHERE status == 2 LIMIT {}".format(len(unused_devices))
+              "WHERE status = 2 LIMIT {}".format(len(unused_devices))
         results = pgsql_db.query(pgsql_cur, sql)
         for row in results:
             face_id = row[0]
@@ -360,7 +369,7 @@ class FromOssQueryFace(object):
             for row in intersection:
                 d = {
                     'id': stu_no_pk_map[row],
-                    'oss_url': config.OSSDomain + "/person/face/" + row + ".jpg",
+                    'oss_url': config.OSSDomain + "/person/face/" + row + ".png",
                     'status': -1  # 未处理
                 }
                 mysql_db.update(pgsql_cur, d, table_name='face')
@@ -459,7 +468,7 @@ class EveryHoursExecute(object):
             if now - int(v) < 31:
                 device_online_number += 1
         # 查询设备数量
-        device_number_sql = "SELECT COUNT(id) ROM device"
+        device_number_sql = "SELECT COUNT(id) ROM device WHERE status != 10"
         result = sql_db.get(cursor, device_number_sql)
         device_offline_number = result[0] - device_offline_number
 

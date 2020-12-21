@@ -553,27 +553,33 @@ class AcsManager(object):
     @db.transaction(is_commit=False)
     def _get_sound_vol_by_name(self, pgsql_cur, dev_name):
         pgsql_db = db.PgsqlDbUtil
-        sql = "SELECT sound_volume,license_plate_number " \
+        sql = "SELECT sound_volume,license_plate_number,device_type " \
               "FROM device WHERE device_name='{}' LIMIT 1"
         result = pgsql_db.get(pgsql_cur, sql.format(dev_name))
-        return result[0], result[1]
+        return result[0], result[1], result[2]
 
     def device_cur_timestamp(self, dev_name, dev_time, cnt, gps):
         """设备初始化完成之后才能写入时间戳"""
         rds_conn = db.rds_conn
         cur_status = rds_conn.hget(RedisKey.DEVICE_CUR_STATUS, dev_name)
+        print "cur_status={}".format(cur_status)
         if cur_status and cur_status == 5:
             # 判断设备是否刚开机
             old_timestamp = rds_conn.hget(
                 RedisKey.DEVICE_CUR_TIMESTAMP, dev_name)
+            print
             if int(time.time()) - int(old_timestamp) > 30:
-                sound_vol, license_plate_number\
+                # 初始化完之后,每次开机都要设置设备信息
+                print u"初始化完之后,每次开机都要设置设备信息"
+                sound_vol, license_plate_number, device_type\
                     = self._get_sound_vol_by_name(dev_name)
-                producer.update_chepai(dev_name, license_plate_number, sound_vol)
-
-            rds_conn.hset(RedisKey.DEVICE_CUR_TIMESTAMP, dev_name, dev_time)
+                if device_type == 1:
+                    producer.update_chepai(dev_name, license_plate_number, sound_vol)
             rds_conn.hset(RedisKey.DEVICE_CUR_PEOPLE_NUMBER, cnt)
-            rds_conn.hset(RedisKey.DEVICE_CUR_GPS, dev_name, gps)
+
+        print dev_name, dev_time, gps
+        rds_conn.hset(RedisKey.DEVICE_CUR_TIMESTAMP, dev_name, dev_time)
+        rds_conn.hset(RedisKey.DEVICE_CUR_GPS, dev_name, gps)
 
     @db.transaction(is_commit=True)
     def save_imei(self, pgsql_cur, device_name, imei):
@@ -593,11 +599,13 @@ class AcsManager(object):
         rds_conn = db.rds_conn
         d = defaultdict()
         d['id'] = fid
+        print "==============save_feature============"
+        print feature
         if feature:
             # aac_url不为空则修改状态
             sql = "SELECT id FROM face WHERE id={} " \
                   "AND aac_url IS NOT NULL"
-            results = pgsql_db.get(sql.format(fid))
+            results = pgsql_db.get(pgsql_cur, sql.format(fid))
             if results:
                 d['status'] = 4
             d['feature'] = feature
