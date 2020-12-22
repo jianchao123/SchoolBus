@@ -144,14 +144,22 @@ def car_update(car_id, license_plate_number):
     _publish_msg('cascade_exchange', 'cascade.carupdate', json.dumps(d))
 
 
-def update_chepai(device_name, chepai, cur_volume):
+def update_chepai(device_name, chepai, cur_volume, workmode):
     """更新车牌"""
-    data ={
+    data = {
         "chepai": chepai,
         "device_name": device_name,
-        "cur_volume": cur_volume
+        "cur_volume": cur_volume,
+        "workmode": workmode
     }
     _publish_msg('device_exchange', 'device.updatechepai', json.dumps(data))
+
+
+def dev_while_list(device_name):
+    data = {
+        'dev_name': device_name
+    }
+    _publish_msg('device_exchange', 'device.devwhitelist', json.dumps(data))
 
 
 # 测试用户创建

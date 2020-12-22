@@ -251,15 +251,15 @@ def worker_update(user_id, data, pk):
                   description: 新增的工作人员Id
 
     """
-    emp_no = data['emp_no']
-    nickname = data['nickname']
-    gender = data['gender']
-    mobile = data['mobile']
-    remarks = data['remarks']
-    company_name = data['company_name']
-    department_name = data['department_name']
-    duty_id = data['duty_id']
-    car_id = data['car_id']
+    emp_no = data.get('emp_no', None)
+    nickname = data.get('nickname', None)
+    gender = data.get('gender', None)
+    mobile = data.get('mobile', None)
+    remarks = data.get('remarks', None)
+    company_name = data.get('company_name', None)
+    department_name = data.get('department_name', None)
+    duty_id = data.get('duty_id', None)
+    car_id = data.get('car_id', None)
 
     ret = WorkerService.worker_update(
         pk, emp_no, nickname, gender, mobile, remarks, company_name, 

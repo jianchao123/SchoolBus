@@ -59,18 +59,14 @@ class ReceiveMessage(object):
                 else:
                     acs_manager.check_version(
                         dev_name, jdata['version'], jdata['devtime'])
-                    print jdata['version'], type(jdata['version'])
                     if jdata['version'] == RedisKey.APPOINT_VERSION_NO:
-
                         ret = acs_manager.init_device_params(
                             jdata['version'], dev_name, jdata['devtime'],
-                            jdata['shd_devid'])
-                        print 'ret={}'.format(ret)
+                            jdata['shd_devid'], jdata['gps'])
                         # 非0直接跳过
                         if not ret:
-                            acs_manager.device_cur_timestamp(
-                                dev_name, jdata['devtime'], jdata['cnt'],
-                                jdata['gps'])
+                            acs_manager.device_rebooted_setting_params(
+                                dev_name, jdata['devtime'], jdata['cnt'])
 
             elif cmd == 'devwhitelist2':
                 logger.info(u"人员列表")
@@ -133,7 +129,7 @@ class ReceiveMessage(object):
         print("%sReceive And Delete Message From Queue%s\nQueueName:"
               "%s\nWaitSeconds:%s\n" % (10 * "=", 10 * "=", self.queue_name,
                                         self.wait_seconds))
-
+        from mns.mns_exception import MNSServerException, MNSClientNetworkException
         logger = get_logger(config.log_path)
         acs_manager = AcsManager(
             self.product_key, self.mns_access_key_id,
@@ -142,15 +138,20 @@ class ReceiveMessage(object):
         while True:
             try:
                 self.msg_handler(acs_manager, logger)
-            except Exception as e:
-                # import traceback
-                # print traceback.format_exc()
+            except MNSServerException as e:
                 logger.error(e.message)
+
+                if hasattr(e, 'type') and e.type == u"MessageNotExist":
+                    print("Queue is empty")
+            except MNSClientNetworkException:
+                print u"network exception"
+            except Exception as e:
                 if hasattr(e, 'type') and e.type == u"QueueNotExist":
                     print("Queue not exist!")
                     sys.exit(0)
-                elif  hasattr(e, 'type') and e.type == u"MessageNotExist":
-                    print("Queue is empty")
+                else:
+                    import traceback
+                    print traceback.format_exc()
 
 
 if __name__ == '__main__':

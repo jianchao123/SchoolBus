@@ -101,10 +101,10 @@ class DeviceService(object):
 
         if sound_volume:
             device.sound_volume = sound_volume
-            if Device.device_type == 1:
-                producer.update_chepai(device.device_name,
-                                       device.license_plate_number,
-                                       device.sound_volume)
+            workmode = 0 if device.device_type == 1 else 3
+            producer.update_chepai(device.device_name,
+                                   device.license_plate_number,
+                                   device.sound_volume, workmode)
 
         if device_type:
             # 当前已创建虚拟设备

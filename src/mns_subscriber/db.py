@@ -83,7 +83,7 @@ class PgsqlDbUtil(object):
             keys += k + ","
             if isinstance(v, (int, float, Decimal, long)) or \
                     v in time_list or "TO_DATE" in v or \
-                    "TO_DATE" in v:
+                    "TO_DATE" in v or "TO_TIMESTAMP" in v:
                 values += str(v) + ","
             else:
                 values += "'" + str(v) + "'" + ","
@@ -107,10 +107,13 @@ class PgsqlDbUtil(object):
                     sql += k + "=" + v + ","
                 elif "TO_DATE" in v:
                     sql += k + "=" + v + ","
+                elif "TO_TIMESTAMP" in v:
+                    sql += k + "=" + v + ","
                 else:
                     sql += k + "=" + "'" + v + "'" + ","
         if isinstance(data["id"], list):
-            sql = sql[:-1] + " WHERE id in ({})".format(",".join(data["id"]))
+            sql = sql[:-1] + " WHERE id in ({})".format(
+                ",".join(data["id"]))
         else:
             sql = sql[:-1] + " WHERE id = {}".format(data["id"])
         pgsql_cur.execute(sql)

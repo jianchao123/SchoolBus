@@ -61,10 +61,10 @@ def student_list(user_id, data):
         in: query
         type: string
         description: 结束日期
-      - name: car_id
+      - name: license_plate_number
         in: query
-        type: integer
-        description: 车辆id
+        type: string
+        description: 车牌号
       - name: page
         in: query
         type: integer
@@ -112,6 +112,7 @@ def student_list(user_id, data):
     start_date = data.get('start_date', None)
     end_date = data.get('end_date', None)
     car_id = data.get('car_id', None)
+    license_plate_number = data.get('license_plate_number', None)
     page = int(data['page'])
     size = int(data['size'])
 
@@ -123,7 +124,7 @@ def student_list(user_id, data):
             raise AppError(*GlobalErrorCode.PARAM_ERROR)
     return StudentService.student_list(
         query_str, school_id, grade_id, class_id, face_status,
-        start_date, end_date, car_id, page, size)
+        start_date, end_date, car_id, license_plate_number, page, size)
 
 
 @bp.route('/add', methods=['POST'])
@@ -228,7 +229,7 @@ def student_add(user_id, data):
     oss_url = data['oss_url']
 
     try:
-        end_time = datetime.strptime(end_time, '%Y-%m-%d %H:%M:%S')
+        end_time = datetime.strptime(end_time, '%Y-%m-%d')
     except ValueError:
         raise AppError(*GlobalErrorCode.PARAM_ERROR)
 
@@ -332,26 +333,27 @@ def student_update(user_id, data, pk):
                   description: 新增的学生Id
 
     """
-    stu_no = data['stu_no']
-    nickname = data['nickname']
-    gender = data['gender']
-    parents_1 = data['parents_1']
-    mobile_1 = data['mobile_1']
-    parents_2 = data['parents_2']
-    mobile_2 = data['mobile_2']
-    address = data['address']
-    remarks = data['remarks']
-    school_id = data['school_id']
-    grade_id = data['grade_id']
-    class_id = data['class_id']
-    end_time = data['end_time']
-    car_id = data['car_id']
-    oss_url = data['oss_url']
+    stu_no = data.get('stu_no', None)
+    nickname = data.get('nickname', None)
+    gender = data.get('gender', None)
+    parents_1 = data.get('parents_1', None)
+    mobile_1 = data.get('mobile_1', None)
+    parents_2 = data.get('parents_2', None)
+    mobile_2 = data.get('mobile_2', None)
+    address = data.get('address', None)
+    remarks = data.get('remarks', None)
+    school_id = data.get('school_id', None)
+    grade_id = data.get('grade_id', None)
+    class_id = data.get('class_id', None)
+    end_time = data.get('end_time', None)
+    car_id = data.get('car_id', None)
+    oss_url = data.get('oss_url', None)
 
-    try:
-        end_time = datetime.strptime(end_time, '%Y-%m-%d %H:%M:%S')
-    except ValueError:
-        raise AppError(*GlobalErrorCode.PARAM_ERROR)
+    if end_time:
+        try:
+            end_time = datetime.strptime(end_time, '%Y-%m-%d')
+        except ValueError:
+            raise AppError(*GlobalErrorCode.PARAM_ERROR)
 
     ret = StudentService.student_update(
         pk, stu_no, nickname, gender, parents_1, mobile_1, parents_2,

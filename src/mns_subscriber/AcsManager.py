@@ -139,71 +139,71 @@ class AcsManager(object):
             if rds_stream_no and str(rds_stream_no) == str(stream_no):
                 rds_conn.delete(k)
 
-    @db.transaction(is_commit=True)
-    def update_device_last_time(self, pgsql_cur, device_name,
-                                devtime, gps_str, device_iid):
-        """
-        更新设备最后在线时间
-        :return:
-        """
-        pgsql_db = db.PgsqlDbUtil
-        rds_conn = db.rds_conn
-
-        sql = "SELECT id,last_time FROM device " \
-              "WHERE device_name='{}' LIMIT 1"
-        obj = pgsql_db.get(pgsql_cur, sql.format(device_name))
-        pk = obj[0]
-        last_time = obj[1]
-        cur_time = datetime.now()
-        dev_time = datetime.fromtimestamp(int(devtime))
-        if (cur_time - dev_time) > timedelta(seconds=40):
-            return
-        # 如果有6小时设备没在线了,就检查该设备的人员是否需要更新
-        if last_time + timedelta(minutes=5) < cur_time:
-            ret = rds_conn.setnx('sync_device_key', 1)
-            if ret:
-                try:
-                    d = {
-                        'id': pk,
-                        'last_time': 'now()'
-                    }
-                    pgsql_db.update(pgsql_cur, d, table_name='device')
-                    jdata = {
-                        "cmd": "devwhitelist",
-                        "pkt_inx": -1
-                    }
-                    # 发送消息之前先清除一次redis key
-                    try:
-                        rds_conn.delete("{}_pkt_inx".format(device_name))
-                        rds_conn.delete("person_raw_{}".format(device_name))
-                    except:
-                        pass
-                    AcsManager._pub_msg(device_name, jdata)
-                except:
-                    import traceback
-                    print traceback.format_exc()
-                finally:
-                    time.sleep(1)
-                    rds_conn.delete('sync_device_key')
-        else:
-            arr = gps_str.split(',')
-            longitude = arr[0]
-            latitude = arr[1]
-            cur_gps = ""
-            if longitude and latitude:
-                longitude = AcsManager._jwd_swap(float(longitude))
-                latitude = AcsManager._jwd_swap(float(latitude))
-                longitude, latitude = utils.gcj_02_to_gorde_gpd(
-                    str(longitude), str(latitude))
-                cur_gps = str(longitude) + "," + str(latitude)
-
-            d = {
-                'id': pk,
-                'last_time': 'now()',
-                'cur_gps': cur_gps,
-                'device_iid': device_iid
-            }
-            pgsql_db.update(pgsql_cur, d, table_name='device')
+    # @db.transaction(is_commit=True)
+    # def update_device_last_time(self, pgsql_cur, device_name,
+    #                             devtime, gps_str, device_iid):
+    #     """
+    #     更新设备最后在线时间
+    #     :return:
+    #     """
+    #     pgsql_db = db.PgsqlDbUtil
+    #     rds_conn = db.rds_conn
+    #
+    #     sql = "SELECT id,last_time FROM device " \
+    #           "WHERE device_name='{}' LIMIT 1"
+    #     obj = pgsql_db.get(pgsql_cur, sql.format(device_name))
+    #     pk = obj[0]
+    #     last_time = obj[1]
+    #     cur_time = datetime.now()
+    #     dev_time = datetime.fromtimestamp(int(devtime))
+    #     if (cur_time - dev_time) > timedelta(seconds=40):
+    #         return
+    #     # 如果有6小时设备没在线了,就检查该设备的人员是否需要更新
+    #     if last_time + timedelta(minutes=5) < cur_time:
+    #         ret = rds_conn.setnx('sync_device_key', 1)
+    #         if ret:
+    #             try:
+    #                 d = {
+    #                     'id': pk,
+    #                     'last_time': 'now()'
+    #                 }
+    #                 pgsql_db.update(pgsql_cur, d, table_name='device')
+    #                 jdata = {
+    #                     "cmd": "devwhitelist",
+    #                     "pkt_inx": -1
+    #                 }
+    #                 # 发送消息之前先清除一次redis key
+    #                 try:
+    #                     rds_conn.delete("{}_pkt_inx".format(device_name))
+    #                     rds_conn.delete("person_raw_{}".format(device_name))
+    #                 except:
+    #                     pass
+    #                 AcsManager._pub_msg(device_name, jdata)
+    #             except:
+    #                 import traceback
+    #                 print traceback.format_exc()
+    #             finally:
+    #                 time.sleep(1)
+    #                 rds_conn.delete('sync_device_key')
+    #     else:
+    #         arr = gps_str.split(',')
+    #         longitude = arr[0]
+    #         latitude = arr[1]
+    #         cur_gps = ""
+    #         if longitude and latitude:
+    #             longitude = AcsManager._jwd_swap(float(longitude))
+    #             latitude = AcsManager._jwd_swap(float(latitude))
+    #             longitude, latitude = utils.gcj_02_to_gorde_gpd(
+    #                 str(longitude), str(latitude))
+    #             cur_gps = str(longitude) + "," + str(latitude)
+    #
+    #         d = {
+    #             'id': pk,
+    #             'last_time': 'now()',
+    #             'cur_gps': cur_gps,
+    #             'device_iid': device_iid
+    #         }
+    #         pgsql_db.update(pgsql_cur, d, table_name='device')
 
     @db.transaction(is_commit=True)
     def add_order(self, pgsql_cur, fid, gps_str, add_time, dev_name, cnt):
@@ -260,11 +260,12 @@ class AcsManager(object):
 
         # gps
         arr = gps_str.split(',')
-        longitude = AcsManager._jwd_swap(float(arr[0]))
-        latitude = AcsManager._jwd_swap(float(arr[1]))
-        longitude, latitude = utils.gcj_02_to_gorde_gpd(
-            str(longitude), str(latitude))
-        gps_str = '{},{}'.format(longitude, latitude)
+        if arr[0] and arr[1]:
+            longitude = AcsManager._jwd_swap(float(arr[0]))
+            latitude = AcsManager._jwd_swap(float(arr[1]))
+            longitude, latitude = utils.gcj_02_to_gorde_gpd(
+                str(longitude), str(latitude))
+            gps_str = '{},{}'.format(longitude, latitude)
 
         d = defaultdict()
         d['id'] = redis_db.incr(RedisKey.ORDER_ID_INCR)
@@ -274,13 +275,15 @@ class AcsManager(object):
         d['school_id'] = school_id
         d['school_name'] = school_name
         d['order_type'] = order_type
-        d['create_time'] = 'to_timestamp({})'.format(add_time)
+        d['create_time'] = 'TO_TIMESTAMP({})'.format(add_time)
         d['up_location'] = ''
         d['gps'] = gps_str
         d['car_id'] = cur_car_id
         d['license_plate_number'] = license_plate_number
         d['device_id'] = cur_device_id
-        pgsql_db.insert(pgsql_cur, d, table_name='order')
+        d['fid'] = fid
+        d['cur_timestamp'] = str(add_time)
+        pgsql_db.insert(pgsql_cur, d, table_name='public.order')
 
     def add_redis_queue(self, device_name, data, pkt_cnt):
         """
@@ -495,7 +498,8 @@ class AcsManager(object):
         print device
         return device[0], device[1], device[2], device[3], device[4], device[5]
 
-    def init_device_params(self, cur_version, device_name, dev_time, shd_devid):
+    def init_device_params(self, cur_version, device_name,
+                           dev_time, shd_devid, gps):
         """
         初始化设备参数
         """
@@ -508,6 +512,15 @@ class AcsManager(object):
             # 如果没有找到这个设备直接消费掉消息
             if not device_status:
                 return -10
+
+            # 设置设备时间戳和gps
+            device_timstamp = rds_conn.hget(RedisKey.DEVICE_CUR_TIMESTAMP, device_name)
+            if device_timstamp and int(time.time()) - int(device_timstamp) > 60 * 2:
+                producer.dev_while_list(device_name)
+                print u"--------------------更新设备人员--------------------"
+            rds_conn.hset(RedisKey.DEVICE_CUR_TIMESTAMP, device_name, dev_time)
+            rds_conn.hset(RedisKey.DEVICE_CUR_GPS, device_name, gps)
+
             # 5表示已初始化人员
             if device_status and int(device_status) == 5:
                 return 0
@@ -539,13 +552,11 @@ class AcsManager(object):
                 d['status'] = 5     # 初始人员
                 d['device_iid'] = shd_devid
                 print u"初始化人员"
-                try:
-                    rds_conn.hset(RedisKey.DEVICE_CUR_STATUS, device_name, 5)
-                    self._init_people([], device_name)
-                    rds_conn.hset(RedisKey.DEVICE_CUR_STATUS, device_name, 5)
-                except:
-                    import traceback
-                    print traceback.format_exc()
+
+                rds_conn.hset(RedisKey.DEVICE_CUR_STATUS, device_name, 5)
+                self._init_people([], device_name)
+                rds_conn.hset(RedisKey.DEVICE_CUR_STATUS, device_name, 5)
+
             if d:
                 d['id'] = pk
                 self._update_device(d)
@@ -558,28 +569,22 @@ class AcsManager(object):
         result = pgsql_db.get(pgsql_cur, sql.format(dev_name))
         return result[0], result[1], result[2]
 
-    def device_cur_timestamp(self, dev_name, dev_time, cnt, gps):
-        """设备初始化完成之后才能写入时间戳"""
+    def device_rebooted_setting_params(self, dev_name, dev_time, cnt):
+        """设备重启后参数设置"""
         rds_conn = db.rds_conn
         cur_status = rds_conn.hget(RedisKey.DEVICE_CUR_STATUS, dev_name)
-        print "cur_status={}".format(cur_status)
-        if cur_status and cur_status == 5:
-            # 判断设备是否刚开机
-            old_timestamp = rds_conn.hget(
-                RedisKey.DEVICE_CUR_TIMESTAMP, dev_name)
-            print
-            if int(time.time()) - int(old_timestamp) > 30:
-                # 初始化完之后,每次开机都要设置设备信息
-                print u"初始化完之后,每次开机都要设置设备信息"
+        if cur_status and int(cur_status) == 5:
+            # 判断设备时间是否不准确
+            seconds_diff = int(time.time()) - int(dev_time)
+            if seconds_diff > 30:
+                print u"设备时间不准确,重新设置"
                 sound_vol, license_plate_number, device_type\
                     = self._get_sound_vol_by_name(dev_name)
-                if device_type == 1:
-                    producer.update_chepai(dev_name, license_plate_number, sound_vol)
-            rds_conn.hset(RedisKey.DEVICE_CUR_PEOPLE_NUMBER, cnt)
+                workmode = 0 if device_type == 1 else 3
+                producer.update_chepai(dev_name, license_plate_number,
+                                       sound_vol, workmode)
 
-        print dev_name, dev_time, gps
-        rds_conn.hset(RedisKey.DEVICE_CUR_TIMESTAMP, dev_name, dev_time)
-        rds_conn.hset(RedisKey.DEVICE_CUR_GPS, dev_name, gps)
+            rds_conn.hset(RedisKey.DEVICE_CUR_PEOPLE_NUMBER, dev_name, cnt)
 
     @db.transaction(is_commit=True)
     def save_imei(self, pgsql_cur, device_name, imei):

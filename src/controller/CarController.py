@@ -91,6 +91,9 @@ def car_list(user_id, data):
                   license_plate_number:
                     type: string
                     description: 车牌
+                  status:
+                    type: integer
+                    description: 1有效 10删除
 
     """
     query_str = data.get('query_str', None)

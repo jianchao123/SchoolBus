@@ -202,12 +202,31 @@ class Test(object):
         }
         self.pub_msg("dev_55", jdata)
 
+    def update_face(self):
+        jdata = {
+            "cmd": "updateface",
+            "fid": 15,
+            "fno": "",
+            "name": "简超",
+            "feature": "wSJGPc6mbj3vsQ08pC+IvbU4hzzOBPC8X1eEvFKZGD1mIa89BfZgvVMh3zxMTCk9VsWfPQabmLpQLy88JXOgveGJrbyZgyY931dOPfOZaj0nkYI8u3QQvdkZ/rxmrdk9mZdJveJvxrun/5M821aMO34i3L2btJ06Oahvu8RwMD3Y5je8GNJUvRo6Nr2XiwM9j5LzPOLMgTxuQA283WobvSJSXzxJzja8plzsvWt1Eb0C7Ju9rdCvOg1Ohr1YjGa7qYWNvH5xhD09CVG8VRVlvS2P2zw+4S09jpAsu7KYGr2UDxu74I/8vREZcb0PjJq9IN+tvCKIHT2JxvU8uVmNvehb4jxK9Ae+hwwfPZZPi7xZqHs9tZiHvXfFhzwNOmE9j/DRPOc+Dz1mqzQ9A9jqPe1JSj0zKsE7TH+wPQCKjz0GKJY9du5xPXNHBj2ADW49/mZKveOd0D2TsAo+8/E9u9F3Gz1c3He9m7a3POaEuT1yUwG+smv6vEyORj3YSZk8baYxPQUjijyb6mG9KB+pvd43Ab1b7Y69+9GYvbw+Szwlq8I9B386O9ZMgj1ghLC9bcAnvepYnbymu0S8s8PavPRdObyiPcY9N/IqvZxEsj18hrY9ye+iPTvzyL1PxWo9w9IJPUTxJ707lJ69xSmvvA0sQz3qy649Jtu0PFRKbLxzFGE8AgHXPdMwBDwGOuy4H0RXPGK5XjxHmQ09JmpfvKIse7xc9/M92Z+GvLZmnrsUTj497z7PvH6QoL1+pxo9+QmLukrkyr30xoq9TEwsPamuiT00DKY9m4zrPW9RhbywFGi9PT6nvDlv4r0o8L49ng60u2tBML0YuWM9MpaMvb4eRL0EqEk8cjOpPfhj6rw/z8s9hqo9vDiMUb0pbcM9S9+ZvL0JXT0/5u09/6yDPc4PQzxYL3s8euDsvE4kVb17vCW92znhO67NzruVH3u9v7RHPYFwkzxeEDa8N0ucPVNAnDyx/wS98zcZPho+lT3ubZY9Ww6evMTr7bmsLQs++WPCPfTZID0XVde99WdTPbUu5LylrBa9+1RHPWv6vr0dTnu9IhgMvj6YuL1kGL+96avMPUL2iD39myo9VGXzu5tTxb3IsVG9o5QWPfLcVLtaFAY9LZ2OPaRixDwzbKq9WXmsPYDqPbz30Im7IJBSvTUHYjy67Qo+ylSnPT3KTT17/CG9/wyCvYrEoLwcVI08u2JqPQSTW71O2Q6+0CQnPLaEKj5zW4I8ysSEvKsM3rzZetI9sUjrPWpkj72Nfja+c9HpvUZNw7zJQru8ryNUvUK1Jj11wRs9BO7QPVocXz3Duok9QsFbPYruUzyqlg4+j+3mPXS44bwAlwK9W7A9vQ==",
+            "ttsurl": "http://cdbus-dev.oss-cn-shanghai.aliyuncs.com/audio/123456789012345678.aac",
+            "group": 0,
+            "faceurl": "",
+            "cardno": ""
+        }
+
+        self.pub_msg("dev_57", jdata)
+
+    def delte_key(self):
+        ks = db.rds_conn.keys('hash:token.id:*')
+        for row in ks:
+            db.rds_conn.delete(row)
 
 if __name__ == '__main__':
     t = Test(config.Productkey, config.MNSAccessKeyId,
              config.MNSAccessKeySecret)
     #t.ddddddddd()
-    t.reset()
+    t.delte_key()
 
     # import struct
     #

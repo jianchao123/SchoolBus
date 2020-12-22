@@ -7,7 +7,7 @@ class Order(db.Model):
     __tablename__ = 'order'
 
     id = db.Column(db.BigInteger, primary_key=True)
-    stu_no = db.Column(db.String(16))   # 学号
+    stu_no = db.Column(db.String(32))   # 身份证
     stu_id = db.Column(db.Integer)      # 学生id
     stu_name = db.Column(db.String(16)) # 学生名字
     school_id = db.Column(db.Integer)   # 学校id

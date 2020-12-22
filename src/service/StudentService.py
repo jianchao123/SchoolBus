@@ -21,7 +21,8 @@ class StudentService(object):
 
     @staticmethod
     def student_list(query_str, school_id, grade_id, class_id, face_status,
-                     start_date, end_date, car_id, page, size):
+                     start_date, end_date, car_id, license_plate_number,
+                     page, size):
         """
         学生姓名/身份证号
         """
@@ -29,7 +30,7 @@ class StudentService(object):
 
         offset = (page - 1) * size
         query = db.session.query(Student, Face).join(
-            Face, Face.stu_id == Student.id)
+            Face, Face.stu_id == Student.id).join(Car, Car.id == Student.car_id)
         if face_status:
             query = query.filter(Face.status == face_status)
         if school_id:
@@ -49,6 +50,8 @@ class StudentService(object):
                                      Student.create_time < end_date))
         if car_id:
             query = query.filter(Student.car_id == car_id)
+        if license_plate_number:
+            query = query.filter(Car.license_plate_number == license_plate_number)
 
         count = query.count()
         results = query.offset(offset).limit(size).all()
@@ -83,7 +86,8 @@ class StudentService(object):
                 'face_status': face.status,
                 'school_name': school.school_name,
                 'grade_name': grade[student.grade_id],
-                'class_name': classes[student.class_id]
+                'class_name': classes[student.class_id],
+                'oss_url': face.oss_url
             })
         return {'results': data, 'count': count}
 
@@ -129,7 +133,10 @@ class StudentService(object):
             face = Face()
             face.nickname = nickname
             face.oss_url = oss_url
-            face.status = 1         # 没有人脸
+            if face.oss_url:
+                face.status = 2
+            else:
+                face.status = 1
             face.stu_id = new_id
             face.stu_no = stu_no
             face.end_timestamp = time.mktime(end_time.timetuple())
@@ -171,7 +178,6 @@ class StudentService(object):
         if nickname:
             student.nickname = nickname
             face.nickname = nickname
-            face.acc_url = ""
 
         if gender:
             student.gender = gender
@@ -208,6 +214,8 @@ class StudentService(object):
         if oss_url:
             face.oss_url = oss_url
             face.status = 2     # 未处理
+            print oss_url
+            print "====================="
 
         if end_time:
             student.end_time = end_time
@@ -217,6 +225,8 @@ class StudentService(object):
             db.session.commit()
             return d
         except SQLAlchemyError:
+            import traceback
+            print traceback.format_exc()
             db.session.rollback()
             return -2
         finally:

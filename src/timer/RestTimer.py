@@ -21,7 +21,6 @@ import config
 
 def pub_msg(rds_conn, devname, jdata):
     print u"-----------加入顺序发送消息的队列--------"
-    print jdata
     k = rds_conn.get("stream_no_incr")
     if k:
         stream_no = rds_conn.incr("stream_no_incr")
@@ -34,29 +33,26 @@ def pub_msg(rds_conn, devname, jdata):
 
 
 class GenerateAAC(object):
-    """生成AAC音频格式文件 10秒 30个"""
+    """生成AAC音频格式文件"""
 
     @db.transaction(is_commit=True)
     def generate_audio(self, pgsql_cur):
+        """大概0.3秒一个"""
         pgsql_db = db.PgsqlDbUtil
-
+        begin = time.time()
         sql = "SELECT id,nickname,stu_no,feature FROM face " \
-              "WHERE aac_url IS NULL LIMIT 30"
+              "WHERE aac_url IS NULL LIMIT 27"
         results = pgsql_db.query(pgsql_cur, sql)
         for row in results:
             feature = row[3]
 
-            begin = time.time()
             oss_key = 'audio/' + row[2] + '.aac'
             try:
                 aip_word_to_audio(row[1], oss_key)
-                end = time.time()
-                print "generate_audio========================"
-                print end - begin
 
                 d = {
                     'id': row[0],
-                    'aac_url': config.OSSDomain + '/' + oss_key
+                    'aac_url': config.OSSDomain.replace('https', 'http') + '/' + oss_key
                 }
                 # feature不为空则修改状态
                 if feature:
@@ -64,6 +60,8 @@ class GenerateAAC(object):
                 pgsql_db.update(pgsql_cur, d, 'face')
             except:
                 print u"生成aac失败"
+        end = time.time()
+        print u"{}个aac总共用时{}s".format(len(results), end - begin)
 
 
 class CheckAccClose(object):
@@ -208,23 +206,17 @@ class GenerateFeature(object):
 
             # 获取生成特征值的设备(编辑设备的时候存入)
             generate_devices = rds_conn.smembers(RedisKey.GENERATE_DEVICE_NAMES)
-            print "000000000000000000000000000"
-            print online_devices
-            print generate_devices
             # 交集
             online_generate_devices = list(set(online_devices)
                                            & generate_devices)
-
             if not online_generate_devices:
                 return
-
             used_devices = []
             # 获取闲置中的设备
             devices = rds_conn.hgetall(RedisKey.DEVICE_USED)
-            for k, v in devices:
+            for k, v in devices.items():
                 used_devices.append(k)
             unused_devices = list(set(online_generate_devices) - set(used_devices))
-            print "--------------------------------------"
             print unused_devices
             if not unused_devices:
                 return
@@ -235,7 +227,7 @@ class GenerateFeature(object):
 
     @db.transaction(is_commit=True)
     def execute(self, pgsql_cur, rds_conn, unused_devices):
-
+        """start到end大概0.004秒"""
         pgsql_db = db.PgsqlDbUtil
 
         jdata = {
@@ -244,9 +236,12 @@ class GenerateFeature(object):
             "faceurl": ""
         }
 
+        start = time.time()
         sql = "SELECT id,oss_url FROM face " \
               "WHERE status = 2 LIMIT {}".format(len(unused_devices))
         results = pgsql_db.query(pgsql_cur, sql)
+        print "-=-=-=-=-=-=-=-=-=-=-=-=-======================"
+        print results
         for row in results:
             face_id = row[0]
             oss_url = row[1]
@@ -255,13 +250,14 @@ class GenerateFeature(object):
             device_name = unused_devices.pop()
             pub_msg(rds_conn, device_name, jdata)
             # 将设备置为使用中
-            rds_conn.hset(RedisKey.DEVICE_USED, device_name)
+            rds_conn.hset(RedisKey.DEVICE_USED, device_name, 1)
             # 更新face状态
             d = {
                 'id': face_id,
                 'status': 3
             }
             pgsql_db.update(pgsql_cur, d, table_name='face')
+            end = time.time()
 
 
 class EveryMinuteExe(object):
@@ -271,7 +267,6 @@ class EveryMinuteExe(object):
         """每分钟执行一次"""
         print u"==================每分钟执行一次====================={}".\
             format(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-        print datetime.now()
         mysql_db = db.PgsqlDbUtil
         rds_conn = db.rds_conn
 
@@ -296,25 +291,21 @@ class EveryMinuteExe(object):
         for row in results:
             device_names.append(row[0])
         devices = rds_conn.hgetall(RedisKey.DEVICE_CUR_GPS)
-        print devices
         for k, v in devices.items():
             if k not in device_names:
                 rds_conn.hdel(RedisKey.DEVICE_CUR_GPS, k)
 
         devices = rds_conn.hgetall(RedisKey.DEVICE_CUR_TIMESTAMP)
-        print devices
         for k, v in devices.items():
             if k not in device_names:
                 rds_conn.hdel(RedisKey.DEVICE_CUR_TIMESTAMP, k)
 
         devices = rds_conn.hgetall(RedisKey.DEVICE_CUR_PEOPLE_NUMBER)
-        print devices
         for k, v in devices.items():
             if k not in device_names:
                 rds_conn.hdel(RedisKey.DEVICE_CUR_PEOPLE_NUMBER, k)
 
         devices = rds_conn.hgetall(RedisKey.DEVICE_CUR_STATUS)
-        print devices
         for k, v in devices.items():
             if k not in device_names:
                 rds_conn.hdel(RedisKey.DEVICE_CUR_STATUS, k)
@@ -379,7 +370,7 @@ class FromOssQueryFace(object):
                 mysql_db.update(pgsql_cur, d, table_name='face')
             rds_conn.delete(RedisKey.OSS_ID_CARD_SET + "CP")
         end = time.time()
-        print end - start
+        print u"从oss获取人脸函数总共用时{}s".format(end - start)
 
 
 class EveryFewMinutesExe(object):

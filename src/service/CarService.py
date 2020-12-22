@@ -47,7 +47,9 @@ class CarService(object):
             is_online = u"未绑定设备"
             device = db.session.query(Device).filter(
                 Device.car_id == row.id).first()
+            device_iid = None
             if device:
+                device_iid = device.device_iid
                 device_timestamp = cache.hget(
                     defines.RedisKey.DEVICE_CUR_TIMESTAMP, device.device_name)
                 if not device_timestamp or (now - int(device_timestamp) > 30):
@@ -60,7 +62,7 @@ class CarService(object):
                 'code': row.code,
                 'license_plate_number': row.license_plate_number,
                 'capacity': row.capacity,
-                'device_iid': row.device_iid,
+                'device_iid': device_iid,
                 'worker_1_id': row.worker_1_id,
                 'worker_1_nickname': row.worker_1_nickname,
                 'worker_1_duty_name': row.worker_1_duty_name,
@@ -124,10 +126,10 @@ class CarService(object):
             device = db.session.query(Device).filter(
                 Device.car_id == car.id).first()
             if device:
-                if device.device_type == 1:
-                    producer.update_chepai(device.device_name,
-                                           device.license_plate_number,
-                                           device.sound_volume)
+                workmode = 0 if device.device_type == 1 else 3
+                producer.update_chepai(device.device_name,
+                                       device.license_plate_number,
+                                       device.sound_volume, workmode)
 
         if company_name:
             car.company_name = company_name

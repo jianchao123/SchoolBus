@@ -313,6 +313,8 @@ class DeviceConsumer(object):
             self.device_business.send_get_people_data_msg(data)
         if routing_suffix == 'updatechepai':
             self.device_business.update_chepai(data)
+        if routing_suffix == 'devwhitelist':
+            self.device_business.dev_white_list_msg(data)
         # 消息确认
         ch.basic_ack(delivery_tag=method.delivery_tag)
 
@@ -349,7 +351,8 @@ class DeviceBusiness(object):
         }
         self._pub_msg(device_name, jdata)
 
-    def _publish_update_people_msg(self, device_name, fid, nickname, feature):
+    def _publish_update_people_msg(self, device_name, fid, nickname,
+                                   feature, aac_url):
         """从设备上更新人员"""
         jdata = {
             "cmd": "updateface",
@@ -357,14 +360,14 @@ class DeviceBusiness(object):
             "fno": device_name,
             "name": nickname.encode('utf-8'),
             "feature": feature,
-            "ttsurl": DeviceBusiness.tts,
+            "ttsurl": aac_url,
             "group": 0,
             "faceurl": "",
             "cardno": ""
         }
         self._pub_msg(device_name, jdata)
 
-    def _publish_add_people_msg(self, device_name, fid, feature, nickname):
+    def _publish_add_people_msg(self, device_name, fid, feature, nickname, aac_url):
         """添加人员"""
 
         jdata = {
@@ -373,13 +376,21 @@ class DeviceBusiness(object):
             "fno": device_name,
             "name": nickname.encode('utf-8'),
             "feature": feature,
-            "ttsurl": DeviceBusiness.tts,
+            "ttsurl": aac_url,
             "group": 0,
             "faceurl": "",
             "go_station": "",
             "return_station": "",
             "school": "",
             "cardno": ""
+        }
+
+        self._pub_msg(device_name, jdata)
+
+    def _publish_dev_white_list(self, device_name):
+        jdata = {
+            "cmd": "devwhitelist",
+            "pkt_inx": -1
         }
         self._pub_msg(device_name, jdata)
 
@@ -429,11 +440,22 @@ class DeviceBusiness(object):
         print jdata
         return self._pub_msg(device_name, jdata)
 
+    def dev_white_list_msg(self, data):
+        dev_name = data['dev_name']
+
+        try:
+            rds_conn.delete("{}_pkt_inx".format(dev_name))
+            rds_conn.delete("person_raw_{}".format(dev_name))
+        except:
+            pass
+        self._publish_dev_white_list(dev_name)
+
     def update_chepai(self, data):
         chepai = data['chepai']
         device_name = data['device_name']
         cur_volume = data['cur_volume']
-        self._set_workmode(device_name, 0, chepai, cur_volume)
+        workmode = data['workmode']
+        self._set_workmode(device_name, int(workmode), chepai, cur_volume)
 
     @transaction(is_commit=True)
     def device_people_list_save(self, pgsql_cur, data):
@@ -535,7 +557,7 @@ class DeviceBusiness(object):
             for fid in del_list:
                 self._publish_del_people_msg(device_name, fid)
 
-        sql = "SELECT feature,nickname " \
+        sql = "SELECT feature,nickname,aac_url " \
               "FROM face WHERE id in ({}) "
         # update list
         if len(update_list) < 60:
@@ -543,15 +565,15 @@ class DeviceBusiness(object):
                 obj = pgsql_db.get(pgsql_cur, sql.format(int(fid)))
                 if obj:
                     self._publish_update_people_msg(
-                        device_name, fid, obj[1], obj[0])
+                        device_name, fid, obj[1], obj[0], obj[2])
 
         # add list
         if len(add_list) < 60:
             for fid in add_list:
-                obj = pgsql_db.get(sql.format(fid))
+                obj = pgsql_db.get(pgsql_cur, sql.format(fid))
                 if obj:
                     self._publish_add_people_msg(
-                        device_name, fid, obj[0], obj[1])
+                        device_name, fid, obj[0], obj[1], obj[2])
 
     def send_get_people_data_msg(self, data):
         """发送获取设备上人员数据的消息"""
