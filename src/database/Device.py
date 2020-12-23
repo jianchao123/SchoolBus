@@ -12,7 +12,7 @@ class Device(db.Model):
     device_secret = db.Column(db.String(128))
     version_no = db.Column(db.String(32))
     device_iid = db.Column(db.String(16))
-    is_open = db.Column(db.Integer)     # 是否开机 1是 0否
+    open_time = db.Column(db.DateTime)     # 开机时间
     imei = db.Column(db.String(32))
     car_id = db.Column(db.Integer)      # 车辆id
     license_plate_number = db.Column(db.String(16))

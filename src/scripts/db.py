@@ -7,6 +7,10 @@ import psycopg2.extras
 from DBUtils.PooledDB import PooledDB
 from redis import ConnectionPool
 import config as conf
+import utils
+
+# logger
+logger = None
 
 # pgsql
 pgsql_pool = PooledDB(
@@ -43,7 +47,8 @@ def transaction(is_commit=False):
             except:
                 if pgsql_conn:
                     pgsql_conn.rollback()
-                print traceback.format_exc()
+                # 记录日志
+                logger.error(traceback.format_exc())
             finally:
                 if pgsql_cur:
                     pgsql_cur.close()
@@ -56,20 +61,20 @@ def transaction(is_commit=False):
 
 class PgsqlDbUtil(object):
 
-    def __init__(self, pgsql_cur):
-        self.pgsql_cur = pgsql_cur
-
-    def get(self, sql):
-        self.pgsql_cur.execute(sql)
-        result = self.pgsql_cur.fetchone()
+    @staticmethod
+    def get(pgsql_cur, sql):
+        pgsql_cur.execute(sql)
+        result = pgsql_cur.fetchone()
         return result
 
-    def query(self, sql):
-        self.pgsql_cur.execute(sql)
-        result = self.pgsql_cur.fetchall()
+    @staticmethod
+    def query(pgsql_cur, sql):
+        pgsql_cur.execute(sql)
+        result = pgsql_cur.fetchall()
         return result
 
-    def insert(self, data, table_name=None):
+    @staticmethod
+    def insert(pgsql_cur, data, table_name=None):
         keys = ""
         values = ""
         time_list = ["now()", "NOW()", "current_timestamp",
@@ -78,7 +83,7 @@ class PgsqlDbUtil(object):
             keys += k + ","
             if isinstance(v, (int, float, Decimal, long)) or \
                     v in time_list or "TO_DATE" in v or \
-                    "TO_DATE" in v:
+                    "TO_DATE" in v or "TO_TIMESTAMP" in v or "NULL" in v:
                 values += str(v) + ","
             else:
                 values += "'" + str(v) + "'" + ","
@@ -88,12 +93,13 @@ class PgsqlDbUtil(object):
 
         sql = "INSERT INTO {}({}) VALUES({})".format(table_name, keys, values)
         print sql
-        self.pgsql_cur.execute(sql)
+        pgsql_cur.execute(sql)
 
-    def update(self, data, table_name=None):
+    @staticmethod
+    def update(pgsql_cur, data, table_name=None):
         sql = "UPDATE {} SET ".format(table_name)
         for k, v in data.items():
-            if k != '`id`':
+            if k != 'id':
                 if isinstance(v, (int, float, Decimal, long)):
                     sql += k + "=" + str(v) + ","
                 elif v in ["now()", "NOW()", "current_timestamp",
@@ -101,16 +107,23 @@ class PgsqlDbUtil(object):
                     sql += k + "=" + v + ","
                 elif "TO_DATE" in v:
                     sql += k + "=" + v + ","
+                elif "TO_TIMESTAMP" in v:
+                    sql += k + "=" + v + ","
+                elif "NULL" in v:
+                    sql += k + "=" + v + ","
                 else:
                     sql += k + "=" + "'" + v + "'" + ","
-        if isinstance(data["`id`"], list):
-            sql = sql[:-1] + " WHERE `id` in ({})".format(",".join(data["`id`"]))
+        if isinstance(data["id"], list):
+            sql = sql[:-1] + " WHERE id in ({})".format(
+                ",".join(data["id"]))
         else:
-            sql = sql[:-1] + " WHERE `id` = {}".format(data["`id`"])
-        self.pgsql_cur.execute(sql)
+            sql = sql[:-1] + " WHERE id = {}".format(data["id"])
+        pgsql_cur.execute(sql)
 
-    def delete_all(self, table_name=None):
-        self.pgsql_cur.execute("DELETE FROM `{}` WHERE 1=1".format(table_name))
+    @staticmethod
+    def delete_all(pgsql_cur, table_name=None):
+        pgsql_cur.execute("DELETE FROM {} WHERE 1=1".format(table_name))
 
-    def execute_sql(self, sql):
-        return self.pgsql_cur.execute(sql)
+    @staticmethod
+    def execute_sql(pgsql_cur, sql):
+        return pgsql_cur.execute(sql)

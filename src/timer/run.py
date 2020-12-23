@@ -49,6 +49,7 @@ if __name__ == "__main__":
     # 每小时执行
     sched.add_job(func=every_hours_exe.every_hours_execute,
                   trigger='cron', day="*", hour="*")
+    sched.add_job(every_hours_exe.every_hours_execute, 'interval', seconds=13)
     sched.start()
 
     # g = sched.start()

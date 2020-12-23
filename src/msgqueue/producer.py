@@ -67,7 +67,7 @@ def export_order_excel_msg(school_id, car_id, order_type,
         "end_date": end_date,
         "task_id": task_id
     }
-    _publish_msg('excel_exchange', 'excel.order', json.dumps(data))
+    _publish_msg('excel_exchange', 'excel.exportorder', json.dumps(data))
 
 
 def export_alert_info_msg(status, start_date, end_date,
@@ -114,26 +114,27 @@ def heartbeat():
                  json.dumps({'heartbeat': 1}))
 
 
-def worker_insert(worker_id, car_id, nickname, duty_id, duty_name):
-    d = {
-        'worker_id': worker_id,
-        'car_id': car_id,
-        'nickname': nickname,
-        'duty_id': duty_id,
-        'duty_name': duty_name
-    }
-    _publish_msg('cascade_exchange', 'cascade.workerinsert', json.dumps(d))
-
-
-def worker_update(worker_id, car_id, nickname, duty_id, duty_name):
-    d = {
-        'worker_id': worker_id,
-        'car_id': car_id,
-        'nickname': nickname,
-        'duty_id': duty_id,
-        'duty_name': duty_name
-    }
-    _publish_msg('cascade_exchange', 'cascade.workerupdate', json.dumps(d))
+# def worker_insert(worker_id, car_id, nickname, duty_id, duty_name):
+#     d = {
+#         'worker_id': worker_id,
+#         'car_id': car_id,
+#         'nickname': nickname,
+#         'duty_id': duty_id,
+#         'duty_name': duty_name
+#     }
+#     _publish_msg('cascade_exchange', 'cascade.workerinsert', json.dumps(d))
+#
+#
+# def worker_update(worker_id, car_id, nickname, duty_id, duty_name, empty=0):
+#     d = {
+#         'worker_id': worker_id,
+#         'car_id': car_id,
+#         'nickname': nickname,
+#         'duty_id': duty_id,
+#         'duty_name': duty_name,
+#         'empty': empty
+#     }
+#     _publish_msg('cascade_exchange', 'cascade.workerupdate', json.dumps(d))
 
 
 def car_update(car_id, license_plate_number):

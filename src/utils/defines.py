@@ -47,12 +47,17 @@ class SubErrorCode(object):
     CAR_BOUNDING_TO_STUDENT = (200052, u"车辆已经绑定了学生,不能删除,请先解除学生对车辆的绑定")
     CAR_BOUNDING_TO_DEVICE = (200053, u"车辆已经绑定了设备,不能删除,请先解除设备对车辆的绑定")
     CAR_BOUNDING_TO_WORKER = (200054, u"车辆已经绑定了工作人员,请先解除工作人员对车辆的绑定")
+    CAR_ALREADY_BOUNDING_WORKER = (200055, u"车辆已经绑定工作人员")
 
     SCHOOL_NAME_ALREADY_EXISTS = (200060, u"学校名字已经存在")
 
     DEVICE_INITED_NOT_CHANGE = (200070, u"初始化已完成,不能再修改设备类型")
     DEVICE_CHEPAI_NOT_FOUND = (200071, u"需要先在车辆列表修改车牌")
     DEVICE_FIRST_BOUNDING_WORKER = (200072, u"需要先绑定工作人员")
+    DEVICE_PLEASE_WAITING = (200073, u"请等待")
+    DEVICE_UNINITIALIZED_ERR = (200074, u"设备未初始化")
+    DEVICE_ALREADY_CLOSE = (200075, u"设备已经关闭")
+    DEVICE_OPEN_THREE_MINUTES_LATER = (200076, u"开机三分钟后才能执行该功能")
 
     TASK_EXECUTING = (200071, u"任务执行中")
 

@@ -6,6 +6,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from database.db import db
 from database.Order import Order
 from database.ExportTask import ExportTask
+from ext import conf
 
 
 class OrderService(object):
@@ -30,11 +31,16 @@ class OrderService(object):
             end_date = end_date + timedelta(days=1)
             query = query.filter(or_(Order.create_time > start_date,
                                      Order.create_time < end_date))
+
+        query = query.order_by(Order.id.desc())
         count = query.count()
         results = query.offset(offset).limit(size).all()
 
         data = []
         for row in results:
+            oss_url = 'https://' + conf.config['OSS_BUCKET'] + '.' + \
+                      conf.config['OSS_POINT'] + '/snap_{}_{}.jpg'.format(
+                row.fid, row.cur_timestamp)
             data.append({
                 'id': row.id,
                 'stu_no': row.stu_no,
@@ -48,7 +54,8 @@ class OrderService(object):
                 'gps': row.gps,
                 'car_id': row.car_id,
                 'license_plate_number': row.license_plate_number,
-                'device_id': row.device_id
+                'device_id': row.device_id,
+                'oss_url': oss_url
             })
         return {'results': data, 'count': count}
 

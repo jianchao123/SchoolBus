@@ -4,8 +4,8 @@
 """
 import os
 import sys
-reload(sys)
-sys.setdefaultencoding('utf8')
+# reload(sys)
+# sys.setdefaultencoding('utf8')
 import json
 import time
 import threading

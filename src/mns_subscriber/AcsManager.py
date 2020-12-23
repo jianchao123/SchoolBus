@@ -1,6 +1,7 @@
 # coding:utf-8
 import os
 import sys
+import zlib
 import time
 import json
 import base64
@@ -266,6 +267,8 @@ class AcsManager(object):
             longitude, latitude = utils.gcj_02_to_gorde_gpd(
                 str(longitude), str(latitude))
             gps_str = '{},{}'.format(longitude, latitude)
+        else:
+            gps_str = ''
 
         d = defaultdict()
         d['id'] = redis_db.incr(RedisKey.ORDER_ID_INCR)
@@ -351,6 +354,9 @@ class AcsManager(object):
 
         intersection_list = list(set(face_ids) & set(device_fid_set))
 
+        print "=================List=============="
+        print add_list
+        print del_list
         # 需要更新的feature
         update_list = []
         for row in results:
@@ -360,6 +366,7 @@ class AcsManager(object):
                 if feature_crc != fid_dict[str(pk)]:
                     update_list.append(str(pk))
 
+        print update_list
         if rds_conn.get(RedisKey.QUERY_DEVICE_PEOPLE):
             # 保存设备上的人员到数据库
             rds_conn.delete(RedisKey.QUERY_DEVICE_PEOPLE)
@@ -513,13 +520,7 @@ class AcsManager(object):
             if not device_status:
                 return -10
 
-            # 设置设备时间戳和gps
-            device_timstamp = rds_conn.hget(RedisKey.DEVICE_CUR_TIMESTAMP, device_name)
-            if device_timstamp and int(time.time()) - int(device_timstamp) > 60 * 2:
-                producer.dev_while_list(device_name)
-                print u"--------------------更新设备人员--------------------"
-            rds_conn.hset(RedisKey.DEVICE_CUR_TIMESTAMP, device_name, dev_time)
-            rds_conn.hset(RedisKey.DEVICE_CUR_GPS, device_name, gps)
+            d = {}
 
             # 5表示已初始化人员
             if device_status and int(device_status) == 5:
@@ -535,7 +536,6 @@ class AcsManager(object):
                 workmode = 0
             print "---------------------"
             print status, type(status)
-            d = {}
             # 已关联车辆
             if status == 2:
                 d['status'] = 3   # 设置工作模式
@@ -576,7 +576,8 @@ class AcsManager(object):
         if cur_status and int(cur_status) == 5:
             # 判断设备时间是否不准确
             seconds_diff = int(time.time()) - int(dev_time)
-            if seconds_diff > 30:
+            print seconds_diff
+            if seconds_diff > 36:
                 print u"设备时间不准确,重新设置"
                 sound_vol, license_plate_number, device_type\
                     = self._get_sound_vol_by_name(dev_name)
@@ -585,6 +586,25 @@ class AcsManager(object):
                                        sound_vol, workmode)
 
             rds_conn.hset(RedisKey.DEVICE_CUR_PEOPLE_NUMBER, dev_name, cnt)
+
+    def device_rebooted_setting_open_time(self, device_name, gps):
+        """设备重启设备开机时间"""
+        rds_conn = db.rds_conn
+        # 设置设备时间戳和gps
+        device_timestamp = rds_conn.hget(
+            RedisKey.DEVICE_CUR_TIMESTAMP, device_name)
+        if device_timestamp and \
+                int(time.time()) - int(device_timestamp) > 60 * 1:
+            producer.dev_while_list(device_name)
+            pk, status, version_no, sound_volume, license_plate_number, \
+                device_type = self._get_device_info_data(device_name)
+            d = defaultdict()
+            d['id'] = pk
+            d['open_time'] = 'TO_TIMESTAMP({})'.format(int(time.time()))
+            self._update_device(d)
+        rds_conn.hset(RedisKey.DEVICE_CUR_TIMESTAMP, device_name,
+                      int(time.time()))
+        rds_conn.hset(RedisKey.DEVICE_CUR_GPS, device_name, gps)
 
     @db.transaction(is_commit=True)
     def save_imei(self, pgsql_cur, device_name, imei):
@@ -614,6 +634,7 @@ class AcsManager(object):
             if results:
                 d['status'] = 4
             d['feature'] = feature
+            d['feature_crc'] = zlib.crc32(base64.b64decode(feature))
         else:
             d['status'] = 5
         pgsql_db.update(pgsql_cur, d, table_name='face')

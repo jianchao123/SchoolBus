@@ -25,6 +25,7 @@ class WorkerService(object):
                 Worker.nickname.like(query_str)))
 
         query = query.filter(Worker.status == 1)
+        query = query.order_by(Worker.id.desc())
         count = query.count()
         results = query.offset(offset).limit(size).all()
 
@@ -80,9 +81,7 @@ class WorkerService(object):
             db.session.add(worker)
             db.session.flush()
             new_id = worker.id
-            producer.worker_insert(new_id, worker.car_id,
-                                   worker.nickname, worker.duty_id,
-                                   defines.duty[worker.duty_id])
+
             db.session.commit()
 
             return {'id': new_id}
@@ -107,6 +106,7 @@ class WorkerService(object):
                 return -10  # 工号已经存在
         if nickname:
             worker.nickname = nickname
+
         if gender:
             worker.gender = gender
         if mobile:
@@ -122,22 +122,55 @@ class WorkerService(object):
             if worker.car_id and worker.duty_id != duty_id:
                 return -12
             worker.duty_id = duty_id
+
+        old_car_id = worker.car_id
+        old_duty_id = worker.duty_id
         if car_id:
             if car_id == -10:
                 worker.car_id = None
                 worker.license_plate_number = None
             else:
+                # 该车辆是否绑定工作人员
+                cnt = db.session.query(Worker).filter(
+                    Worker.car_id == car_id,
+                    Worker.duty_id == worker.duty_id).count()
+                if cnt:
+                    return -13
+
                 car = db.session.query(Car).filter(
                     Car.id == car_id).first()
                 if not car:
                     return -11  # 车辆未找到
                 worker.car_id = car.id
                 worker.license_plate_number = car.license_plate_number
-        # 异步更新车辆里携带的工作人员信息
-        if nickname or duty_id:
-            producer.worker_update(
-                worker.id, worker.car_id, worker.nickname, worker.duty_id,
-                defines.duty[worker.duty_id])
+
+        # if nickname or duty_id:
+        #     # 是否已经绑定车辆
+        #     if worker.car_id:
+        #         producer.worker_update(
+        #             worker.id, worker.car_id, worker.nickname,
+        #             worker.duty_id, defines.duty[worker.duty_id])
+        #
+        # # 原来有car_id 且 老car_id与新car_id不一样
+        # if old_car_id and car_id and old_car_id != car_id:
+        #     # 老car_id删除worker信息
+        #     producer.worker_update(
+        #         worker.id, old_car_id, 'NULL', 'NULL', 'NULL', empty=old_duty_id)
+        #
+        #     producer.worker_update(
+        #         worker.id, car_id, worker.nickname,
+        #         worker.duty_id, defines.duty[worker.duty_id])
+        #
+        # # 原来没有car_id 新关联car_id
+        # if not old_car_id and car_id:
+        #     producer.worker_update(
+        #         worker.id, car_id, worker.nickname,
+        #         worker.duty_id, defines.duty[worker.duty_id])
+        #
+        # if car_id == -10:
+        #     producer.worker_update(
+        #         worker.id, old_car_id, 'NULL', 'NULL', 'NULL',
+        #         empty=old_duty_id)
         try:
             d = {'id': worker.id}
             db.session.commit()
@@ -158,15 +191,18 @@ class WorkerService(object):
         worker_id_list = worker_ids.split(",")
         # 1.如果工作人员已经绑定了车辆不能删除该工作人员
         cnt = db.session.query(Worker).filter(
-            Worker.id.is_(worker_id_list)).filter(
+            Worker.id.in_(worker_id_list)).filter(
             Worker.car_id.isnot(None)).count()
         if cnt:
             return -10
 
         try:
-            db.session.query(Worker).filter(
-                Worker.id.in_(worker_id_list)).update(
+            workers = db.session.query(Worker).filter(
+                Worker.id.in_(worker_id_list))
+
+            workers.update(
                 {Worker.status: 10}, synchronize_session=False)
+
             db.session.commit()
             return {'id': 1}
         except SQLAlchemyError:

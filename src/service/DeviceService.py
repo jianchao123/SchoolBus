@@ -1,6 +1,7 @@
 # coding:utf-8
 import time
 from datetime import datetime
+from datetime import timedelta
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import or_
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
@@ -11,6 +12,7 @@ from database.Student import Student
 from database.Face import Face
 from database.Car import Car
 from utils import defines
+from database.School import School
 from msgqueue import producer
 from ext import cache
 
@@ -162,14 +164,15 @@ class DeviceService(object):
 
         obj = db.session.query(DeviceFaceInfo). \
             filter(DeviceFaceInfo.device_id == device.id).first()
-        if obj:
+        if obj and obj.update_timestamp and \
+                int(time.time()) - int(obj.update_timestamp) < 60:
             d = {}
             person_fid_list = []
             if obj.info_str:
                 raw = obj.info_str.split(",")
                 for row in raw:
-                    person_fid_list.append(row.split("|"))
-            from database.School import School
+                    person_fid_list.append(int(row))
+
             students = db.session.query(Student, School.school_name).join(
                 Face, Face.stu_id == Student.id).join(
                 School, School.id == Student.school_id).filter(
@@ -182,8 +185,8 @@ class DeviceService(object):
                     'id': student.id,
                     'nickname': student.nickname,
                     'school_name': school_name,
-                    'grade_name': defines.grade[students.grade_id],
-                    'class_name': defines.classes[students.class_id],
+                    'grade_name': defines.grade[student.grade_id],
+                    'class_name': defines.classes[student.class_id],
                     'stu_no': student.stu_no
                 })
             d["published"] = person_list
@@ -191,4 +194,28 @@ class DeviceService(object):
 
             return d
         else:
+
+            k = cache.get(defines.RedisKey.QUERY_DEVICE_PEOPLE)
+            if k:
+                return -1  # 正在刷新数据到数据库
+
+            if device.status != 5:
+                return -3  # 设备还未初始化人员
+
+            dev_timestamp = cache.hget(
+                defines.RedisKey.DEVICE_CUR_TIMESTAMP, device.device_name)
+            time_diff = int(time.time()) - int(dev_timestamp)
+            if time_diff > 30:
+                return -4  # 设备未开机
+
+            # 已在线且三分钟后
+            if time_diff < 30 and \
+                    datetime.now() - timedelta(minutes=3) < device.open_time:
+                return -5
+
+            # 发送消息
+            cache.set(defines.RedisKey.QUERY_DEVICE_PEOPLE, 1)
+            cache.expire(defines.RedisKey.QUERY_DEVICE_PEOPLE, 30)
+            producer.get_device_people_data(device.device_name)
+
             return {"published": [], "published_numbers": 0}

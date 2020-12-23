@@ -40,12 +40,12 @@ class InsertUpdateConsumer(object):
         data = json.loads(body.decode('utf-8'))
         arr = method.routing_key.split(".")
         routing_suffix = arr[-1]
-        if routing_suffix == 'workerinsert':
-            # 更新工作人员关联车辆的信息
-            self.business.car_field_update(data)
-        if routing_suffix == 'workerupdate':
-            # 更新工作人员关联车辆的信息
-            self.business.car_field_update(data)
+        # if routing_suffix == 'workerinsert':
+        #     # 更新工作人员关联车辆的信息
+        #     self.business.car_field_update(data)
+        # if routing_suffix == 'workerupdate':
+        #     # 更新工作人员关联车辆的信息
+        #     self.business.car_field_update(data)
         if routing_suffix == 'carupdate':
             # 更新关联到该车辆的学生信息
             self.business.student_field_update(data)
@@ -58,28 +58,43 @@ class InsertUpdateBusiness(object):
     def __init__(self, logger):
         self.logger = logger
 
-    @transaction(is_commit=True)
-    def car_field_update(self, pgsql_cur, data):
-        from collections import defaultdict
-        pgsql_db = PgsqlDbUtil
-        print data
-        worker_id = data['worker_id']
-        car_id = data['car_id']
-        nickname = data['nickname']
-        duty_id = data['duty_id']
-        duty_name = data['duty_name']
-        d = defaultdict()
-        d['id'] = car_id
-        if duty_id == 1:
-            d['worker_1_id'] = worker_id
-            d['worker_1_nickname'] = nickname
-            d['worker_1_duty_name'] = duty_name
-        elif duty_id == 2:
-            d['worker_2_id'] = worker_id
-            d['worker_2_nickname'] = nickname
-            d['worker_2_duty_name'] = duty_name
-        print d
-        pgsql_db.update(pgsql_cur, d, 'car')
+    # @transaction(is_commit=True)
+    # def car_field_update(self, pgsql_cur, data):
+    #     from collections import defaultdict
+    #     pgsql_db = PgsqlDbUtil
+    #     print data
+    #     worker_id = data['worker_id']
+    #     car_id = data['car_id']
+    #     nickname = data['nickname']
+    #     duty_id = data['duty_id']
+    #     duty_name = data['duty_name']
+    #     empty = data['empty']
+    #
+    #     d = defaultdict()
+    #     d['id'] = car_id
+    #     if empty:
+    #         if empty == 1:
+    #             d['worker_1_id'] = 'NULL'
+    #             d['worker_1_nickname'] = 'NULL'
+    #             d['worker_1_duty_name'] = 'NULL'
+    #         elif empty == 2:
+    #             d['worker_2_id'] = 'NULL'
+    #             d['worker_2_nickname'] = 'NULL'
+    #             d['worker_2_duty_name'] = 'NULL'
+    #     else:
+    #         # 驾驶员
+    #         if duty_id == 1:
+    #             d['worker_1_id'] = worker_id
+    #             d['worker_1_nickname'] = nickname
+    #             d['worker_1_duty_name'] = duty_name
+    #         elif duty_id == 2:
+    #             d['worker_2_id'] = worker_id
+    #             d['worker_2_nickname'] = nickname
+    #             d['worker_2_duty_name'] = duty_name
+    #
+    #     print d
+    #     if d:
+    #         pgsql_db.update(pgsql_cur, d, 'car')
 
     @transaction(is_commit=True)
     def student_field_update(self, pgsql_cur, data):
@@ -231,15 +246,13 @@ class StudentBusiness(object):
             if worker:
                 d['id'] = worker[0]
                 pgsql_db.update(pgsql_cur, d, 'worker')
-                producer.worker_update(worker.id, car_id, nickname,
-                                       duty_id, duty[duty_id])
+
             else:
                 pgsql_db.insert(pgsql_cur, d, 'worker')
                 # 查询
                 new_worker = pgsql_db.get(pgsql_cur, worker_sql.format(emp_no))
                 print new_worker
-                producer.worker_insert(new_worker[0], car_id, nickname,
-                                       duty_id, duty[duty_id])
+
         rds_conn.delete('batch_add_worker')
 
     @transaction(is_commit=True)
@@ -358,7 +371,7 @@ class DeviceBusiness(object):
             "cmd": "updateface",
             "fid": int(fid),
             "fno": device_name,
-            "name": nickname.encode('utf-8'),
+            "name": nickname,
             "feature": feature,
             "ttsurl": aac_url,
             "group": 0,
@@ -374,7 +387,7 @@ class DeviceBusiness(object):
             "cmd": "addface",
             "fid": int(fid),
             "fno": device_name,
-            "name": nickname.encode('utf-8'),
+            "name": nickname,
             "feature": feature,
             "ttsurl": aac_url,
             "group": 0,
@@ -417,6 +430,8 @@ class DeviceBusiness(object):
         if workmode not in [0, 1, 3]:
             return -1
         cur_volume = cur_volume - 94
+        if not chepai:
+            return
         jdata = {
             "cmd": "syntime",
             "time": int(time.time()),
@@ -480,66 +495,87 @@ class DeviceBusiness(object):
                 fid = ret_all[0]
                 fid_list.append(str(fid))
                 offset += 16
-        device_sql = "SELECT id FROM device WHERE device_name='{}'"
-        device_id = pgsql_db.get(device_sql.format(device_name))[0]
+        device_sql = "SELECT id FROM device WHERE device_name='{}' LIMIT 1"
+        device = pgsql_db.get(pgsql_cur, device_sql.format(device_name))
+        device_id = device[0]
 
-        people_data = []
-        if fid_list:
-            sql = "SELECT id,nickname,emp_no FROM face WHERE id IN (" \
-                  + ",".join(fid_list) + ")"
-            results = pgsql_db.query(pgsql_cur, sql)
-            for row in results:
-                fid = str(row[0])
-                nickname = row[1]
-                emp_no = row[2]
-                s = emp_no + "|" + nickname + "|1"
-                people_data.append(s)
-
-        not_updated_person_data = []
-        if server_face_ids:
-            qq = [str(row) for row in list(set(server_face_ids) - set(fid_list))]
-            if qq:
-                sql = "SELECT id,nickname,emp_no FROM face " \
-                      "WHERE id IN ({})".format(",".join(qq))
-                print sql
-                results = pgsql_db.query(pgsql_cur, sql)
-                for row in results:
-                    fid = str(row[0])
-                    nickname = row[1]
-                    emp_no = row[2]
-                    s = emp_no + "|" + nickname + "|0"
-                    not_updated_person_data.append(s)
-
-        get_sql = 'SELECT id FROM device_people_list ' \
-                  'WHERE device_id={} LIMIT 1'
-        result = pgsql_db.get(pgsql_cur, get_sql.format(device_id))
-        print "-=-=-=-=-=========================="
-        print result
+        sql = "SELECT id,info_str FROM device_face_info " \
+              "WHERE device_id={} LIMIT 1"
+        result = pgsql_db.get(pgsql_cur, sql.format(device_id))
         if result:
-            pk = result[0]
-
             d = {
-                'id': int(pk),
-                'device_people_list_raw': ",".join(people_raw_list),
-                'total_number': len(server_face_ids),
-                'already_upgrade_number': len(fid_list),
-                'update_time': 'now()',
-                'device_people': ",".join(people_data),
-                'not_updated': ",".join(not_updated_person_data)
+                'id': result[0],
+                'info_str': ",".join(fid_list),
+                'update_timestamp': '{}'.format(int(time.time()))
             }
-            pgsql_db.update(pgsql_cur, d, table_name='device_people_list')
+            pgsql_db.update(pgsql_cur, d, 'device_face_info')
         else:
-
             d = {
                 'device_id': device_id,
-                'device_people_list_raw': ",".join(people_raw_list),
-                'total_number': len(server_face_ids),
-                'already_upgrade_number': len(fid_list),
-                'update_time': 'now()',
-                'device_people': ",".join(people_data),
-                'not_updated': ",".join(not_updated_person_data)
+                'info_str': ",".join(fid_list),
+                'update_timestamp': '{}'.format(int(time.time()))
             }
-            pgsql_db.insert(pgsql_cur, d, table_name='device_people_list')
+            pgsql_db.insert(pgsql_cur, d, 'device_face_info')
+        # device_sql = "SELECT id FROM device WHERE device_name='{}'"
+        # device_id = pgsql_db.get(pgsql_cur, device_sql.format(device_name))[0]
+
+        # people_data = []
+        # if fid_list:
+        #     sql = "SELECT id,nickname,emp_no FROM face WHERE id IN (" \
+        #           + ",".join(fid_list) + ")"
+        #     results = pgsql_db.query(pgsql_cur, sql)
+        #     for row in results:
+        #         fid = str(row[0])
+        #         nickname = row[1]
+        #         emp_no = row[2]
+        #         s = emp_no + "|" + nickname + "|1"
+        #         people_data.append(s)
+
+        # not_updated_person_data = []
+        # if server_face_ids:
+        #     qq = [str(row) for row in list(set(server_face_ids) - set(fid_list))]
+        #     if qq:
+        #         sql = "SELECT id,nickname,emp_no FROM face " \
+        #               "WHERE id IN ({})".format(",".join(qq))
+        #         print sql
+        #         results = pgsql_db.query(pgsql_cur, sql)
+        #         for row in results:
+        #             fid = str(row[0])
+        #             nickname = row[1]
+        #             emp_no = row[2]
+        #             s = emp_no + "|" + nickname + "|0"
+        #             not_updated_person_data.append(s)
+        #
+        # get_sql = 'SELECT id FROM device_people_list ' \
+        #           'WHERE device_id={} LIMIT 1'
+        # result = pgsql_db.get(pgsql_cur, get_sql.format(device_id))
+        # print "-=-=-=-=-=========================="
+        # print result
+        # if result:
+        #     pk = result[0]
+        #
+        #     d = {
+        #         'id': int(pk),
+        #         'device_people_list_raw': ",".join(people_raw_list),
+        #         'total_number': len(server_face_ids),
+        #         'already_upgrade_number': len(fid_list),
+        #         'update_time': 'now()',
+        #         'device_people': ",".join(people_data),
+        #         'not_updated': ",".join(not_updated_person_data)
+        #     }
+        #     pgsql_db.update(pgsql_cur, d, table_name='device_people_list')
+        # else:
+        #
+        #     d = {
+        #         'device_id': device_id,
+        #         'device_people_list_raw': ",".join(people_raw_list),
+        #         'total_number': len(server_face_ids),
+        #         'already_upgrade_number': len(fid_list),
+        #         'update_time': 'now()',
+        #         'device_people': ",".join(people_data),
+        #         'not_updated': ",".join(not_updated_person_data)
+        #     }
+        #     pgsql_db.insert(pgsql_cur, d, table_name='device_people_list')
 
     @transaction(is_commit=False)
     def device_people_list_upgrade(self, pgsql_cur, data):
@@ -556,7 +592,9 @@ class DeviceBusiness(object):
         if len(del_list) < 60:
             for fid in del_list:
                 self._publish_del_people_msg(device_name, fid)
-
+        print del_list
+        print update_list
+        print add_list
         sql = "SELECT feature,nickname,aac_url " \
               "FROM face WHERE id in ({}) "
         # update list
@@ -628,8 +666,8 @@ class ExportExcelBusiness(object):
         task_id = data['task_id']
 
         sql = """
-        SELECT stu_no,stu_name,school_name,order_type,create_time,
-        license_plate_number,up_location FROM order O 
+        SELECT O.stu_no,O.stu_name,O.school_name,O.order_type,O.create_time,
+        O.license_plate_number,O.gps FROM public.order O 
         INNER JOIN school SHL ON SHL.id=O.school_id 
         WHERE 1=1 {} 
         LIMIT {} OFFSET {}
@@ -651,7 +689,7 @@ class ExportExcelBusiness(object):
                 "TO_DATE('{}','YYYY-MM-DD')".format(start_date, end_date)
 
         results = pgsql_db.query(pgsql_cur, sql.format(param_str, limit, offset))
-        value_title = [u'学生编号', u'学生姓名' u'学校', u'乘车记录类型', 
+        value_title = [u'身份证号', u'学生姓名', u'学校', u'乘车记录类型',
                        u'乘车时间', u'乘坐车辆', u'gps位置']
         zip_name = u"乘坐记录{}-{}".format(start_date, end_date)
         excel_name = u"乘坐记录第{}部分.xls"
@@ -687,9 +725,14 @@ class ExportExcelBusiness(object):
                 else:
                     order_type_str = u"放学下车"
                 create_time_str = row[4].strftime('%Y-%m-%d %H:%M:%S')
-                sheet_data.append([row[0], row[1], row[2], order_type_str, 
-                                   create_time_str, row[5], row[6]])
-
+                print row
+                print row[0], row[1], row[2]
+                sheet_data.append(
+                    [row[0], row[1].decode('utf8'), row[2].decode('utf8'),
+                     order_type_str, create_time_str, row[5].decode('utf8'),
+                     row[6]])
+            print book_name_xls
+            print sheet_data
             utils.write_excel_xls(
                 workbook,
                 book_name_xls,
@@ -729,7 +772,8 @@ class ExportExcelBusiness(object):
         sql = """
         SELECT license_plate_number,worker_name_1,worker_name_2,company_name,
         people_number,people_info,alert_start_time,alert_second_time,
-        status,gps FROM alert_info WHERE 1=1 
+        status,gps,cancel_worker_name,cancel_time,cancel_reason
+         FROM alert_info WHERE 1=1 
             """
         if status:
             sql += " AND status={}".format(status)
@@ -759,10 +803,15 @@ class ExportExcelBusiness(object):
                 pass
         sheet_data = [value_title]
         for index, row in enumerate(results):
-            arr = row[10].split(',')
-            sheet_data.append([row[0], row[1], row[2], row[3], row[4], row[5],
-                               row[6], row[7], row[8], row[9], arr[0],
-                               arr[1], arr[2]])
+            alert_status = u'正在报警' if row[8] == 1 else u'已解除'
+            sheet_data.append(
+                [row[0].decode('utf-8'), row[1].decode('utf-8'),
+                 row[2].decode('utf-8'), row[3].decode('utf-8'), row[4],
+                 row[5].decode('utf-8'), row[6].strftime('%Y-%m-%d %H:%M:%S'),
+                 row[7].strftime('%Y-%m-%d %H:%M:%S'), alert_status,
+                 row[9], row[10].decode('utf-8'),
+                 row[11].strftime('%Y-%m-%d %H:%M:%S'),
+                 row[12]].decode('utf-8'))
 
         workbook = utils.create_new_workbook()
         utils.write_excel_xls(

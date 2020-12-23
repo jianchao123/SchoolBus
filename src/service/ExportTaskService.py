@@ -26,6 +26,6 @@ class ExportTaskService(object):
                 'task_name': row.task_name,
                 'zip_url': row.zip_url,
                 'task_type': row.task_type,
-                'create_time': row.create_time.strftime('%Y-%m%-d %H:%M:%S')
+                'create_time': row.create_time.strftime('%Y-%m-%d %H:%M:%S')
             })
         return {'count': count, 'results': data}

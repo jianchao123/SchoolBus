@@ -222,11 +222,24 @@ class Test(object):
         for row in ks:
             db.rds_conn.delete(row)
 
+    @db.transaction(is_commit=True)
+    def generate_crc(self, cursor):
+        import zlib
+        pgdb = db.PgsqlDbUtil
+        results = pgdb.query(cursor, 'SELECT id,feature_crc,feature FROM face')
+        for row in results:
+            d = {
+                'id': row[0],
+                'feature_crc': zlib.crc32(base64.b64decode(row[2]))
+            }
+            pgdb.update(cursor, d, 'face')
+
+
 if __name__ == '__main__':
     t = Test(config.Productkey, config.MNSAccessKeyId,
              config.MNSAccessKeySecret)
     #t.ddddddddd()
-    t.delte_key()
+    t.generate_crc()
 
     # import struct
     #

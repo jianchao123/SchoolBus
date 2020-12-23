@@ -56,6 +56,23 @@ class CarService(object):
                     is_online = u"离线"
                 else:
                     is_online = u"在线"
+            # 查询绑定的工作人员
+            worker_1_id = None
+            worker_1_nickname = None
+            worker_1_duty_name = None
+            worker_2_id = None
+            worker_2_nickname = None
+            worker_2_duty_name = None
+            workers = db.session.query(Worker).filter(Worker.car_id == row.id).all()
+            for worker in workers:
+                if worker.duty_id == 1:
+                    worker_1_id = worker.id
+                    worker_1_nickname = worker.nickname
+                    worker_1_duty_name = defines.duty[worker.duty_id]
+                elif worker.duty_id == 2:
+                    worker_2_id = worker.id
+                    worker_2_nickname = worker.nickname
+                    worker_2_duty_name = defines.duty[worker.duty_id]
 
             data.append({
                 'id': row.id,
@@ -63,12 +80,12 @@ class CarService(object):
                 'license_plate_number': row.license_plate_number,
                 'capacity': row.capacity,
                 'device_iid': device_iid,
-                'worker_1_id': row.worker_1_id,
-                'worker_1_nickname': row.worker_1_nickname,
-                'worker_1_duty_name': row.worker_1_duty_name,
-                'worker_2_id': row.worker_2_id,
-                'worker_2_nickname': row.worker_2_nickname,
-                'worker_2_duty_name': row.worker_2_duty_name,
+                'worker_1_id': worker_1_id,
+                'worker_1_nickname': worker_1_nickname,
+                'worker_1_duty_name': worker_1_duty_name,
+                'worker_2_id': worker_2_id,
+                'worker_2_nickname': worker_2_nickname,
+                'worker_2_duty_name': worker_2_duty_name,
                 'company_name': row.company_name,
                 'status': row.status,
                 'is_online': is_online
@@ -82,9 +99,16 @@ class CarService(object):
 
         """
         car = db.session.query(Car).filter(
-            Car.license_plate_number == license_plate_number).first()
+            Car.license_plate_number == license_plate_number,
+            Car.status == 1).first()
         if car:
             return -10  # 车牌已经存在
+
+        del_car = db.session.query(Car).filter(
+            Car.license_plate_number == license_plate_number,
+            Car.status == 10).first()
+        if del_car:
+            del_car.license_plate_number = 'xxxxxx'
 
         car = Car()
         car.code = str(datetime.now().strftime('%Y%m%d%H%M%S%f'))

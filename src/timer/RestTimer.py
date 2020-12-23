@@ -442,15 +442,15 @@ class EveryHoursExecute(object):
 
         # 今日乘车人次
         today_toke_bus_number_sql = \
-            "SELECT COUNT(id) FROM order WHERE " \
-            "TO_CHAR(create_time, 'yyyy-MM-dd') = '{}'"
+            "SELECT COUNT(id) FROM public.order WHERE " \
+            "TO_CHAR(create_time, 'yyyy-MM-dd') = '{}'  LIMIT 1"
         result = sql_db.get(cursor, today_toke_bus_number_sql.format(today_str))
         today_take_bus_number = result[0]
 
         # 昨日乘车人次
         yesterday_toke_bus_number_sql = \
-            "SELECT COUNT(id) FROM order WHERE " \
-            "TO_CHAR(create_time, 'yyyy-MM-dd') = '{}'"
+            "SELECT COUNT(id) FROM public.order WHERE " \
+            "TO_CHAR(create_time, 'yyyy-MM-dd') = '{}'  LIMIT 1"
         result = sql_db.get(cursor, yesterday_toke_bus_number_sql.format(yesterday_str))
         yesterday_take_bus_number = result[0]
 
@@ -459,11 +459,11 @@ class EveryHoursExecute(object):
         device_online_number = 0
         device_offline_number = 0
         devices = rds_conn.hgetall(RedisKey.DEVICE_CUR_TIMESTAMP)
-        for k, v in devices:
+        for k, v in devices.items():
             if now - int(v) < 31:
                 device_online_number += 1
         # 查询设备数量
-        device_number_sql = "SELECT COUNT(id) ROM device WHERE status != 10"
+        device_number_sql = "SELECT COUNT(id) FROM device WHERE status != 10"
         result = sql_db.get(cursor, device_number_sql)
         device_offline_number = result[0] - device_offline_number
 
@@ -471,17 +471,23 @@ class EveryHoursExecute(object):
         alert_sql = \
             "SELECT COUNT(id) FROM alert_info WHERE alert_start_time > " \
             "TO_DATE('{}', '%Y-%m-%d') and alert_start_time < " \
-            "TO_DATE('{}', '%Y-%m-%d')"
-        this_week_alert_number = sql_db.get(alert_sql.format(
+            "TO_DATE('{}', '%Y-%m-%d')  LIMIT 1"
+        this_week_alert_number = sql_db.get(cursor, alert_sql.format(
             this_week_start_str, this_week_end_str))
-        last_week_alert_number = sql_db.get(alert_sql.format(
+        this_week_alert_number = this_week_alert_number[0] if this_week_alert_number else 0
+
+        last_week_alert_number = sql_db.get(cursor, alert_sql.format(
             last_week_start_str, last_week_end_str))
+        last_week_alert_number = last_week_alert_number[0] if last_week_alert_number else 0
 
         # 今日昨日报警数量
         alert_sql = "SELECT COUNT(id) FROM alert_info WHERE " \
-                    "TO_CHAR(alert_start_time, 'yyyy-MM-dd') = '{}'"
-        today_alert_number = sql_db.get(alert_sql.format(today_str))
-        yesterday_alert_number = sql_db.get(alert_sql.format(yesterday_str))
+                    "TO_CHAR(alert_start_time, 'yyyy-MM-dd') = '{}' LIMIT 1"
+        today_alert_number = sql_db.get(cursor, alert_sql.format(today_str))
+        today_alert_number = today_alert_number[0] if today_alert_number else 0
+
+        yesterday_alert_number = sql_db.get(cursor, alert_sql.format(yesterday_str))
+        yesterday_alert_number = yesterday_alert_number[0] if yesterday_alert_number else 0
 
         d = {
             'today_take_bus_number': today_take_bus_number,
@@ -493,7 +499,7 @@ class EveryHoursExecute(object):
             'today_alert_number': today_alert_number,
             'yesterday_alert_number': yesterday_alert_number
         }
-        rds_conn.hmset(RedisKey.STATISTICS, d)
+        rds_conn.set(RedisKey.STATISTICS, json.dumps(d))
 
 
 class OrderSendMsg(object):

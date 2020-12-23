@@ -109,8 +109,8 @@ else:
     OSSDomain = 'https://cdbus-dev.oss-cn-shanghai.aliyuncs.com'
     OSSAccessKeyId = 'LTAIWE5CGeOiozf7'
     OSSAccessKeySecret = 'IGuoRIxwMlPQqJ9ujWyTvSq2em4RDj'
-    OSSEndpoint = ''
-    OSSBucketName = ''
+    OSSEndpoint = 'oss-cn-shanghai.aliyuncs.com'
+    OSSBucketName = 'cdbus-dev'
 
     # MNS
     MNSEndpoint = 'http://1162097573951650.mns.cn-shanghai.aliyuncs.com/'

@@ -63,7 +63,9 @@ class ReceiveMessage(object):
                         ret = acs_manager.init_device_params(
                             jdata['version'], dev_name, jdata['devtime'],
                             jdata['shd_devid'], jdata['gps'])
-                        # 非0直接跳过
+                        acs_manager.device_rebooted_setting_open_time(
+                            dev_name, jdata['gps'])
+                        # 非0直接跳过,0表示已经初始化完成,因为低版本jdata没有cnt
                         if not ret:
                             acs_manager.device_rebooted_setting_params(
                                 dev_name, jdata['devtime'], jdata['cnt'])

@@ -274,6 +274,8 @@ def worker_update(user_id, data, pk):
         raise AppError(*SubErrorCode.CAR_NOT_FOUND)
     if ret == -12:
         raise AppError(*SubErrorCode.WORKER_NO_CHANGE_DUTY)
+    if ret == -13:
+        raise AppError(*SubErrorCode.CAR_ALREADY_BOUNDING_WORKER)
     return ret
 
 

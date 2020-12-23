@@ -198,7 +198,7 @@ def device_update(user_id, data, pk):
     return ret
 
 
-@bp.route('/person/<int:pk>', methods=['POST'])
+@bp.route('/person/info/<int:pk>', methods=['POST'])
 @get_require_check_with_user([])
 def device_person_info(user_id, data, pk):
     """
@@ -231,27 +231,37 @@ def device_person_info(user_id, data, pk):
               description: 状态
             data:
               type: array
-              properties:
-                items:
-                  properties:
-                    published_numbers:
-                      type: integer
-                      description: 数量
-                    published:
-                      type: array
-                      items:
-                        properties:
-                          nickname:
-                            type: string
-                            description: 昵称
-                          school_name:
-                            type: string
-                            description: 学校名字
-                          grade_name:
-                            type: string
-                            description: 年纪名字
-                          stu_no:
-                            type: string
-                            description: 身份证
+              items:
+                properties:
+                  published_numbers:
+                    type: integer
+                    description: 数量
+                  published:
+                    type: array
+                    items:
+                      properties:
+                        nickname:
+                          type: string
+                          description: 昵称
+                        school_name:
+                          type: string
+                          description: 学校名字
+                        grade_name:
+                          type: string
+                          description: 年纪名字
+                        stu_no:
+                          type: string
+                          description: 身份证
     """
-    return DeviceService.get_device_person_data(pk)
+    ret = DeviceService.get_device_person_data(pk)
+    if ret == -1:
+        raise AppError(*SubErrorCode.DEVICE_PLEASE_WAITING)
+    elif ret == -2:
+        raise AppError(*GlobalErrorCode.OBJ_NOT_FOUND_ERROR)
+    elif ret == -3:
+        raise AppError(*SubErrorCode.DEVICE_UNINITIALIZED_ERR)
+    elif ret == -4:
+        raise AppError(*SubErrorCode.DEVICE_ALREADY_CLOSE)
+    elif ret == -5:
+        raise AppError(*SubErrorCode.DEVICE_OPEN_THREE_MINUTES_LATER)
+    return ret
