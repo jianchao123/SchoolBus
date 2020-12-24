@@ -65,43 +65,58 @@ class GenerateAAC(object):
 
 
 class CheckAccClose(object):
-    """检查acc关闭 11秒间隔"""
+    """检查acc关闭 5秒间隔"""
 
-    @db.transaction(is_commit=True)
-    def check_acc_close(self, pgsql_cur):
+    def check_acc_close(self):
         """检查acc close"""
-        pgsql_db = db.PgsqlDbUtil
         rds_conn = db.rds_conn
         acc_hash = rds_conn.hgetall(RedisKey.ACC_CLOSE)
         cur_timestamp = int(time.time())
-        for dev_name, acc_timestamp in acc_hash.items():
+        for dev_name, value in acc_hash.items():
+            arr = value.split("|")
+            acc_timestamp = int(arr[0])
+            face_ids = arr[1]
             time_diff = cur_timestamp - acc_timestamp
+            self.acc_business(rds_conn, dev_name, time_diff, face_ids)
 
-            sql = "SELECT CAR.license_plate_number,CAR.company_name," \
-                  "CAR.id FROM device D INNER JOIN car CAR ON " \
-                  "CAR.id=D.car_id WHERE D.device_name='{}' LIMIT 1"
-            results = pgsql_db.get(sql.format(dev_name))
-            license_plate_number = results[0]
-            company_name = results[1]
-            car_id = results[2]
+    @db.transaction(is_commit=True)
+    def acc_business(self, pgsql_cur, rds_conn, dev_name, time_diff, face_ids):
+        pgsql_db = db.PgsqlDbUtil
 
-            self.post_wechat_msg(car_id, company_name, dev_name,
-                                 license_plate_number, pgsql_cur, pgsql_db,
-                                 rds_conn, time_diff)
+        sql = "SELECT CAR.license_plate_number,CAR.company_name," \
+              "CAR.id FROM device D INNER JOIN car CAR ON " \
+              "CAR.id=D.car_id WHERE D.device_name='{}' LIMIT 1"
+        results = pgsql_db.get(pgsql_cur, sql.format(dev_name))
+        license_plate_number = results[0]
+        company_name = results[1]
+        car_id = results[2]
 
-    def post_wechat_msg(self, car_id, company_name, dev_name,
-                        license_plate_number, pgsql_cur, pgsql_db, rds_conn,
-                        time_diff):
         if time_diff < 35:
             return
-        if time_diff < 300:
+
+        today = datetime.now()
+        today_str = today.strftime('%Y%m%d')
+        suffix = 'AM'
+        if today.hour > 12:
+            suffix = 'PM'
+        periods = "{}-{}-{}".format(today_str, dev_name, suffix)
+
+        get_alert_info_sql = "SELECT id,status FROM alert_info " \
+                             "WHERE periods='{}' LIMIT 1"
+        if time_diff < 60:
             number = int(rds_conn.hget(
                 RedisKey.DEVICE_CUR_PEOPLE_NUMBER, dev_name))
             if number:
+
+                # 是否已经添加报警记录
+                alert_info = pgsql_db.get(
+                    pgsql_cur, get_alert_info_sql.format(periods))
+                if alert_info:
+                    return
                 # 工作人员
                 sql = "SELECT id,nickname,duty_id FROM worker " \
-                      "WHERE car_id={} LIMIT 1".format(car_id)
-                results = pgsql_db.query(sql.format(dev_name))
+                      "WHERE car_id={}".format(car_id)
+                results = pgsql_db.query(pgsql_cur, sql)
                 worker_id_1 = None
                 worker_name_1 = None
                 worker_id_2 = None
@@ -109,21 +124,19 @@ class CheckAccClose(object):
                 for row in results:
                     if row[2] == 1:
                         worker_id_1 = row[0]
-                        worker_name_2 = row[1]
+                        worker_name_1 = row[1]
                     elif row[2] == 2:
                         worker_id_2 = row[0]
                         worker_name_2 = row[1]
 
-                # 取出滞留人员
-                fids = rds_conn.smembers(RedisKey.STUDENT_SET)
-                fids = ','.join(list(fids))
                 sql = "SELECT STU.nickname,SHL.school_name,STU.grade_id," \
                       "STU.class_id,STU.mobile_1,STU.mobile_2 FROM " \
                       "face F INNER JOIN student STU ON STU.id=F.stu_id " \
                       "INNER JOIN school SHL ON SHL.id=STU.school_id " \
-                      "WHERE F.id in ({})".format(','.join(fids))
-                results = pgsql_db.query(sql.format(fids))
-                infos = []
+                      "WHERE F.id in ({})".format(face_ids)
+                print sql
+                results = pgsql_db.query(pgsql_cur, sql)
+                student_info = []
                 for row in results:
                     info = defaultdict()
                     info['nickname'] = row[0]
@@ -132,9 +145,9 @@ class CheckAccClose(object):
                     info['class_name'] = classes[row[3]]
                     info['mobile_1'] = row[4]
                     info['mobile_2'] = row[5]
-                    infos.append(info)
+                    student_info.append(info)
                 people_info = ""
-                for info in infos:
+                for info in student_info:
                     people_info += '{},{},{},{},{}|'.format(
                         info['nickname'], info['school_name'],
                         info['grade_name'], info['class_name'],
@@ -151,30 +164,36 @@ class CheckAccClose(object):
                     'people_info': people_info,
                     'first_alert': 1,
                     'second_alert': 0,
-                    'alert_start_time': 'now()',
-                    'alert_location': '',
+                    'alert_start_time': 'NOW()',
                     'gps': rds_conn.hget(RedisKey.DEVICE_CUR_GPS, dev_name),
-                    'status': 1         # 正在报警
+                    'status': 1,         # 正在报警
+                    'periods': periods
                 }
+                print d
                 pgsql_db.insert(pgsql_cur, d, 'alert_info')
                 # TODO 推送第一次公众号消息
         else:
             # 判断报警状态是否修改
-            sql = "SELECT status FROM alert_info WHERE car_id={} " \
-                  "ORDER BY id DESC LIMIT 1"
-            result = pgsql_db.get(sql.format(car_id))
+
+            result = pgsql_db.get(pgsql_cur, get_alert_info_sql.format(periods))
             # 大于5分钟还处于报警中就推送第二次消息
-            if result and result[0] == 1:
+            if result and result[1] == 1:
                 # TODO 推送第二次公众号消息
                 d = {
-                    'id': car_id,
+                    'id': result[0],
                     'second_alert': 1,
-                    'alert_second_time': 'now()'
+                    'alert_second_time': 'NOW()'
                 }
                 pgsql_db.update(pgsql_cur, d, 'alert_info')
             # 大于5分钟直接删除Key
             rds_conn.hdel(RedisKey.ACC_CLOSE, dev_name)
             rds_conn.delete(RedisKey.STUDENT_SET.format(dev_name))
+            # TODO 删除设备车内人数
+            jdata = {
+                "cmd": "clearcnt",
+                "value": 0
+            }
+            pub_msg(rds_conn, dev_name, jdata)
 
 
 class RefreshWxAccessToken(object):

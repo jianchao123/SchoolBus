@@ -78,7 +78,7 @@ class PgsqlDbUtil(object):
         keys = ""
         values = ""
         time_list = ["now()", "NOW()", "current_timestamp",
-                     "CURRENT_TIMESTAMP", "null"]
+                     "CURRENT_TIMESTAMP"]
         for k, v in data.items():
             keys += k + ","
             if isinstance(v, (int, float, Decimal, long)) or \

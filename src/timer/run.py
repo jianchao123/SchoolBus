@@ -34,7 +34,7 @@ if __name__ == "__main__":
     # 生成aac文件
     sched.add_job(generate_aac.generate_audio, 'interval', seconds=10)
     # 检查acc熄火key
-    sched.add_job(check_acc_close.check_acc_close, 'interval', seconds=11)
+    sched.add_job(check_acc_close.check_acc_close, 'interval', seconds=5)
     # 上传人脸zip包到oss,将人脸匹配到记录
     sched.add_job(from_oss_query_face.from_oss_get_face, 'interval', seconds=16)
     # 刷新微信access token

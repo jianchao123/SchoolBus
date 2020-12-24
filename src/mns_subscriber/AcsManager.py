@@ -105,10 +105,10 @@ class AcsManager(object):
             "time": int(time.time()),
             "chepai": chepai.encode('utf8'),
             "workmode": workmode,
-            "delayoff": 10,
-            "leftdetect": 5,
+            "delayoff": 2,
+            "leftdetect": 1,
             "jiange": 10,
-            "cleartime": 2628000,
+            "cleartime": 40,
             "shxmode": 0,
             "volume": int(cur_volume),
             "facesize": 390,
@@ -577,7 +577,7 @@ class AcsManager(object):
             # 判断设备时间是否不准确
             seconds_diff = int(time.time()) - int(dev_time)
             print seconds_diff
-            if seconds_diff > 36:
+            if seconds_diff > 45:
                 print u"设备时间不准确,重新设置"
                 sound_vol, license_plate_number, device_type\
                     = self._get_sound_vol_by_name(dev_name)
@@ -641,13 +641,15 @@ class AcsManager(object):
         # 将设备从使用中删除
         rds_conn.hdel(RedisKey.DEVICE_USED, device_name)
 
-    def acc_close(self, device_name):
+    def acc_close(self, device_name, add_time):
         """
         acc关闭
         向redis存入一条acc关闭的数据
         """
         rds_conn = db.rds_conn
-        # TODO 日志是否有devtime
-        rds_conn.hset(RedisKey.ACC_CLOSE, device_name, int(time.time()))
-        # 将STUDENT_SET设置过期时间100s
-        rds_conn.expire(RedisKey.STUDENT_SET.format(device_name), 100)
+        # 取出滞留人员
+        face_ids = rds_conn.smembers(RedisKey.STUDENT_SET.format(device_name))
+        face_ids = [str(row) for row in list(face_ids)]
+        value = str(add_time) + "|" + ",".join(face_ids)
+        rds_conn.hset(RedisKey.ACC_CLOSE, device_name, value)
+

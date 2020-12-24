@@ -25,7 +25,7 @@ url_prefix = '/wxmp'
 
 """
 公众号菜单填写 /authorize_str?menu_name=mobile
-公众号拿到url开始跳转,到redirect_uri页面,用户填写好手机号之后,请求save_mobile
+公众号拿到url开始跳转,到redirect_uri页面,用户填写好手机号之后,请求get_open_id
 redirect_uri(静态页面)
 """
 
@@ -78,6 +78,50 @@ def authorize_str(args):
     return {'url': s}
 
 
+@bp.route('/get_open_id')
+@get_require_check(['code'])
+def get_open_id(args):
+    """
+    获取open_id
+    获取open_id，需要先登录
+    ---
+    tags:
+      - 获取open_id
+    parameters:
+      - name: token
+        in: header
+        type: string
+        required: true
+        description: TOKEN
+      - name: code
+        in: query
+        type: string
+        description: 微信提供
+
+    responses:
+      200:
+        description: 正常返回http code 200
+        schema:
+          properties:
+            msg:
+              type: string
+              description: 错误消息
+            status:
+              type: integer
+              description: 状态
+            data:
+              type: object
+              properties:
+                oss:
+                  properties:
+                    openid:
+                      type: string
+                      description: OPENID 后面的每个接口都加上open_id的参数
+    """
+    code = args['code']
+    return WxMPService.get_open_id(code)
+
+
 @bp.route('/save_mobile')
 @post_require_check([])
 def save_mobile(args):
@@ -97,16 +141,13 @@ def save_mobile(args):
         in: body
         required: true
         schema:
-          required:
-            - organization_id
-            - user_id
           properties:
             mobile:
               type: string
               description: 手机号
-            code:
+            open_id:
               type: string
-              description: CODE
+              description: OPENID
     responses:
       200:
         description: 正常返回http code 200
@@ -121,16 +162,70 @@ def save_mobile(args):
             data:
               type: object
               properties:
-                id:
+                open_id:
                   type: integer
-                  description: 新Id
+                  description: OPENID
     """
     mobile = args['mobile']
-    code = args['code']
-    ret = WxMPService.save_mobile(mobile, code)
+    open_id = args['open_id']
+    ret = WxMPService.save_mobile(mobile, open_id)
     if ret == -10:
         raise AppError(*SubErrorCode.STUDENT_NOT_FOUND_PARENTS_MOBILE)
     return ret
+
+
+@bp.route('/bus_where')
+@get_require_check([])
+def bus_where(args):
+    """
+    校车在哪儿
+    校车在哪儿，需要先登录
+    ---
+    tags:
+      - 校车在哪儿
+    parameters:
+      - name: token
+        in: header
+        type: string
+        required: true
+        description: TOKEN
+      - name: body
+        in: body
+        required: true
+        schema:
+          properties:
+            open_id:
+              type: string
+              description: OPENID
+    responses:
+      200:
+        description: 正常返回http code 200
+        schema:
+          properties:
+            msg:
+              type: string
+              description: 错误消息
+            status:
+              type: integer
+              description: 状态
+            data:
+              type: object
+              properties:
+                d:
+                  type: integer
+                  description: 先判断此字段. 0 正常显示数据, -10 跳转到绑定手机号页面
+                gps:
+                  type: string
+                  description: 123.123456,34.123456
+                staff:
+                  type: string
+                  description: 职员信息
+                order_type:
+                  type: integer
+                  description: 1 上学上车 2上学下车 3 放学上车 4 放学下车
+    """
+    open_id = args['open_id']
+    return WxMPService.bus_where(open_id)
 
 
 wx_msg = WeixinMsg(conf.config['MP_TOKEN'])

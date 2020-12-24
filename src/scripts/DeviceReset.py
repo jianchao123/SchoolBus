@@ -53,10 +53,10 @@ class Test(object):
             "time": int(time.time()),
             "chepai": "川A:AD123456",
             "workmode": workmode,
-            "delayoff": 1,
+            "delayoff": 2,
             "leftdetect": 1,
             "jiange": 10,
-            "cleartime": 2628000,
+            "cleartime": 40,
             "shxmode": 1,
             "volume": 6,
             "facesize": 390,
@@ -169,10 +169,10 @@ class Test(object):
             "time": int(time.time()),
             "chepai": "test",
             "workmode": 3,
-            "delayoff": 10,
-            "leftdetect": 5,
+            "delayoff": 2,
+            "leftdetect": 1,
             "jiange": 10,
-            "cleartime": 2628000,
+            "cleartime": 40,
             "shxmode": 0,
             "volume": -20,
             "facesize": 390,
@@ -234,12 +234,19 @@ class Test(object):
             }
             pgdb.update(cursor, d, 'face')
 
+    def clear_car_number(self):
+        jdata = {
+            "cmd": "clearcnt",
+            "value": 0
+        }
+        self.pub_msg("dev_57", jdata)
+
 
 if __name__ == '__main__':
     t = Test(config.Productkey, config.MNSAccessKeyId,
              config.MNSAccessKeySecret)
     #t.ddddddddd()
-    t.generate_crc()
+    t.clear_car_number()
 
     # import struct
     #

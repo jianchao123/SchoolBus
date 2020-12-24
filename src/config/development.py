@@ -30,4 +30,4 @@ class DevelopmentConfig(Config):
     MP_APP_SECRET = 'bf3e50ed4b549fc007d5ad39634cdc4d'
     MP_TOKEN = 'gK9gY3cV2bM6pH9gF7vJ5uC8vN9cI0cL'
     MP_ENCODING_AES_KEY = 'CAmGrrm1rJ0HqgcbIBQbhKAHLUKGGbv3RJTTFnixTaC'
-    MP_AUTH_URI = 'http://cdmp.wgxing.com/'
+    MP_AUTH_URI = 'http://cdmp.wgxing.com/wxmp/get_open_id'

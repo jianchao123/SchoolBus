@@ -6,17 +6,29 @@ from sqlalchemy import func, or_
 from sqlalchemy.exc import SQLAlchemyError
 from database.db import db
 from database.Student import Student
-from database.Order import Order
 from database.AlertInfo import AlertInfo
 from database.Worker import Worker
 from database.Car import Car
-from ext import conf
+from database.Device import Device
+from database.Order import Order
+from utils.defines import duty
+from ext import conf, cache
+from utils import defines
 
 
 class WxMPService(object):
 
     @staticmethod
-    def save_mobile(mobile, code):
+    def get_open_id(code):
+        url = "https://api.weixin.qq.com/sns/oauth2/access_token?" \
+              "appid={}&secret={}&code={}&grant_type=authorization_code"
+        res = requests.get(url.format(conf.config['MP_APP_ID'],
+                                      conf.config['MP_APP_SECRET'], code))
+        d = json.loads(res.content)
+        return {'openid': d['open_id']}
+
+    @staticmethod
+    def save_mobile(mobile, open_id):
         db.session.commit()
         students = db.session.query(Student).filter(
             or_(Student.mobile_1 == mobile, Student.mobile_2 == mobile)).all()
@@ -24,12 +36,6 @@ class WxMPService(object):
         if not students and not workers:
             return -10
 
-        url = "https://api.weixin.qq.com/sns/oauth2/access_token?" \
-              "appid={}&secret={}&code={}&grant_type=authorization_code"
-        res = requests.get(url.format(conf.config['MP_APP_ID'],
-                                      conf.config['MP_APP_SECRET'], code))
-        d = json.loads(res.content)
-        open_id = d['open_id']
         # 保存到学生的家长字段
         for row in students:
             if row.mobile_1 == mobile:
@@ -121,5 +127,56 @@ class WxMPService(object):
         worker = db.session.query(Worker).filter(
             Worker.open_id == open_id).first()
         if not student and not worker:
-            return -10  # 跳转到绑定手机号页面
-        db.session.query(Car).filter(Car)
+            return {'d': -10}  # 跳转到绑定手机号页面
+
+        d = {
+            'd': 0,
+            'nickname': None,
+            'order_type': None,
+            'create_time': None,
+            'license_plate_number': None,
+            'gps': None,
+            'staff': None
+        }
+
+        if student:
+
+            if student.car_id:
+                device = db.session.query(Device).join(
+                    Car, Car.id == Device.car_id).filter(
+                    Car.id == student.car_id)
+                if device:
+                    device_gps = cache.hget(
+                        defines.RedisKey.DEVICE_CUR_GPS, device.device_name)
+                    order = db.session.query(Order).filter(
+                        Order.stu_id == student.id).first()
+                    if order:
+                        d['nickname'] = order.stu_name
+                        d['order_type'] = order.order_type
+                        d['create_time'] = order.create_time.strftime('%Y-%m-%d %H:%M:%S')
+                        d['gps'] = device_gps
+
+                        results = db.session.query(Worker).filter(Worker.car_id == student.car_id).all()
+                        string = ''
+                        for row in results:
+                            string += '{} ({} {})\n'.format(row.nickname, duty[row.duty_id], row.mobile)
+                        d['staff'] = string
+        elif worker:
+
+            device = db.session.query(Device).join(
+                Car, Car.id == Device.car_id).filter(
+                Car.id == worker.car_id)
+            if device:
+                device_gps = cache.hget(
+                    defines.RedisKey.DEVICE_CUR_GPS, device.device_name)
+
+                d['gps'] = device_gps
+
+                results = db.session.query(Worker).filter(
+                    Worker.car_id == worker.car_id).all()
+                string = ''
+                for row in results:
+                    string += '{} ({} {})\n'.format(row.nickname, duty[row.duty_id],
+                                                    row.mobile)
+                d['staff'] = string
+        return d
