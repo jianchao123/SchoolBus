@@ -37,10 +37,16 @@ class AlertInfoService(object):
             query = query.filter(or_(AlertInfo.create_time > start_time,
                                      AlertInfo.create_time < end_time))
         count = query.count()
+        query = query.order_by(AlertInfo.id.desc())
         results = query.offset(offset).limit(size).all()
 
         data = []
         for row in results:
+            alert_start_time_str = ''
+            if row.alert_start_time:
+                alert_start_time_str = row.alert_start_time.strftime('%Y-%m-%d %H:%M:%S')
+            if row.alert_second_time:
+                alert_second_time_str = row.alert_second_time.strftime('%Y-%m-%d %H:%M:%S')
             data.append({
                 'id': row.id,
                 'license_plate_number': row.license_plate_number,
@@ -51,10 +57,8 @@ class AlertInfoService(object):
                 'people_info': row.people_info,
                 'first_alert': row.first_alert,
                 'second_alert': row.second_alert,
-                'alert_start_time':
-                    row.alert_start_time.strftime('%Y-%m-%d %H:%M:%S'),
-                'alert_second_time':
-                    row.alert_second_time.strftime('%Y-%m-%d %H:%M:%S'),
+                'alert_start_time': alert_start_time_str,
+                'alert_second_time': alert_second_time_str,
                 'alert_location': row.gps,
                 'status': row.status
             })

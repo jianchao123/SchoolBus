@@ -185,10 +185,18 @@ class StudentService(object):
             student.parents_1 = parents_1
         if mobile_1:
             student.mobile_1 = mobile_1
+            # 清除open_id
+            if student.mobile_1 != mobile_1:
+                student.open_id_1 = None
+
         if parents_2:
             student.parents_2 = parents_2
         if mobile_2:
             student.mobile_2 = mobile_2
+            # 清除open_id
+            if student.mobile_2 != mobile_2:
+                student.open_id_2 = None
+
         if address:
             student.address = address
         if remarks:

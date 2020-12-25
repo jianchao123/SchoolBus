@@ -147,7 +147,8 @@ class StudentBusiness(object):
         """
         pgsql_db = PgsqlDbUtil
 
-        stu_sql = "SELECT id FROM student WHERE stu_no='{}' LIMIT 1"
+        stu_sql = "SELECT id,mobile_1,mobile_2 FROM student " \
+                  "WHERE stu_no='{}' LIMIT 1"
         for row in data:
             stu_no = row[0]
             nickname = row[1]
@@ -186,8 +187,11 @@ class StudentBusiness(object):
 
             if student:
                 d['id'] = student[0]
+                if student[1] and student[1] != parents1_mobile:
+                    d['open_id_1'] = 'NULL'
+                if student[2] and student[2] != parents2_mobile:
+                    d['open_id_2'] = 'NULL'
                 pgsql_db.update(pgsql_cur, d, 'student')
-
             else:
                 d['create_time'] = 'now()'
                 d['status'] = 1
@@ -211,7 +215,7 @@ class StudentBusiness(object):
         批量添加工作者
         """
         pgsql_db = PgsqlDbUtil
-        worker_sql = "SELECT id FROM worker WHERE emp_no='{}' LIMIT 1"
+        worker_sql = "SELECT id,mobile FROM worker WHERE emp_no='{}' LIMIT 1"
         for row in data:
             emp_no = row[0]
             nickname = row[1]
@@ -245,8 +249,9 @@ class StudentBusiness(object):
 
             if worker:
                 d['id'] = worker[0]
+                if worker[1] and worker[1] != mobile:
+                    d['open_id'] = 'NULL'
                 pgsql_db.update(pgsql_cur, d, 'worker')
-
             else:
                 pgsql_db.insert(pgsql_cur, d, 'worker')
                 # 查询
@@ -328,6 +333,8 @@ class DeviceConsumer(object):
             self.device_business.update_chepai(data)
         if routing_suffix == 'devwhitelist':
             self.device_business.dev_white_list_msg(data)
+        if routing_suffix == 'clearcnt':
+            self.device_business.clear_count(data)
         # 消息确认
         ch.basic_ack(delivery_tag=method.delivery_tag)
 
@@ -619,6 +626,15 @@ class DeviceBusiness(object):
         jdata = {
             "cmd": "devwhitelist",
             "pkt_inx": -1
+        }
+        self._pub_msg(device_name, jdata)
+
+    def clear_count(self, data):
+        """清空车内人数"""
+        device_name = data['device_name']
+        jdata = {
+            "cmd": "clearcnt",
+            "value": 0
         }
         self._pub_msg(device_name, jdata)
 

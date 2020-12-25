@@ -239,6 +239,8 @@ def get_require_check(args_name):
                 ))
             except Exception as ex:
                 log.critical('[未知错误]{}'.format(format_exception(ex)))
+                import traceback
+                print traceback.format_exc()
                 return jsonify(make_error_resp(*GlobalErrorCode.UNKNOWN_ERR))
 
         return __wrapper

@@ -210,6 +210,7 @@ class AcsManager(object):
     def add_order(self, pgsql_cur, fid, gps_str, add_time, dev_name, cnt):
         """
         添加订单
+        报警刷脸不需要,影响逻辑
         """
         redis_db = db.rds_conn
         pgsql_db = db.PgsqlDbUtil
@@ -223,6 +224,9 @@ class AcsManager(object):
             redis_db.sadd(k, fid)
         else:
             redis_db.srem(k, fid)
+            # 集合为空,删除acc
+            if not redis_db.scard(k):
+                redis_db.delete(RedisKey.ACC_CLOSE)
 
         if cur_hour < 12 and odd_even:          # 上学上车
             order_type = 1
@@ -650,6 +654,15 @@ class AcsManager(object):
         # 取出滞留人员
         face_ids = rds_conn.smembers(RedisKey.STUDENT_SET.format(device_name))
         face_ids = [str(row) for row in list(face_ids)]
-        value = str(add_time) + "|" + ",".join(face_ids)
+
+        today = datetime.now()
+        today_str = today.strftime('%Y%m%d%H%M%S')
+        suffix = 'AM'
+        if today.hour > 12:
+            suffix = 'PM'
+
+        # 每次acc熄火唯一key
+        periods = "{}-{}-{}".format(today_str, device_name, suffix)
+        value = str(add_time) + "|" + ",".join(face_ids) + "|" + periods
         rds_conn.hset(RedisKey.ACC_CLOSE, device_name, value)
 

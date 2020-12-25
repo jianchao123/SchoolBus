@@ -20,12 +20,54 @@ class WxMPService(object):
 
     @staticmethod
     def get_open_id(code):
+        """
+        {u'access_token': u'40_LL5e4qeCM_GZwLQykM3M8BM3IXAGrViWuFu6t5RxyW6Dg2mUoWZRZGERWWVjUTNNlTrqSHCdxQELUt7JAoNLoWGcNDMVRt8DcSNDdJDJVvE',
+        u'openid': u'opeBzwwl3Z34uyyZtnMIoAfF-qOc', u'expires_in': 7200,
+        u'refresh_token': u'40_KJC73GIkm7xsDAYeKteMt-gzhL1Vk3tuCPdSnZS2uKOvhUnqimjb6eUkoAx0Bz1z7z4Va5wfrEE00wOMOhGTpwdLwYL76wbE4MPsrFuwp2A',
+        u'scope': u'snsapi_base'}
+        """
         url = "https://api.weixin.qq.com/sns/oauth2/access_token?" \
               "appid={}&secret={}&code={}&grant_type=authorization_code"
         res = requests.get(url.format(conf.config['MP_APP_ID'],
                                       conf.config['MP_APP_SECRET'], code))
         d = json.loads(res.content)
-        return {'openid': d['open_id']}
+        print d
+        open_id = d['openid']
+        student = db.session.query(Student).filter(
+            or_(Student.open_id_1 == open_id,
+                Student.open_id_2 == open_id)).first()
+        worker = db.session.query(Worker).filter(
+            Worker.open_id == open_id).first()
+        is_binding = 0
+        if student or worker:
+            is_binding = 1
+        return {'openid': open_id, 'is_binding': is_binding}
+
+    @staticmethod
+    def get_role(open_id):
+        db.session.commit()
+        student = db.session.query(Student).filter(
+            or_(Student.open_id_1 == open_id,
+                Student.open_id_2 == open_id)).first()
+        worker = db.session.query(Worker).filter(
+            Worker.open_id == open_id).first()
+        d = {
+            'parents': 0,
+            'driver': 0,
+            'zgy': 0
+        }
+        if student:
+            d['parents'] = 1
+            d['mobile'] = student.mobile_1 if student.mobile_1 else student.mobile_2
+            d['mobile'] = student.mobile_2 if student.mobile_2 else student.mobile_1
+        if worker.duty_id == 1:
+            d['driver'] = 1
+            d['mobile'] = worker.mobile
+        if worker.duty_id == 2:
+            d['zgy'] = 1
+            d['mobile'] = worker.mobile
+
+        return d
 
     @staticmethod
     def save_mobile(mobile, open_id):

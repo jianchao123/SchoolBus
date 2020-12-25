@@ -23,15 +23,9 @@ bp = Blueprint('WxMPController', __name__)
 """蓝图url前缀"""
 url_prefix = '/wxmp'
 
-"""
-公众号菜单填写 /authorize_str?menu_name=mobile
-公众号拿到url开始跳转,到redirect_uri页面,用户填写好手机号之后,请求get_open_id
-redirect_uri(静态页面)
-"""
 
-
-@bp.route('/authorize_str')
-@get_require_check([])
+@bp.route('/authorize_str', methods=['GET'])
+@get_require_check(['menu_name'])
 def authorize_str(args):
     """
     获取授权串
@@ -40,11 +34,6 @@ def authorize_str(args):
     tags:
       - 获取授权串
     parameters:
-      - name: token
-        in: header
-        type: string
-        required: true
-        description: TOKEN
       - name: menu_name
         in: query
         type: string
@@ -64,21 +53,21 @@ def authorize_str(args):
             data:
               type: object
               properties:
-                oss:
-                  properties:
-                    url:
-                      type: string
-                      description: 授权url
+                url:
+                  type: string
+                  description: 授权url
     """
     menu_name = args['menu_name']
+    from urllib import quote
+
     s = "https://open.weixin.qq.com/connect/oauth2/authorize?appid={}" \
         "&redirect_uri={}&response_type=code&scope=snsapi_base&state={}" \
         "#wechat_redirect".format(conf.config['MP_APP_ID'],
-                                  conf.config['MP_AUTH_URI'], menu_name)
+                                  quote(conf.config['MP_AUTH_URI']), menu_name)
     return {'url': s}
 
 
-@bp.route('/get_open_id')
+@bp.route('/get_open_id', methods=['GET'])
 @get_require_check(['code'])
 def get_open_id(args):
     """
@@ -88,15 +77,14 @@ def get_open_id(args):
     tags:
       - 获取open_id
     parameters:
-      - name: token
-        in: header
-        type: string
-        required: true
-        description: TOKEN
       - name: code
         in: query
         type: string
         description: 微信提供
+      - name: state
+        in: query
+        type: string
+        description: 菜单名字
 
     responses:
       200:
@@ -112,18 +100,21 @@ def get_open_id(args):
             data:
               type: object
               properties:
-                oss:
-                  properties:
-                    openid:
-                      type: string
-                      description: OPENID 后面的每个接口都加上open_id的参数
+                openid:
+                  type: string
+                  description: OPENID 后面的每个接口都加上open_id的参数
+                is_binding:
+                  type: integer
+                  description: 是否绑定手机号 1是 0否
     """
     code = args['code']
+    print "===================="
+    print args.get('state', None)
     return WxMPService.get_open_id(code)
 
 
-@bp.route('/save_mobile')
-@post_require_check([])
+@bp.route('/save_mobile', methods=['POST'])
+@post_require_check(['mobile', 'open_id'])
 def save_mobile(args):
     """
     保存手机号
@@ -132,11 +123,6 @@ def save_mobile(args):
     tags:
       - 订单模块
     parameters:
-      - name: token
-        in: header
-        type: string
-        required: true
-        description: TOKEN
       - name: body
         in: body
         required: true
@@ -174,8 +160,53 @@ def save_mobile(args):
     return ret
 
 
-@bp.route('/bus_where')
-@get_require_check([])
+@bp.route('/get_role', methods=['GET'])
+@get_require_check(['open_id'])
+def get_role(args):
+    """
+    获取角色
+    获取角色，需要先登录
+    ---
+    tags:
+      - 获取角色
+    parameters:
+      - name: open_id
+        in: query
+        type: string
+        description: OPENID
+    responses:
+      200:
+        description: 正常返回http code 200
+        schema:
+          properties:
+            msg:
+              type: string
+              description: 错误消息
+            status:
+              type: integer
+              description: 状态
+            data:
+              type: object
+              properties:
+                parents:
+                  type: integer
+                  description: 是否父母 1是 0否
+                driver:
+                  type: integer
+                  description: 是否驾驶员 1是 0否
+                zgy:
+                  type: integer
+                  description: 是否照顾员 1是 0否
+                mobile:
+                  type: string
+                  description: 手机号
+    """
+    open_id = args['open_id']
+    return WxMPService.get_role(open_id)
+
+
+@bp.route('/bus_where', methods=['GET'])
+@get_require_check(['open_id'])
 def bus_where(args):
     """
     校车在哪儿
@@ -184,19 +215,10 @@ def bus_where(args):
     tags:
       - 校车在哪儿
     parameters:
-      - name: token
-        in: header
+      - name: open_id
+        in: query
         type: string
-        required: true
-        description: TOKEN
-      - name: body
-        in: body
-        required: true
-        schema:
-          properties:
-            open_id:
-              type: string
-              description: OPENID
+        description: OPENID
     responses:
       200:
         description: 正常返回http code 200

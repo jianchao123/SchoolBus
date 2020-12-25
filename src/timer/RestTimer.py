@@ -76,11 +76,13 @@ class CheckAccClose(object):
             arr = value.split("|")
             acc_timestamp = int(arr[0])
             face_ids = arr[1]
+            periods = arr[2]
             time_diff = cur_timestamp - acc_timestamp
-            self.acc_business(rds_conn, dev_name, time_diff, face_ids)
+            self.acc_business(rds_conn, dev_name, time_diff, face_ids, periods)
 
     @db.transaction(is_commit=True)
-    def acc_business(self, pgsql_cur, rds_conn, dev_name, time_diff, face_ids):
+    def acc_business(self, pgsql_cur, rds_conn, dev_name,
+                     time_diff, face_ids, periods):
         pgsql_db = db.PgsqlDbUtil
 
         sql = "SELECT CAR.license_plate_number,CAR.company_name," \
@@ -91,15 +93,8 @@ class CheckAccClose(object):
         company_name = results[1]
         car_id = results[2]
 
-        if time_diff < 35:
+        if time_diff < 15:
             return
-
-        today = datetime.now()
-        today_str = today.strftime('%Y%m%d')
-        suffix = 'AM'
-        if today.hour > 12:
-            suffix = 'PM'
-        periods = "{}-{}-{}".format(today_str, dev_name, suffix)
 
         get_alert_info_sql = "SELECT id,status FROM alert_info " \
                              "WHERE periods='{}' LIMIT 1"
@@ -111,6 +106,8 @@ class CheckAccClose(object):
                 # 是否已经添加报警记录
                 alert_info = pgsql_db.get(
                     pgsql_cur, get_alert_info_sql.format(periods))
+                print "555555555555555555555555"
+                print alert_info
                 if alert_info:
                     return
                 # 工作人员
@@ -174,7 +171,6 @@ class CheckAccClose(object):
                 # TODO 推送第一次公众号消息
         else:
             # 判断报警状态是否修改
-
             result = pgsql_db.get(pgsql_cur, get_alert_info_sql.format(periods))
             # 大于5分钟还处于报警中就推送第二次消息
             if result and result[1] == 1:
@@ -185,15 +181,8 @@ class CheckAccClose(object):
                     'alert_second_time': 'NOW()'
                 }
                 pgsql_db.update(pgsql_cur, d, 'alert_info')
-            # 大于5分钟直接删除Key
+            # 删除acc key
             rds_conn.hdel(RedisKey.ACC_CLOSE, dev_name)
-            rds_conn.delete(RedisKey.STUDENT_SET.format(dev_name))
-            # TODO 删除设备车内人数
-            jdata = {
-                "cmd": "clearcnt",
-                "value": 0
-            }
-            pub_msg(rds_conn, dev_name, jdata)
 
 
 class RefreshWxAccessToken(object):
@@ -290,6 +279,22 @@ class EveryMinuteExe(object):
         rds_conn = db.rds_conn
 
         cur_date = datetime.now().strftime('%Y-%m-%d')
+
+        # 定时删除车内人员
+        if datetime.now().hour in (12, 23):
+            student_set_key = rds_conn.keys(RedisKey.STUDENT_SET.format('*'))
+            for row in student_set_key:
+                # 删除车内人员
+                rds_conn.delete(row)
+
+                # 删除设备车内人数
+                device_name = row.split(":")[-1]
+                jdata = {
+                    "cmd": "clearcnt",
+                    "value": 0
+                }
+                pub_msg(rds_conn, device_name, jdata)
+
         # 过期人脸更新状态
         expire_sql = """SELECT F.id FROM student AS STU 
         INNER JOIN face AS F ON F.stu_id=STU.id 

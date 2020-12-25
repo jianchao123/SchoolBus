@@ -163,6 +163,13 @@ def dev_while_list(device_name):
     _publish_msg('device_exchange', 'device.devwhitelist', json.dumps(data))
 
 
+def delete_device_person_number(device_name):
+    data = {
+        'dev_name': device_name
+    }
+    _publish_msg('device_exchange', 'device.clearcnt', json.dumps(data))
+
+
 # 测试用户创建
 if __name__ == "__main__":
     # generate_create_student_msg(12)

@@ -97,12 +97,13 @@ class ReceiveMessage(object):
                     if log_id == 3:
                         acs_manager.acc_close(dev_name, jdata['addtime'])
                 else:
-                    logger.info(u"添加订单")
-                    acs_manager.add_order(jdata['fid'],
-                                          jdata['gps'],
-                                          jdata['addtime'],
-                                          dev_name,
-                                          jdata['cnt'])
+                    if not jdata['type']:
+                        logger.info(u"添加订单")
+                        acs_manager.add_order(jdata['fid'],
+                                              jdata['gps'],
+                                              jdata['addtime'],
+                                              dev_name,
+                                              jdata['cnt'])
             elif cmd == 'syndevinfo':
                 print u'4g模块\sim卡信息'
                 acs_manager.save_imei(dev_name, jdata['imei'])
