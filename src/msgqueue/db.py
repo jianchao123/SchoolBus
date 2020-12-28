@@ -127,3 +127,7 @@ class PgsqlDbUtil(object):
     @staticmethod
     def execute_sql(pgsql_cur, sql):
         return pgsql_cur.execute(sql)
+
+
+from weixin import WeixinMP
+wx_mp = WeixinMP(conf.MP_APP_ID, conf.MP_APP_SECRET)

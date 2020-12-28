@@ -245,6 +245,12 @@ def bus_where(args):
                 order_type:
                   type: integer
                   description: 1 上学上车 2上学下车 3 放学上车 4 放学下车
+                nickname:
+                  type: string
+                  description: 学生名字
+                create_time:
+                  type: integer
+                  description: 创建时间
     """
     open_id = args['open_id']
     return WxMPService.bus_where(open_id)

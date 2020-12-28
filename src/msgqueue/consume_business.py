@@ -6,7 +6,7 @@ import base64
 import shutil
 import struct
 from datetime import datetime
-from msgqueue.db import transaction, PgsqlDbUtil, rds_conn
+from msgqueue.db import transaction, PgsqlDbUtil, rds_conn, wx_mp
 from msgqueue import config
 from msgqueue import utils
 from aliyunsdkcore.client import AcsClient
@@ -14,7 +14,7 @@ from aliyunsdkiot.request.v20180120.RegisterDeviceRequest import \
     RegisterDeviceRequest
 from aliyunsdkiot.request.v20180120.PubRequest import PubRequest
 from define import grade, classes, gender, duty
-import producer
+
 
 
 class HeartBeatConsumer(object):
@@ -842,3 +842,64 @@ class ExportExcelBusiness(object):
         pgsql_db.update(pgsql_cur, d, table_name='export_task')
         # 删除文件
         os.remove(path)
+
+
+class MpMsgConsumer(object):
+    def __init__(self):
+        self.logger = utils.get_logger(config.log_path)
+        self.business = MpMsgBusiness(self.logger)
+
+    def callback(self, ch, method, properties, body):
+        print method
+        data = json.loads(body.decode('utf-8'))
+        arr = method.routing_key.split(".")
+        routing_suffix = arr[-1]
+        if routing_suffix == 'parents':
+            self.business.parents_mp_msg(data)
+
+        # 消息确认
+        ch.basic_ack(delivery_tag=method.delivery_tag)
+
+
+class MpMsgBusiness(object):
+
+    def __init__(self, logger):
+        self.logger = logger
+
+    def parents_mp_msg(self, data):
+        """家长消息"""
+        open_id = data['open_id']
+        order_id = data['order_id']
+        nickname = data['nickname']
+        order_type_name = data['order_type_name']
+        up_time = data['up_time']
+        license_plate_number = data['license_plate_number']
+        d = {
+            "first": {
+                "value": "乘车刷脸成功提醒！",
+                "color": "#173177"
+            },
+            "keyword1": {
+                "value": nickname,
+                "color": "#173177"
+            },
+            "keyword2": {
+                "value": order_type_name,
+                "color": "#173177"
+            },
+            "keyword3": {
+                "value": up_time,
+                "color": "#173177"
+            },
+            "keyword4": {
+                "value": license_plate_number,
+                "color": "#173177"
+            },
+            "remark": {
+                "value": "点击详情,查看更多！",
+                "color": "#173177"
+            }
+        }
+        wx_mp.template_send(
+            config.MP_TEMPLATE_ID, open_id, d,
+            url=config.MP_REDIRECT_URL.format(order_id))

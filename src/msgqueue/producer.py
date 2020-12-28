@@ -5,10 +5,11 @@
 """
 import json
 import pika
+from collections import defaultdict
 
-queue_conn = pika.BlockingConnection(pika.ConnectionParameters(
+conn = pika.BlockingConnection(pika.ConnectionParameters(
     host='localhost', heartbeat=0))
-channel = queue_conn.channel()
+channel = conn.channel()
 channel.exchange_declare(exchange='student_exchange', exchange_type='topic')
 channel.exchange_declare(exchange='device_exchange', exchange_type='topic')
 channel.exchange_declare(exchange='excel_exchange', exchange_type='topic')
@@ -168,6 +169,19 @@ def delete_device_person_number(device_name):
         'dev_name': device_name
     }
     _publish_msg('device_exchange', 'device.clearcnt', json.dumps(data))
+
+
+def send_template_message(open_id, order_id, nickname,
+                          order_type_name, up_time, license_plate_number):
+    """发送模板消息"""
+    data = defaultdict()
+    data['open_id'] = open_id
+    data['order_id'] = order_id
+    data['nickname'] = nickname
+    data['order_type_name'] = order_type_name
+    data['up_time'] = up_time
+    data['license_plate_number'] = license_plate_number
+    _publish_msg('mpmsg_exchange', 'mpmsg.parents', json.dumps(data))
 
 
 # 测试用户创建

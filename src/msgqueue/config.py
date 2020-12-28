@@ -51,6 +51,7 @@ if env == "TEST":
     MP_APP_SECRET = 'bf3e50ed4b549fc007d5ad39634cdc4d'
     MP_TOKEN = 'gK9gY3cV2bM6pH9gF7vJ5uC8vN9cI0cL'
     MP_ENCODING_AES_KEY = 'CAmGrrm1rJ0HqgcbIBQbhKAHLUKGGbv3RJTTFnixTaC'
+    MP_TEMPLATE_ID = ""
 
 
 elif env == "PRO":
@@ -96,7 +97,7 @@ elif env == "PRO":
     MP_APP_SECRET = 'bf3e50ed4b549fc007d5ad39634cdc4d'
     MP_TOKEN = 'gK9gY3cV2bM6pH9gF7vJ5uC8vN9cI0cL'
     MP_ENCODING_AES_KEY = 'CAmGrrm1rJ0HqgcbIBQbhKAHLUKGGbv3RJTTFnixTaC'
-
+    MP_TEMPLATE_ID = ""
 
 else:
     # 物联网
@@ -141,7 +142,8 @@ else:
     MP_APP_SECRET = 'bf3e50ed4b549fc007d5ad39634cdc4d'
     MP_TOKEN = 'gK9gY3cV2bM6pH9gF7vJ5uC8vN9cI0cL'
     MP_ENCODING_AES_KEY = 'CAmGrrm1rJ0HqgcbIBQbhKAHLUKGGbv3RJTTFnixTaC'
-
+    MP_TEMPLATE_ID = ""
+    MP_REDIRECT_URL = "http://cdbus.wgxing.com/order.html?order_id={}"
 
 redis_conf = dict(host="127.0.0.1", port=6379, db=0, decode_responses=True)
 pgsql_conf = dict(host=pgsql_host, database=pgsql_db, port=pgsql_port,

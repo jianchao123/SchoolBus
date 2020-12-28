@@ -608,6 +608,8 @@ class AcsManager(object):
             self._update_device(d)
         rds_conn.hset(RedisKey.DEVICE_CUR_TIMESTAMP, device_name,
                       int(time.time()))
+        if gps == ",":
+            gps = "104.055701,30.586817"
         rds_conn.hset(RedisKey.DEVICE_CUR_GPS, device_name, gps)
 
     @db.transaction(is_commit=True)

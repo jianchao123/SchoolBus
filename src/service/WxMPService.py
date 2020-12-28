@@ -60,10 +60,10 @@ class WxMPService(object):
             d['parents'] = 1
             d['mobile'] = student.mobile_1 if student.mobile_1 else student.mobile_2
             d['mobile'] = student.mobile_2 if student.mobile_2 else student.mobile_1
-        if worker.duty_id == 1:
+        if worker and worker.duty_id == 1:
             d['driver'] = 1
             d['mobile'] = worker.mobile
-        if worker.duty_id == 2:
+        if worker and worker.duty_id == 2:
             d['zgy'] = 1
             d['mobile'] = worker.mobile
 
@@ -186,17 +186,20 @@ class WxMPService(object):
             if student.car_id:
                 device = db.session.query(Device).join(
                     Car, Car.id == Device.car_id).filter(
-                    Car.id == student.car_id)
+                    Car.id == student.car_id).first()
                 if device:
                     device_gps = cache.hget(
                         defines.RedisKey.DEVICE_CUR_GPS, device.device_name)
                     order = db.session.query(Order).filter(
                         Order.stu_id == student.id).first()
+
+                    if device_gps:
+                        d['gps'] = device_gps
+
                     if order:
                         d['nickname'] = order.stu_name
                         d['order_type'] = order.order_type
                         d['create_time'] = order.create_time.strftime('%Y-%m-%d %H:%M:%S')
-                        d['gps'] = device_gps
 
                         results = db.session.query(Worker).filter(Worker.car_id == student.car_id).all()
                         string = ''
