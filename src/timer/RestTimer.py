@@ -7,12 +7,10 @@ from collections import defaultdict
 from datetime import datetime, timedelta
 
 from aliyunsdkcore.client import AcsClient
-from aliyunsdkiot.request.v20180120.RegisterDeviceRequest import \
-    RegisterDeviceRequest
 from aliyunsdkiot.request.v20180120.PubRequest import PubRequest
+from msgqueue import producer
 
 from timer import db
-
 from define import RedisKey
 from define import grade, classes
 from utils import aip_word_to_audio
@@ -96,7 +94,8 @@ class CheckAccClose(object):
         if time_diff < 15:
             return
 
-        get_alert_info_sql = "SELECT id,status FROM alert_info " \
+        get_alert_info_sql = "SELECT id,status,number,people_info," \
+                             "license_plate_number FROM alert_info " \
                              "WHERE periods='{}' LIMIT 1"
         if time_diff < 60:
             number = int(rds_conn.hget(
@@ -106,25 +105,27 @@ class CheckAccClose(object):
                 # 是否已经添加报警记录
                 alert_info = pgsql_db.get(
                     pgsql_cur, get_alert_info_sql.format(periods))
-                print "555555555555555555555555"
-                print alert_info
                 if alert_info:
                     return
                 # 工作人员
-                sql = "SELECT id,nickname,duty_id FROM worker " \
+                sql = "SELECT id,nickname,duty_id,open_id FROM worker " \
                       "WHERE car_id={}".format(car_id)
                 results = pgsql_db.query(pgsql_cur, sql)
                 worker_id_1 = None
                 worker_name_1 = None
                 worker_id_2 = None
                 worker_name_2 = None
+                open_id_1 = None
+                open_id_2 = None
                 for row in results:
                     if row[2] == 1:
                         worker_id_1 = row[0]
                         worker_name_1 = row[1]
+                        open_id_1 = row[3]
                     elif row[2] == 2:
                         worker_id_2 = row[0]
                         worker_name_2 = row[1]
+                        open_id_2 = row[3]
 
                 sql = "SELECT STU.nickname,SHL.school_name,STU.grade_id," \
                       "STU.class_id,STU.mobile_1,STU.mobile_2 FROM " \
@@ -133,6 +134,8 @@ class CheckAccClose(object):
                       "WHERE F.id in ({})".format(face_ids)
                 print sql
                 results = pgsql_db.query(pgsql_cur, sql)
+
+                send_msg_student_info = ""
                 student_info = []
                 for row in results:
                     info = defaultdict()
@@ -143,6 +146,7 @@ class CheckAccClose(object):
                     info['mobile_1'] = row[4]
                     info['mobile_2'] = row[5]
                     student_info.append(info)
+                    send_msg_student_info += row[0] + ","
                 people_info = ""
                 for info in student_info:
                     people_info += '{},{},{},{},{}|'.format(
@@ -167,20 +171,57 @@ class CheckAccClose(object):
                     'periods': periods
                 }
                 print d
+                send_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 pgsql_db.insert(pgsql_cur, d, 'alert_info')
-                # TODO 推送第一次公众号消息
+                if open_id_1:
+                    producer.send_staff_template_message(
+                        open_id_1, periods, number, send_msg_student_info.decode('utf8'),
+                        u"首次报警".decode('utf8'), send_time, license_plate_number.decode('utf8'))
+                if open_id_2:
+                    producer.send_staff_template_message(
+                        open_id_1, periods, number, send_msg_student_info.decode('utf8'),
+                        u"首次报警".decode('utf8'), send_time, license_plate_number.decode('utf8'))
         else:
             # 判断报警状态是否修改
             result = pgsql_db.get(pgsql_cur, get_alert_info_sql.format(periods))
             # 大于5分钟还处于报警中就推送第二次消息
             if result and result[1] == 1:
-                # TODO 推送第二次公众号消息
                 d = {
                     'id': result[0],
                     'second_alert': 1,
                     'alert_second_time': 'NOW()'
                 }
                 pgsql_db.update(pgsql_cur, d, 'alert_info')
+
+                send_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                pgsql_db.insert(pgsql_cur, d, 'alert_info')
+
+                # 发送模板消息
+                number = result[2]
+                send_msg_student_info = ""
+                stu_arr = result[3].split("|")
+                for row in stu_arr:
+                    send_msg_student_info += row.split(",")[0] + ","
+                license_plate_number = result[4]
+
+                sql = "SELECT duty_id,open_id FROM worker " \
+                      "WHERE car_id={}".format(car_id)
+                results = pgsql_db.query(pgsql_cur, sql)
+                open_id_1 = None
+                open_id_2 = None
+                for row in results:
+                    if row[0] == 1:
+                        open_id_1 = row[1]
+                    elif row[0] == 2:
+                        open_id_2 = row[1]
+                if open_id_1:
+                    producer.send_staff_template_message(
+                        open_id_1, periods, number, send_msg_student_info.decode('utf8'),
+                        u"二次报警".decode('utf8'), send_time, license_plate_number.decode('utf8'))
+                if open_id_2:
+                    producer.send_staff_template_message(
+                        open_id_1, periods, number, send_msg_student_info.decode('utf8'),
+                        u"二次报警".decode('utf8'), send_time, license_plate_number.decode('utf8'))
             # 删除acc key
             rds_conn.hdel(RedisKey.ACC_CLOSE, dev_name)
 

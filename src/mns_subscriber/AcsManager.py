@@ -308,11 +308,11 @@ class AcsManager(object):
         up_time_str = up_time.strftime('%Y-%m-%d %H:%M:%S')
         # 推送模板消息
         if open_id_1:
-            producer.send_template_message(
+            producer.send_parents_template_message(
                 open_id_1, d['id'], stu_nickname,
                 order_type_name, up_time_str, license_plate_number)
         if open_id_2:
-            producer.send_template_message(
+            producer.send_parents_template_message(
                 open_id_2, d['id'], stu_nickname,
                 order_type_name, up_time_str, license_plate_number)
 

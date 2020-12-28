@@ -171,9 +171,10 @@ def delete_device_person_number(device_name):
     _publish_msg('device_exchange', 'device.clearcnt', json.dumps(data))
 
 
-def send_template_message(open_id, order_id, nickname,
-                          order_type_name, up_time, license_plate_number):
-    """发送模板消息"""
+def send_parents_template_message(
+        open_id, order_id, nickname, order_type_name,
+        up_time, license_plate_number):
+    """发送家长模板消息"""
     data = defaultdict()
     data['open_id'] = open_id
     data['order_id'] = order_id
@@ -182,6 +183,21 @@ def send_template_message(open_id, order_id, nickname,
     data['up_time'] = up_time
     data['license_plate_number'] = license_plate_number
     _publish_msg('mpmsg_exchange', 'mpmsg.parents', json.dumps(data))
+
+
+def send_staff_template_message(
+        open_id, periods, number, student_info,
+        alert_type, time, license_plate_number):
+    """发送工作人员模板消息"""
+    data = defaultdict()
+    data['open_id'] = open_id
+    data['periods'] = periods
+    data['number'] = number
+    data['student_info'] = student_info
+    data['alert_type'] = alert_type
+    data['time'] = time
+    data['license_plate_number'] = license_plate_number
+    _publish_msg('mpmsg_exchange', 'mpmsg.staff', json.dumps(data))
 
 
 # 测试用户创建

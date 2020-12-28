@@ -856,6 +856,8 @@ class MpMsgConsumer(object):
         routing_suffix = arr[-1]
         if routing_suffix == 'parents':
             self.business.parents_mp_msg(data)
+        if routing_suffix == 'staff':
+            self.business.staff_mp_msg(data)
 
         # 消息确认
         ch.basic_ack(delivery_tag=method.delivery_tag)
@@ -874,6 +876,7 @@ class MpMsgBusiness(object):
         order_type_name = data['order_type_name']
         up_time = data['up_time']
         license_plate_number = data['license_plate_number']
+
         d = {
             "first": {
                 "value": "乘车刷脸成功提醒！",
@@ -901,5 +904,49 @@ class MpMsgBusiness(object):
             }
         }
         wx_mp.template_send(
-            config.MP_TEMPLATE_ID, open_id, d,
-            url=config.MP_REDIRECT_URL.format(order_id))
+            config.MP_PARENTS_TEMPLATE_ID, open_id, d,
+            url=config.MP_PARENTS_REDIRECT_URL.format(order_id))
+
+    def staff_mp_msg(self, data):
+        """工作人员模板消息"""
+        open_id = data['open_id']
+        periods = data['periods']
+        number = data['number']
+        student_info = data['student_info']
+        alert_type = data['alert_type']
+        time = data['time']
+        license_plate_number = data['license_plate_number']
+
+        d = {
+            "first": {
+                "value": "您好,有学生遗漏在车内,请检查车厢！",
+                "color": "#173177"
+            },
+            "keyword1": {
+                "value": number,
+                "color": "#173177"
+            },
+            "keyword2": {
+                "value": student_info,
+                "color": "#173177"
+            },
+            "keyword3": {
+                "value": alert_type,
+                "color": "#173177"
+            },
+            "keyword4": {
+                "value": time,
+                "color": "#173177"
+            },
+            "keyword5": {
+                "value": license_plate_number,
+                "color": "#173177"
+            },
+            "remark": {
+                "value": "点击详情,查看更多！",
+                "color": "#173177"
+            }
+        }
+        wx_mp.template_send(
+            config.MP_STAFF_TEMP_ID, open_id, d,
+            url=config.MP_STAFF_REDIRECT_URL.format(periods))
