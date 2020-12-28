@@ -248,7 +248,8 @@ class AcsManager(object):
         license_plate_number = device_result[2]
 
         stu_sql = """
-        SELECT stu.id, stu.stu_no, stu.nickname,shl.id,shl.school_name FROM student stu 
+        SELECT stu.id, stu.stu_no, stu.nickname,shl.id,shl.school_name,
+        stu.open_id_1,stu.open_id_2 FROM student stu 
         INNER JOIN face f ON f.stu_id=stu.id 
         INNER JOIN school shl ON shl.id=stu.school_id 
         WHERE f.id={} LIMIT 1
@@ -262,6 +263,8 @@ class AcsManager(object):
         stu_nickname = student_result[2]
         school_id = student_result[3]
         school_name = student_result[4]
+        open_id_1 = student_result[5]
+        open_id_2 = student_result[5]
 
         # gps
         arr = gps_str.split(',')
@@ -291,6 +294,27 @@ class AcsManager(object):
         d['fid'] = fid
         d['cur_timestamp'] = str(add_time)
         pgsql_db.insert(pgsql_cur, d, table_name='public.order')
+
+        if order_type == 1:
+            order_type_name = u"上学上车"
+        elif order_type == 2:
+            order_type_name = u"上学下车"
+        elif order_type == 3:
+            order_type_name = u"放学上车"
+        else:
+            order_type_name = u"放学下车"
+
+        up_time = datetime.fromtimestamp(add_time)
+        up_time_str = up_time.strftime('%Y-%m-%d %H:%M:%S')
+        # 推送模板消息
+        if open_id_1:
+            producer.send_template_message(
+                open_id_1, d['id'], stu_nickname,
+                order_type_name, up_time_str, license_plate_number)
+        if open_id_2:
+            producer.send_template_message(
+                open_id_2, d['id'], stu_nickname,
+                order_type_name, up_time_str, license_plate_number)
 
     def add_redis_queue(self, device_name, data, pkt_cnt):
         """
