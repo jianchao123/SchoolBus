@@ -5,6 +5,8 @@
 import os
 import sys
 import pika
+reload(sys)
+sys.setdefaultencoding('utf8')
 
 current_dir = os.path.dirname(os.path.realpath(__file__))
 current_dir = os.path.dirname(current_dir)

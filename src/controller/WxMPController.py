@@ -32,7 +32,7 @@ def authorize_str(args):
     获取授权串，需要先登录
     ---
     tags:
-      - 获取授权串
+      - 公众号
     parameters:
       - name: menu_name
         in: query
@@ -75,7 +75,7 @@ def get_open_id(args):
     获取open_id，需要先登录
     ---
     tags:
-      - 获取open_id
+      - 公众号
     parameters:
       - name: code
         in: query
@@ -113,6 +113,49 @@ def get_open_id(args):
     return WxMPService.get_open_id(code)
 
 
+@bp.route('/disable/binding', methods=['POST'])
+@post_require_check(['open_id'])
+def cancel_binding(args):
+    """
+    解除绑定
+    解除绑定，需要先登录
+    ---
+    tags:
+      - 公众号
+    parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          properties:
+            open_id:
+              type: string
+              description: OPENID
+    responses:
+      200:
+        description: 正常返回http code 200
+        schema:
+          properties:
+            msg:
+              type: string
+              description: 错误消息
+            status:
+              type: integer
+              description: 状态
+            data:
+              type: object
+              properties:
+                id:
+                  type: integer
+                  description: 0 解绑成功
+    """
+    open_id = args['open_id']
+    ret = WxMPService.cancel_binding(open_id)
+    if ret == -2:
+        raise AppError(*GlobalErrorCode.DB_COMMIT_ERR)
+    return ret
+
+
 @bp.route('/save_mobile', methods=['POST'])
 @post_require_check(['mobile', 'open_id'])
 def save_mobile(args):
@@ -121,7 +164,7 @@ def save_mobile(args):
     保存手机号，需要先登录
     ---
     tags:
-      - 订单模块
+      - 公众号
     parameters:
       - name: body
         in: body
@@ -168,7 +211,7 @@ def get_role(args):
     获取角色，需要先登录
     ---
     tags:
-      - 获取角色
+      - 公众号
     parameters:
       - name: open_id
         in: query
@@ -213,7 +256,7 @@ def bus_where(args):
     校车在哪儿，需要先登录
     ---
     tags:
-      - 校车在哪儿
+      - 公众号
     parameters:
       - name: open_id
         in: query
@@ -241,7 +284,7 @@ def bus_where(args):
                   description: 123.123456,34.123456
                 staff:
                   type: string
-                  description: 职员信息
+                  description: 职员信息 刘玉 (驾驶员 18502547895)\\n 王五 (照管员 15678941234)
                 order_type:
                   type: integer
                   description: 1 上学上车 2上学下车 3 放学上车 4 放学下车
@@ -254,6 +297,101 @@ def bus_where(args):
     """
     open_id = args['open_id']
     return WxMPService.bus_where(open_id)
+
+
+@bp.route('/order/retrieve', methods=['GET'])
+@get_require_check(['order_id'])
+def order_retrieve(args):
+    """
+    检索订单
+    检索订单，需要先登录
+    ---
+    tags:
+      - 公众号
+    parameters:
+      - name: order_id
+        in: query
+        type: integer
+        description: 订单id 从页面连接上获取
+    responses:
+      200:
+        description: 正常返回http code 200
+        schema:
+          properties:
+            msg:
+              type: string
+              description: 错误消息
+            status:
+              type: integer
+              description: 状态
+            data:
+              type: object
+              properties:
+                gps:
+                  type: string
+                  description: gps 逗号分割
+                time:
+                  type: string
+                  description: 时间
+                url:
+                  type: integer
+                  description: 实时刷脸url
+
+    """
+    order_id = args['order_id']
+    return WxMPService.get_order_by_id(order_id)
+
+
+@bp.route('/alarm/retrieve', methods=['GET'])
+@get_require_check(['periods'])
+def alarm_retrieve(args):
+    """
+    检索报警
+    检索报警，需要先登录
+    ---
+    tags:
+      - 公众号
+    parameters:
+      - name: periods
+        in: query
+        type: string
+        description: 期数 从页面链接上获取
+    responses:
+      200:
+        description: 正常返回http code 200
+        schema:
+          properties:
+            msg:
+              type: string
+              description: 错误消息
+            status:
+              type: integer
+              description: 状态
+            data:
+              type: object
+              properties:
+                numbers:
+                  type: string
+                  description: 报警人数
+                alert_info:
+                  type: string
+                  description: 人员信息,前端自行分割处理
+                license_plate_number:
+                  type: integer
+                  description: 车牌号
+                time:
+                  type: string
+                  description: 刷脸时间
+                gps:
+                  type: string
+                  description: gps
+                worker_info:
+                  type: string
+                  description: 工作人员信息
+
+    """
+    periods = args['periods']
+    return WxMPService.alert_info_by_id(periods)
 
 
 wx_msg = WeixinMsg(conf.config['MP_TOKEN'])

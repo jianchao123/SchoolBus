@@ -7,11 +7,7 @@ import json
 import base64
 import struct
 import inspect
-from zlib import crc32
-import decimal
-from datetime import timedelta
 from datetime import datetime
-from aliyunsdkcore import client
 from collections import defaultdict
 
 from aliyunsdkcore.client import AcsClient
@@ -19,7 +15,7 @@ from aliyunsdkiot.request.v20180120.RegisterDeviceRequest import \
     RegisterDeviceRequest
 from aliyunsdkiot.request.v20180120.PubRequest import PubRequest
 
-from define import RedisKey
+from define import RedisKey, classes, grade
 import db
 
 
@@ -247,9 +243,26 @@ class AcsManager(object):
         cur_car_id = device_result[1]
         license_plate_number = device_result[2]
 
+        # 工作人员信息
+        worker_sql = """
+        SELECT duty_id,mobile,nickname FROM worker WHERE car_id={}
+        """
+        driver_name = ""
+        zgy_name = ""
+        driver_mobile = ""
+        zgy_mobile = ""
+        worker_result = pgsql_db.query(pgsql_cur, worker_sql.format(cur_car_id))
+        for row in worker_result:
+            if row[0] == 1:
+                driver_name = row[2]
+                driver_mobile = row[1]
+            else:
+                zgy_name = row[2]
+                zgy_mobile = row[1]
+
         stu_sql = """
         SELECT stu.id, stu.stu_no, stu.nickname,shl.id,shl.school_name,
-        stu.open_id_1,stu.open_id_2 FROM student stu 
+        stu.open_id_1,stu.open_id_2,stu.grade_id,stu.class_id FROM student stu 
         INNER JOIN face f ON f.stu_id=stu.id 
         INNER JOIN school shl ON shl.id=stu.school_id 
         WHERE f.id={} LIMIT 1
@@ -265,6 +278,8 @@ class AcsManager(object):
         school_name = student_result[4]
         open_id_1 = student_result[5]
         open_id_2 = student_result[6]
+        grade_id = student_result[7]
+        class_id = student_result[8]
 
         # gps
         arr = gps_str.split(',')
@@ -293,6 +308,13 @@ class AcsManager(object):
         d['device_id'] = cur_device_id
         d['fid'] = fid
         d['cur_timestamp'] = str(add_time)
+        d['grade_name'] = grade[grade_id]
+        d['class_name'] = classes[class_id]
+        d['driver_name'] = driver_name
+        d['zgy_name'] = zgy_name
+        d['driver_mobile'] = driver_mobile
+        d['zgy_mobile'] = zgy_mobile
+
         pgsql_db.insert(pgsql_cur, d, table_name='public.order')
 
         if order_type == 1:
@@ -383,6 +405,7 @@ class AcsManager(object):
 
         intersection_list = list(set(face_ids) & set(device_fid_set))
 
+        print fid_dict
         print "=================List=============="
         print add_list
         print del_list

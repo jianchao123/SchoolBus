@@ -195,6 +195,8 @@ def device_update(user_id, data, pk):
         raise AppError(*SubErrorCode.DEVICE_INITED_NOT_CHANGE)
     if ret == -12:
         raise AppError(*SubErrorCode.DEVICE_FIRST_BOUNDING_WORKER)
+    if ret == -13:
+        raise AppError(*SubErrorCode.DEVICE_CAR_ALREADY_BINDING)
     return ret
 
 

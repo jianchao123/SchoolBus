@@ -54,7 +54,8 @@ class StudentService(object):
             query = query.filter(Car.license_plate_number == license_plate_number)
 
         count = query.count()
-        results = query.offset(offset).limit(size).all()
+
+        results = query.order_by(Student.id.desc()).offset(offset).limit(size).all()
 
         data = []
         for row in results:
@@ -361,7 +362,7 @@ class StudentService(object):
                     is_err = 1
             # 检查重复
             if stu_no in stu_no_list:
-                err_str += u"工号{}重复".format(stu_no)
+                err_str += u"身份证号{}重复".format(stu_no)
                 is_err = 1
             else:
                 stu_no_list.append(stu_no)
@@ -399,14 +400,26 @@ class StudentService(object):
             end_time = str(row_data[12]).strip()
             license_plate_number = str(row_data[13]).strip()
 
+            # student_list.append([
+            #     stu_no, nickname, gender.index(gender_name), parents_1, mobile_1,
+            #     parents_2, mobile_2, address, remarks,
+            #     school_dict[school_name.decode('utf8')],
+            #     grade.index(grade_name.decode('utf8')),
+            #     classes.index(class_name.decode('utf8')), end_time,
+            #     car_dict[license_plate_number.decode('utf8')],
+            #     license_plate_number])
             student_list.append([
-                stu_no, nickname, gender.index(gender_name), parents_1, mobile_1,
-                parents_2, mobile_2, address, remarks,
+                stu_no, nickname.encode('utf8'),
+                gender.index(gender_name),
+                parents_1.encode('utf8'), mobile_1,
+                parents_2.encode('utf8'), mobile_2,
+                address.encode('utf8'),
+                remarks.encode('utf8'),
                 school_dict[school_name.decode('utf8')],
                 grade.index(grade_name.decode('utf8')),
                 classes.index(class_name.decode('utf8')), end_time,
                 car_dict[license_plate_number.decode('utf8')],
-                license_plate_number])
+                license_plate_number.encode('utf8')])
         # 发送消息
         print student_list
         start = 0

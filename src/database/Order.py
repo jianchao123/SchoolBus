@@ -21,4 +21,10 @@ class Order(db.Model):
     device_id = db.Column(db.Integer)
     fid = db.Column(db.Integer)
     cur_timestamp = db.Column(db.String(16))
+    grade_name = db.Column(db.String(16))
+    class_name = db.Column(db.String(16))
+    driver_name = db.Column(db.String(16))
+    zgy_name = db.Column(db.String(16))
+    driver_mobile = db.Column(db.String(16))
+    zgy_mobile = db.Column(db.String(16))
 

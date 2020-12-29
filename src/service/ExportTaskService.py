@@ -16,6 +16,7 @@ class ExportTaskService(object):
         offset = (page - 1) * size
         query = db.session.query(ExportTask).filter(ExportTask.status != 10)
         count = query.count()
+        query = query.order_by(ExportTask.id.desc())
         results = query.offset(offset).limit(size).all()
 
         data = []

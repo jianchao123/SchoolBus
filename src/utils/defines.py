@@ -59,6 +59,7 @@ class SubErrorCode(object):
     DEVICE_UNINITIALIZED_ERR = (200074, u"设备未初始化")
     DEVICE_ALREADY_CLOSE = (200075, u"设备已经关闭")
     DEVICE_OPEN_THREE_MINUTES_LATER = (200076, u"开机三分钟后才能执行该功能")
+    DEVICE_CAR_ALREADY_BINDING = (200077, u"车辆已经绑定设备")
 
     TASK_EXECUTING = (200071, u"任务执行中")
 

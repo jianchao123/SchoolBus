@@ -105,23 +105,22 @@ class WxMPService(object):
 
         order = db.session.query(Order).filter(
             Order.id == order_id).first()
-        take_bus_time = datetime.fromtimestamp(
-            order.cur_timestamp).strftime('%Y-%m-%d %H:%M:%S')
+        take_bus_time = order.create_time.strftime('%Y-%m-%d %H:%M:%S')
         d = {
             'id': order.id,
             'gps': order.gps,
             'time': take_bus_time,
             'url': conf.config['REALTIME_FACE_IMG'].format(
-                order.fid, order.cur_timestamp)
+                fid=order.fid, timestamp=order.cur_timestamp)
         }
         return d
 
     @staticmethod
-    def alert_info_by_id(alert_info_id):
+    def alert_info_by_id(periods):
         db.session.commit()
 
         alert_info = db.session.query(AlertInfo).filter(
-            AlertInfo.id == alert_info_id).first()
+            AlertInfo.periods == periods).first()
         d = {
             'id': alert_info.id,
             'numbers': alert_info.people_number,
@@ -129,8 +128,8 @@ class WxMPService(object):
             'license_plate_number': alert_info.license_plate_number,
             'time': alert_info.alert_start_time.strftime('%Y-%m-%d %H:%M:%S'),
             'gps': alert_info.gps,
-            'worker_info': '{}({})'.format(alert_info.worker_name_1,
-                                           alert_info.worker_name_2)
+            'worker_info': u'{}(驾驶员);{}(照管员)'.format(
+                alert_info.worker_name_1, alert_info.worker_name_2)
         }
         return d
 
@@ -161,9 +160,32 @@ class WxMPService(object):
             db.session.close()
 
     @staticmethod
+    def cancel_binding(open_id):
+        """解除绑定"""
+        db.session.commit()
+        student = db.session.query(Student).filter(
+            or_(Student.open_id_1 == open_id,
+                Student.open_id_2 == open_id)).first()
+        worker = db.session.query(Worker).filter(
+            Worker.open_id == open_id).first()
+        if student:
+            student.open_id_1 = None
+            student.open_id_2 = None
+        if worker:
+            worker.open_id = None
+        try:
+            db.session.commit()
+            return {'id': 0}
+        except SQLAlchemyError:
+            db.session.rollback()
+            return -2
+        finally:
+            db.session.close()
+
+    @staticmethod
     def bus_where(open_id):
         """
-        只能家长查看
+        校车在那儿
         """
         db.session.commit()
 
@@ -224,59 +246,30 @@ class WxMPService(object):
         student = db.session.query(Student).filter(
             or_(Student.open_id_1 == open_id,
                 Student.open_id_2 == open_id)).first()
-        worker = db.session.query(Worker).filter(
-            Worker.car_id == student.car_id).first()
         if student:
-            print "--------------------------2"
-            if student.car_id:
-                device = db.session.query(Device).join(
-                    Car, Car.id == Device.car_id).filter(
-                    Car.id == student.car_id).first()
-                if device:
-                    device_gps = cache.hget(
-                        defines.RedisKey.DEVICE_CUR_GPS, device.device_name)
-                    order = db.session.query(Order).filter(
-                        Order.stu_id == student.id).order_by(
-                        Order.id.desc()).first()
+            # 最近一条数据
+            order = db.session.query(Order).filter(
+                Order.stu_id == student.id).order_by(
+                Order.id.desc()).first()
 
-                    if device_gps:
-                        d['gps'] = device_gps
-
-                    if order:
-                        d['nickname'] = order.stu_name.encode('utf8')
-                        d['order_type'] = order.order_type
-                        d['create_time'] = order.create_time.strftime(
-                            '%Y-%m-%d %H:%M:%S')
-
-                        results = db.session.query(Worker).filter(
-                            Worker.car_id == student.car_id).all()
-                        string = ''
-                        for row in results:
-                            string += '{} ({} {})\n'.format(row.nickname,
-                                                            duty[row.duty_id],
-                                                            row.mobile)
-                        d['staff'] = string
-                        d['oss_url'] = conf.config['REALTIME_FACE_IMG'].format(
-                            fid=order.fid, timestamp=order.cur_timestamp)
-                        d[
-                            'license_plate_number'] = order.license_plate_number.encode(
-                            'utf8')
-        elif worker:
-
-            device = db.session.query(Device).join(
-                Car, Car.id == Device.car_id).filter(
-                Car.id == worker.car_id)
-            if device:
-                device_gps = cache.hget(
-                    defines.RedisKey.DEVICE_CUR_GPS, device.device_name)
-
-                d['gps'] = device_gps
+            if order:
+                d['nickname'] = order.stu_name.encode('utf8')
+                d['order_type'] = order.order_type
+                d['create_time'] = order.create_time.strftime(
+                    '%Y-%m-%d %H:%M:%S')
 
                 results = db.session.query(Worker).filter(
-                    Worker.car_id == worker.car_id).all()
+                    Worker.car_id == student.car_id).all()
                 string = ''
                 for row in results:
-                    string += '{} ({} {})\n'.format(row.nickname,
-                                                    duty[row.duty_id],
-                                                    row.mobile)
+                    string += '{} ({} {})|'.format(
+                        row.nickname, duty[row.duty_id], row.mobile)
                 d['staff'] = string
+                d['oss_url'] = conf.config['REALTIME_FACE_IMG'].format(
+                    fid=order.fid, timestamp=order.cur_timestamp)
+                d[
+                    'license_plate_number'] = order.license_plate_number.encode(
+                    'utf8')
+                d['gps'] = order.gps
+                d['staff'] = '驾驶员 ({} {}),照管员 ({} {})'.format(
+                    order.driver_name, order.driver_mobile, order.zgy_name, order.zgy_mobile)

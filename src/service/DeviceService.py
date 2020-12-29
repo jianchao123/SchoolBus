@@ -11,6 +11,7 @@ from database.DeviceFaceInfo import DeviceFaceInfo
 from database.Student import Student
 from database.Face import Face
 from database.Car import Car
+from database.Worker import Worker
 from utils import defines
 from database.School import School
 from msgqueue import producer
@@ -52,6 +53,7 @@ class DeviceService(object):
         query = query.filter(Device.status != 10)
 
         count = query.count()
+        query = query.order_by(Device.id.desc())
         results = query.offset(offset).limit(size).all()
 
         data = []
@@ -127,15 +129,19 @@ class DeviceService(object):
             if car_id == -10:
                 device.car_id = None
             else:
+                # 该车辆是否已经绑定设备
+                if db.session.query(Device).filter(
+                        Device.car_id == car_id).first():
+                    return -13
+
                 # 该车辆是否已经绑定工作人员
-                cnt = db.session.query(Car).filter(
-                    Car.id == car_id).filter(
-                    or_(Car.worker_1_id == None, Car.worker_2_id == None)
-                ).count()
-                if cnt:
+                cnt = db.session.query(Worker).filter(
+                    Worker.car_id == car_id).count()
+                if cnt < 2:
                     return -12
 
                 car = db.session.query(Car).filter(Car.id == car_id).first()
+
                 device.car_id = car_id
                 device.license_plate_number = car.license_plate_number
                 # 如果用户关联设备和车辆,判断状态是否为1,为1就修改到2

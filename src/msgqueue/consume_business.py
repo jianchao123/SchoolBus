@@ -166,6 +166,9 @@ class StudentBusiness(object):
             car_id = row[13]
             license_plate_number = row[14]
 
+            parents1_mobile = str(int(float(parents1_mobile)))
+            parents2_mobile = str(int(float(parents2_mobile)))
+
             student = pgsql_db.get(pgsql_cur, stu_sql.format(stu_no))
             d = {
                 'stu_no': stu_no,
@@ -184,6 +187,7 @@ class StudentBusiness(object):
                 'car_id': car_id,
                 'license_plate_number': license_plate_number
             }
+            print d
 
             if student:
                 d['id'] = student[0]
@@ -231,8 +235,7 @@ class StudentBusiness(object):
             worker = pgsql_db.get(pgsql_cur, worker_sql.format(emp_no))
             if emp_no.isdigit():
                 emp_no = str(int(float(emp_no)))
-            if mobile.isdigit():
-                mobile = str(int(float(mobile)))
+            mobile = str(int(float(mobile)))
             d = {
                 'emp_no': emp_no,
                 'nickname': nickname,
@@ -266,14 +269,13 @@ class StudentBusiness(object):
         """
         pgsql_db = PgsqlDbUtil
         car_sql = "SELECT id,capacity,company_name FROM car " \
-                  "WHERE license_plate_number='{}' LIMIT 1"
+                  "WHERE license_plate_number='{}' AND status = 1 LIMIT 1"
         for row in data:
             license_plate_number = row[0]
             capacity = row[1]
             company_name = row[2]
 
-            car_sql = car_sql.format(license_plate_number)
-            car = pgsql_db.get(pgsql_cur, car_sql)
+            car = pgsql_db.get(pgsql_cur, car_sql.format(license_plate_number))
             if car:
                 d = {
                     'id': car[0],

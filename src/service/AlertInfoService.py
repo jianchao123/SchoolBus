@@ -44,9 +44,12 @@ class AlertInfoService(object):
         for row in results:
             alert_start_time_str = ''
             if row.alert_start_time:
-                alert_start_time_str = row.alert_start_time.strftime('%Y-%m-%d %H:%M:%S')
+                alert_start_time_str = \
+                    row.alert_start_time.strftime('%Y-%m-%d %H:%M:%S')
+            alert_second_time_str = ''
             if row.alert_second_time:
-                alert_second_time_str = row.alert_second_time.strftime('%Y-%m-%d %H:%M:%S')
+                alert_second_time_str = \
+                    row.alert_second_time.strftime('%Y-%m-%d %H:%M:%S')
             data.append({
                 'id': row.id,
                 'license_plate_number': row.license_plate_number,

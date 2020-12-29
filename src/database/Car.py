@@ -18,4 +18,4 @@ class Car(db.Model):
     worker_2_nickname = db.Column(db.String(32))
     worker_2_duty_name = db.Column(db.Integer)
     company_name = db.Column(db.String(16))     # 车辆所属公司
-    status = db.Column(db.Integer)              # 1有效 10删除
+    status = db.Column(db.Integer)              # 1有效 2 10删除
