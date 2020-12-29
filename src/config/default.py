@@ -37,5 +37,3 @@ class Config(object):
 
     APP_LOG_LEVEL = 'info'
 
-    # 实时刷脸图片 format
-    REALTIME_FACE_IMG = 'http://OSSDomain/snap_{fid}_{timestamp}.png'

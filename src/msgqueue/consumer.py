@@ -4,11 +4,6 @@
 """
 import os
 import sys
-# reload(sys)
-# sys.setdefaultencoding('utf8')
-import json
-import time
-import threading
 
 current_dir = os.path.dirname(os.path.realpath(__file__))
 current_dir = os.path.dirname(current_dir)

@@ -49,7 +49,7 @@ class OrderService(object):
                 'school_id': row.school_id,
                 'school_name': row.school_name,
                 'order_type': row.order_type,
-                'create_time': row.create_time,
+                'create_time': row.create_time.strftime('%Y-%m-%d %H:%M:%S'),
                 'up_location': row.up_location,
                 'gps': row.gps,
                 'car_id': row.car_id,

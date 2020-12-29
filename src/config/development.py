@@ -31,3 +31,7 @@ class DevelopmentConfig(Config):
     MP_TOKEN = 'gK9gY3cV2bM6pH9gF7vJ5uC8vN9cI0cL'
     MP_ENCODING_AES_KEY = 'CAmGrrm1rJ0HqgcbIBQbhKAHLUKGGbv3RJTTFnixTaC'
     MP_AUTH_URI = 'http://cdmp.wgxing.com/index2.html' # wechat redirect_uri,可用于本地测试,微信的bug
+
+    # 实时刷脸图片 format
+    REALTIME_FACE_IMG = 'http://' + OSS_BUCKET + '.' + OSS_POINT + \
+                        '/snap_{fid}_{timestamp}.jpg'

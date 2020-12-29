@@ -162,27 +162,72 @@ class WxMPService(object):
 
     @staticmethod
     def bus_where(open_id):
+        """
+        只能家长查看
+        """
         db.session.commit()
-        student = db.session.query(Student).filter(
+
+        # 判断身份
+        is_parents = db.session.query(Student).filter(
             or_(Student.open_id_1 == open_id,
                 Student.open_id_2 == open_id)).first()
-        worker = db.session.query(Worker).filter(
+        is_staff = db.session.query(Worker).filter(
             Worker.open_id == open_id).first()
-        if not student and not worker:
-            return {'d': -10}  # 跳转到绑定手机号页面
 
         d = {
-            'd': 0,
+            'd': -10,
             'nickname': None,
             'order_type': None,
             'create_time': None,
             'license_plate_number': None,
             'gps': None,
-            'staff': None
+            'staff': None,
+            'oss_url': None
         }
+        print is_staff, is_parents
+        if is_parents and is_staff:
+            d['d'] = 0
+            WxMPService.parents_data(d, open_id)
+        elif is_parents:
+            d['d'] = 0
+            WxMPService.parents_data(d, open_id)
+        elif is_staff:
+            d['d'] = 0
+            WxMPService.staff_data(d, open_id)
+        print d
+        return d
 
+    @staticmethod
+    def staff_data(d, open_id):
+        worker = db.session.query(Worker).filter(
+            Worker.open_id == open_id).first()
+        if worker:
+            device = db.session.query(Device).join(
+                Car, Car.id == Device.car_id).filter(
+                Car.id == worker.car_id).first()
+            device_gps = cache.hget(
+                defines.RedisKey.DEVICE_CUR_GPS, device.device_name)
+
+            results = db.session.query(Worker).filter(
+                Worker.car_id == worker.car_id).all()
+            string = ''
+            for row in results:
+                string += '{} ({} {})\n'.format(row.nickname,
+                                                duty[row.duty_id],
+                                                row.mobile)
+
+            d['gps'] = device_gps
+            d['staff'] = string
+
+    @staticmethod
+    def parents_data(d, open_id):
+        student = db.session.query(Student).filter(
+            or_(Student.open_id_1 == open_id,
+                Student.open_id_2 == open_id)).first()
+        worker = db.session.query(Worker).filter(
+            Worker.car_id == student.car_id).first()
         if student:
-
+            print "--------------------------2"
             if student.car_id:
                 device = db.session.query(Device).join(
                     Car, Car.id == Device.car_id).filter(
@@ -191,21 +236,31 @@ class WxMPService(object):
                     device_gps = cache.hget(
                         defines.RedisKey.DEVICE_CUR_GPS, device.device_name)
                     order = db.session.query(Order).filter(
-                        Order.stu_id == student.id).first()
+                        Order.stu_id == student.id).order_by(
+                        Order.id.desc()).first()
 
                     if device_gps:
                         d['gps'] = device_gps
 
                     if order:
-                        d['nickname'] = order.stu_name
+                        d['nickname'] = order.stu_name.encode('utf8')
                         d['order_type'] = order.order_type
-                        d['create_time'] = order.create_time.strftime('%Y-%m-%d %H:%M:%S')
+                        d['create_time'] = order.create_time.strftime(
+                            '%Y-%m-%d %H:%M:%S')
 
-                        results = db.session.query(Worker).filter(Worker.car_id == student.car_id).all()
+                        results = db.session.query(Worker).filter(
+                            Worker.car_id == student.car_id).all()
                         string = ''
                         for row in results:
-                            string += '{} ({} {})\n'.format(row.nickname, duty[row.duty_id], row.mobile)
+                            string += '{} ({} {})\n'.format(row.nickname,
+                                                            duty[row.duty_id],
+                                                            row.mobile)
                         d['staff'] = string
+                        d['oss_url'] = conf.config['REALTIME_FACE_IMG'].format(
+                            fid=order.fid, timestamp=order.cur_timestamp)
+                        d[
+                            'license_plate_number'] = order.license_plate_number.encode(
+                            'utf8')
         elif worker:
 
             device = db.session.query(Device).join(
@@ -221,7 +276,7 @@ class WxMPService(object):
                     Worker.car_id == worker.car_id).all()
                 string = ''
                 for row in results:
-                    string += '{} ({} {})\n'.format(row.nickname, duty[row.duty_id],
+                    string += '{} ({} {})\n'.format(row.nickname,
+                                                    duty[row.duty_id],
                                                     row.mobile)
                 d['staff'] = string
-        return d

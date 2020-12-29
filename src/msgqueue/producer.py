@@ -13,6 +13,7 @@ channel = conn.channel()
 channel.exchange_declare(exchange='student_exchange', exchange_type='topic')
 channel.exchange_declare(exchange='device_exchange', exchange_type='topic')
 channel.exchange_declare(exchange='excel_exchange', exchange_type='topic')
+channel.exchange_declare(exchange='mpmsg_exchange', exchange_type='topic')
 
 
 def _publish_msg(exchange, routing_key, message):

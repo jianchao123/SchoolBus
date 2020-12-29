@@ -854,6 +854,7 @@ class MpMsgConsumer(object):
         data = json.loads(body.decode('utf-8'))
         arr = method.routing_key.split(".")
         routing_suffix = arr[-1]
+        print '===============================================123'
         if routing_suffix == 'parents':
             self.business.parents_mp_msg(data)
         if routing_suffix == 'staff':

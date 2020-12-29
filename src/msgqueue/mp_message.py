@@ -2,10 +2,14 @@
 """
 订阅者
 """
+import os
+import sys
 import pika
-from msgqueue.consume_business import MpMsgConsumer
 
-print("start subscriber")
+current_dir = os.path.dirname(os.path.realpath(__file__))
+current_dir = os.path.dirname(current_dir)
+sys.path.insert(0, current_dir)
+from msgqueue.consume_business import MpMsgConsumer
 
 
 def start_subscriber():
@@ -14,15 +18,9 @@ def start_subscriber():
     channel = connection.channel()
     channel.exchange_declare(exchange='mpmsg_exchange', exchange_type='topic')
 
-    # channel.queue_declare(queue="mpmsg_queue", durable=True)
-    # channel.queue_bind(exchange='mpmsg_exchange',
-    #                    queue="mpmsg_queue",
-    #                    routing_key="mpmsg.*")
-
-    result = channel.queue_declare(exclusive=True)
-    queue_name = result.method.queue
+    channel.queue_declare(queue="mpmsg_queue", durable=True)
     channel.queue_bind(exchange='mpmsg_exchange',
-                       queue=queue_name,
+                       queue="mpmsg_queue",
                        routing_key="mpmsg.*")
 
     channel.basic_qos(prefetch_count=1)

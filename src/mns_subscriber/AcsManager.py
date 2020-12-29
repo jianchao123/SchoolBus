@@ -264,7 +264,7 @@ class AcsManager(object):
         school_id = student_result[3]
         school_name = student_result[4]
         open_id_1 = student_result[5]
-        open_id_2 = student_result[5]
+        open_id_2 = student_result[6]
 
         # gps
         arr = gps_str.split(',')
@@ -312,6 +312,7 @@ class AcsManager(object):
                 open_id_1, d['id'], stu_nickname,
                 order_type_name, up_time_str, license_plate_number)
         if open_id_2:
+            print "------------------------------open_id_2"
             producer.send_parents_template_message(
                 open_id_2, d['id'], stu_nickname,
                 order_type_name, up_time_str, license_plate_number)
