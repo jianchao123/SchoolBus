@@ -67,8 +67,8 @@ class ReceiveMessage(object):
                             dev_name, jdata['gps'])
                         # 非0直接跳过,0表示已经初始化完成,因为低版本jdata没有cnt
                         if not ret:
-                            acs_manager.device_rebooted_setting_params(
-                                dev_name, jdata['devtime'], jdata['cnt'])
+                            acs_manager.device_incar_person_number(
+                                dev_name, jdata['cnt'])
 
             elif cmd == 'devwhitelist2':
                 logger.info(u"人员列表")

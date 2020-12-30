@@ -181,7 +181,7 @@ def school_update(user_id, data, pk):
     if ret == -2:
         raise AppError(*GlobalErrorCode.DB_COMMIT_ERR)
     if ret == -10:
-        raise AppError(*SubErrorCode.CAR_CHEPAI_ALREADY_EXISTS)
+        raise AppError(*SubErrorCode.SCHOOL_NAME_ALREADY_EXISTS)
     return ret
 
 

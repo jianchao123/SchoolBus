@@ -2,7 +2,7 @@
 
 from datetime import timedelta
 
-from sqlalchemy import func, or_
+from sqlalchemy import func, or_, and_
 from sqlalchemy.exc import SQLAlchemyError
 from database.db import db
 from database.AlertInfo import AlertInfo
@@ -21,12 +21,13 @@ class AlertInfoService(object):
 
         offset = (page - 1) * size
         query = db.session.query(AlertInfo)
+        print status, "---------------------"
         if status:
             query = query.filter(AlertInfo.status == status)
         if first_alert:
-            query = query.filter(AlertInfo.first_alert == first_alert)
+            query = query.filter(AlertInfo.first_alert == 1)
         if second_alert:
-            query = query.filter(AlertInfo.first_alert == second_alert)
+            query = query.filter(AlertInfo.second_alert == 1)
         if query_str:
             query_str = '%{keyword}%'.format(keyword=query_str)
             query = query.filter(or_(
@@ -34,8 +35,8 @@ class AlertInfoService(object):
                 AlertInfo.worker_name_1.like(query_str),
                 AlertInfo.worker_name_2.like(query_str)))
         if start_time and end_time:
-            query = query.filter(or_(AlertInfo.create_time > start_time,
-                                     AlertInfo.create_time < end_time))
+            query = query.filter(and_(AlertInfo.create_time > start_time,
+                                      AlertInfo.create_time < end_time))
         count = query.count()
         query = query.order_by(AlertInfo.id.desc())
         results = query.offset(offset).limit(size).all()
@@ -97,8 +98,8 @@ class AlertInfoService(object):
 
         if start_date and end_date:
             end_date = end_date + timedelta(days=1)
-            query = query.filter(or_(AlertInfo.create_time > start_date,
-                                     AlertInfo.create_time < end_date))
+            query = query.filter(and_(AlertInfo.create_time > start_date,
+                                      AlertInfo.create_time < end_date))
         count = query.count()
         if count > 15000000:
             return -11

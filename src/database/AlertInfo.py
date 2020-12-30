@@ -27,5 +27,5 @@ class AlertInfo(db.Model):
     cancel_type_id = db.Column(db.Integer)      # 取消类型 1其他 2无学生解除 3有学生解除
     cancel_time = db.Column(db.DateTime)        # 取消时间
     cancel_reason = db.Column(db.Integer)       # cancel_type_id=1时需要此项
-    gps = db.Column(db.String(16))
+    gps = db.Column(db.String(32))
     periods = db.Column(db.String(48))

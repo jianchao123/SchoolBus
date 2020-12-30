@@ -43,10 +43,12 @@ def create_app():
     app.config.from_object(load_config())
 
     # 初始化log conf对象
-    from ext import log, conf, cache
+    from ext import log, conf, cache, cache1
     log.init_app(app)
     conf.init_app(app)
     cache.init_app(app)
+    app.config['REDIS_DB'] = 1
+    cache1.init_app(app)
 
     register_blueprints('controller', app)
 

@@ -23,7 +23,7 @@ class CarService(object):
         offset = (page - 1) * size
         query = db.session.query(Car)
         if query_str:
-            query_str = '%{keyword}%'.format(keyword=query_str)
+            query_str = '%%{keyword}%%'.format(keyword=query_str)
 
             results = db.session.query(Device).filter(
                 Device.device_iid.like(query_str)).all()

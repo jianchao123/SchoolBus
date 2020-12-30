@@ -272,9 +272,6 @@ class WorkerService(object):
             if not mobile:
                 err_str += u"手机号为空,"
                 is_err = 1
-            if not remarks:
-                err_str += u"备注为空,"
-                is_err = 1
             if not company_name:
                 err_str += u"公司名为空,"
                 is_err = 1
@@ -298,18 +295,21 @@ class WorkerService(object):
             if license_plate_number.decode('utf8') not in car_dict:
                 err_str += u"未知的车牌"
                 is_err = 1
-            print car_duty_d
-            print license_plate_number.decode('utf8')
-            print license_plate_number
-            print license_plate_number.decode('utf8') in car_duty_d
-            print license_plate_number in car_duty_d
-            if license_plate_number.decode('utf8') in car_duty_d:
-                duty_id_list = car_duty_d[license_plate_number.decode('utf8')]
-                print defines.duty
-                print duty_name.decode('utf8')
-                if defines.duty.index(duty_name.decode('utf8')) in duty_id_list:
-                    err_str += u"该车辆{}工作人员{}重复".format(license_plate_number, emp_no)
+
+            duty_id = defines.duty.index(duty_name.decode('utf8'))
+            lpn = license_plate_number.decode('utf8')
+            if lpn in car_duty_d:
+                duty_id_list = car_duty_d[lpn]
+
+                if duty_id in duty_id_list:
+                    err_str += u"该车辆{}工作人员{}重复".format(
+                        license_plate_number, emp_no)
                     is_err = 1
+                else:
+                    duty_id_list.append(duty_id)
+            else:
+                car_duty_d[lpn] = [duty_id]
+
             # 检查重复
             if emp_no in emp_no_list:
                 err_str += u"工号{}重复".format(emp_no)

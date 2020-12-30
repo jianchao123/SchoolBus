@@ -376,4 +376,6 @@ def worker_batch_add(user_id, data):
 
     # "c": 1, "msg": err_str}
     data = WorkerService.batch_add_worker(fd)
+    if data == -10:
+        raise AppError(*SubErrorCode.TASK_EXECUTING)
     return data

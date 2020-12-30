@@ -1,7 +1,7 @@
 # coding:utf-8
 from datetime import timedelta
 
-from sqlalchemy import func, or_
+from sqlalchemy import func, or_, and_
 from sqlalchemy.exc import SQLAlchemyError
 from database.db import db
 from database.Order import Order
@@ -29,8 +29,8 @@ class OrderService(object):
                 Order.license_plate_number.like(query_str)))
         if start_date and end_date:
             end_date = end_date + timedelta(days=1)
-            query = query.filter(or_(Order.create_time > start_date,
-                                     Order.create_time < end_date))
+            query = query.filter(and_(Order.create_time > start_date,
+                                      Order.create_time < end_date))
 
         query = query.order_by(Order.id.desc())
         count = query.count()
@@ -84,7 +84,7 @@ class OrderService(object):
             query = query.filter(Order.order_type == order_type)
         if start_date and end_date:
             end_date = end_date + timedelta(days=1)
-            query = query.filter(or_(Order.create_time > start_date,
+            query = query.filter(and_(Order.create_time > start_date,
                                      Order.create_time < end_date))
         count = query.count()
         if count > 15000000:

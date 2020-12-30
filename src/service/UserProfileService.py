@@ -3,7 +3,7 @@
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 from database.AdminUser import AdminUser
 from utils import tools
-from ext import cache
+from ext import cache1
 from database.db import db
 
 
@@ -23,7 +23,7 @@ class UserProfileService(object):
         return:
             int. UserId
         """
-        user_id = cache.get(UserProfileService.TOKEN_ID_KEY.format(token))
+        user_id = cache1.get(UserProfileService.TOKEN_ID_KEY.format(token))
         return int(user_id) if user_id else UserProfileService.INVALID_USER_ID
 
     @staticmethod
@@ -42,8 +42,8 @@ class UserProfileService(object):
 
     @staticmethod
     def login(user_id, token):
-        cache.set(UserProfileService.TOKEN_ID_KEY.format(token), user_id)
-        cache.expire(UserProfileService.TOKEN_ID_KEY.format(token), 60 * 60 * 8)
+        cache1.set(UserProfileService.TOKEN_ID_KEY.format(token), user_id)
+        cache1.expire(UserProfileService.TOKEN_ID_KEY.format(token), 60 * 60 * 8)
 
     @staticmethod
     def modify_pwd(user_id, passwd_raw):

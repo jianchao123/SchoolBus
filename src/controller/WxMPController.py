@@ -394,6 +394,58 @@ def alarm_retrieve(args):
     return WxMPService.alert_info_by_id(periods)
 
 
+@bp.route('/alarm/cancel', methods=['POST'])
+@post_require_check(['periods'])
+def alarm_cancel(args):
+    """
+    解除报警
+    解除报警，需要先登录
+    ---
+    tags:
+      - 公众号
+    parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          properties:
+            open_id:
+              type: string
+              description: OPENID
+            periods:
+              type: string
+              description: 报警期数
+            cancel_type_id:
+              type: integer
+              description: 取消类型id 1其他 2无学生解除 3有学生解除
+            cancel_reason:
+              type: string
+              description: 取消原因
+    responses:
+      200:
+        description: 正常返回http code 200
+        schema:
+          properties:
+            msg:
+              type: string
+              description: 错误消息
+            status:
+              type: integer
+              description: 状态
+            data:
+              type: object
+              properties:
+                id:
+                  type: integer
+                  description: 解绑的id
+    """
+    periods = args['periods']
+    open_id = args['open_id']
+    cancel_type_id = args['cancel_type_id']
+    cancel_reason = args.get('cancel_reason', None)
+    WxMPService.cancel_alert(open_id, periods, cancel_type_id, cancel_reason)
+
+
 wx_msg = WeixinMsg(conf.config['MP_TOKEN'])
 
 

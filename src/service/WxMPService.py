@@ -134,7 +134,7 @@ class WxMPService(object):
         return d
 
     @staticmethod
-    def cancel_alert(open_id, alert_info_id, cancel_type_id, cancel_reason):
+    def cancel_alert(open_id, periods, cancel_type_id, cancel_reason):
         db.session.commit()
         # 查询工作人员手机号
         worker = db.session.query(Worker).filter(
@@ -143,7 +143,7 @@ class WxMPService(object):
             return -10  # 跳转到绑定手机号页面
 
         alert_info = db.session.query(AlertInfo).filter(
-            AlertInfo.id == alert_info_id).first()
+            AlertInfo.periods == periods).first()
         if cancel_type_id == 1:
             alert_info.cancel_reason = cancel_reason
         alert_info.cancel_type_id = cancel_type_id

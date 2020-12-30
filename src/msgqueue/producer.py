@@ -165,13 +165,6 @@ def dev_while_list(device_name):
     _publish_msg('device_exchange', 'device.devwhitelist', json.dumps(data))
 
 
-def delete_device_person_number(device_name):
-    data = {
-        'dev_name': device_name
-    }
-    _publish_msg('device_exchange', 'device.clearcnt', json.dumps(data))
-
-
 def send_parents_template_message(
         open_id, order_id, nickname, order_type_name,
         up_time, license_plate_number):
@@ -199,6 +192,12 @@ def send_staff_template_message(
     data['time'] = time
     data['license_plate_number'] = license_plate_number
     _publish_msg('mpmsg_exchange', 'mpmsg.staff', json.dumps(data))
+
+
+def clear_device_person_count(device_name):
+    """清空设备车内人数"""
+    data = {'device_name': device_name}
+    _publish_msg('device_exchange', 'device.clearcnt', json.dumps(data))
 
 
 # 测试用户创建

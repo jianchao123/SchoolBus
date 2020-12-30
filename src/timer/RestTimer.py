@@ -94,7 +94,7 @@ class CheckAccClose(object):
         if time_diff < 15:
             return
 
-        get_alert_info_sql = "SELECT id,status,number,people_info," \
+        get_alert_info_sql = "SELECT id,status,people_number,people_info," \
                              "license_plate_number FROM alert_info " \
                              "WHERE periods='{}' LIMIT 1"
         if time_diff < 60:
@@ -132,7 +132,7 @@ class CheckAccClose(object):
                       "face F INNER JOIN student STU ON STU.id=F.stu_id " \
                       "INNER JOIN school SHL ON SHL.id=STU.school_id " \
                       "WHERE F.id in ({})".format(face_ids)
-                print sql
+
                 results = pgsql_db.query(pgsql_cur, sql)
 
                 send_msg_student_info = ""
@@ -170,7 +170,7 @@ class CheckAccClose(object):
                     'status': 1,         # 正在报警
                     'periods': periods
                 }
-                print d
+
                 send_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 pgsql_db.insert(pgsql_cur, d, 'alert_info')
                 if open_id_1:
@@ -194,8 +194,6 @@ class CheckAccClose(object):
                 pgsql_db.update(pgsql_cur, d, 'alert_info')
 
                 send_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                pgsql_db.insert(pgsql_cur, d, 'alert_info')
-
                 # 发送模板消息
                 number = result[2]
                 send_msg_student_info = ""
@@ -266,7 +264,7 @@ class GenerateFeature(object):
             for k, v in devices.items():
                 used_devices.append(k)
             unused_devices = list(set(online_generate_devices) - set(used_devices))
-            print unused_devices
+
             if not unused_devices:
                 return
             self.execute(rds_conn, unused_devices)
@@ -289,8 +287,7 @@ class GenerateFeature(object):
         sql = "SELECT id,oss_url FROM face " \
               "WHERE status = 2 LIMIT {}".format(len(unused_devices))
         results = pgsql_db.query(pgsql_cur, sql)
-        print "-=-=-=-=-=-=-=-=-=-=-=-=-======================"
-        print results
+
         for row in results:
             face_id = row[0]
             oss_url = row[1]
@@ -327,14 +324,6 @@ class EveryMinuteExe(object):
             for row in student_set_key:
                 # 删除车内人员
                 rds_conn.delete(row)
-
-                # 删除设备车内人数
-                device_name = row.split(":")[-1]
-                jdata = {
-                    "cmd": "clearcnt",
-                    "value": 0
-                }
-                pub_msg(rds_conn, device_name, jdata)
 
         # 过期人脸更新状态
         expire_sql = """SELECT F.id FROM student AS STU 
@@ -421,11 +410,14 @@ class FromOssQueryFace(object):
             server_face_list.append(stu_no)
             stu_no_pk_map[stu_no] = pk
 
+        print "-==-=-=-=--=======================================1"
+        print server_face_list
         if server_face_list:
             rds_conn.sadd(RedisKey.OSS_ID_CARD_SET + "CP", *server_face_list)
             intersection = list(rds_conn.sinter(
                 RedisKey.OSS_ID_CARD_SET, RedisKey.OSS_ID_CARD_SET + "CP"))
             intersection = intersection[:1000]
+            print intersection
             for row in intersection:
                 d = {
                     'id': stu_no_pk_map[row],
@@ -462,7 +454,7 @@ class EveryFewMinutesExe(object):
                 if slash_arr and len(slash_arr) == 3:
                     comma_arr = slash_arr[-1].split('.')
                     if comma_arr and len(comma_arr) == 2 \
-                            and comma_arr[-1] == 'jpg':
+                            and comma_arr[-1] == 'png':
                         rds_conn.sadd(RedisKey.OSS_ID_CARD_SET, comma_arr[0])
 
                 # 删除不规则的人脸

@@ -125,7 +125,7 @@ def alert_info_list(user_id, data):
                     description: 状态1 正在报警  2 已解除
 
     """
-    status = data.get('alert_info_type', None)
+    status = data.get('status', None)
     start_date = data.get('start_date', None)
     end_date = data.get('end_date', None)
     query_str = data.get('query_str', None)
@@ -139,6 +139,8 @@ def alert_info_list(user_id, data):
             start_date = datetime.strptime(start_date, '%Y-%m-%d')
             end_date = datetime.strptime(end_date, '%Y-%m-%d')
         except ValueError:
+            import traceback
+            print traceback.format_exc()
             raise AppError(*GlobalErrorCode.PARAM_ERROR)
 
     return AlertInfoService.alert_info_list(

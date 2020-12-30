@@ -14,3 +14,4 @@ conf = CConfigHelper()
 
 """cache对象"""
 cache = CCacheHelper()
+cache1 = CCacheHelper()

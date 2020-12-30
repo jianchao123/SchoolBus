@@ -154,7 +154,7 @@ def car_add(user_id, data):
     company_name = data['company_name']
     capacity = data['capacity']
     license_plate_number = data['license_plate_number']
-    print type(capacity), capacity
+    license_plate_number = license_plate_number.upper()
     ret = CarService.car_add(license_plate_number, capacity, company_name)
     if ret == -2:
         raise AppError(*GlobalErrorCode.DB_COMMIT_ERR)
@@ -214,6 +214,9 @@ def car_update(user_id, data, pk):
     company_name = data.get('company_name', None)
     capacity = data.get('capacity', None)
     license_plate_number = data.get('license_plate_number', None)
+
+    if license_plate_number:
+        license_plate_number = license_plate_number.upper()
 
     ret = CarService.car_update(pk, license_plate_number, capacity, company_name)
     if ret == -1:
@@ -325,6 +328,8 @@ def car_batch_add(user_id, data):
 
     # "c": 1, "msg": err_str}
     data = CarService.batch_add_car(fd)
+    if data == -10:
+        raise AppError(*SubErrorCode.TASK_EXECUTING)
     return data
 
 

@@ -32,7 +32,8 @@ class DeviceService(object):
         if device_iid:
             query = query.filter(Device.device_iid == device_iid)
         if license_plate_number:
-            query = query.filter(Device.license_plate_number == license_plate_number)
+            query = query.filter(Device.license_plate_number.like(
+                '%%{}%%'.format(license_plate_number)))
 
         cur_timestamp = int(time.time())
         if status:
@@ -96,12 +97,12 @@ class DeviceService(object):
         if not device:
             return -1
 
-        if license_plate_number:
-            # 这里只能修改设备上的车牌,需要先在车辆修改车牌
-            cnt = db.session.query(Car).filter(
-                Car.license_plate_number == license_plate_number).count()
-            if not cnt:
-                return -10  # 车牌找不到
+        # if license_plate_number:
+        #     # 这里只能修改设备上的车牌,需要先在车辆修改车牌
+        #     cnt = db.session.query(Car).filter(
+        #         Car.license_plate_number == license_plate_number).count()
+        #     if not cnt:
+        #         return -10  # 车牌找不到
 
         if sound_volume:
             device.sound_volume = sound_volume

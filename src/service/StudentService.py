@@ -3,7 +3,7 @@ import time
 from datetime import datetime
 from datetime import timedelta
 
-from sqlalchemy import func, or_
+from sqlalchemy import func, or_, and_
 from sqlalchemy.exc import SQLAlchemyError
 from database.db import db
 from database.Student import Student
@@ -45,17 +45,18 @@ class StudentService(object):
                 Student.nickname.like(query_str),
                 Student.stu_no.like(query_str)))
         if start_date and end_date:
+            print "-----------------------"
             end_date = end_date + timedelta(days=1)
-            query = query.filter(or_(Student.create_time > start_date,
-                                     Student.create_time < end_date))
+            query = query.filter(and_(Student.end_time > start_date,
+                                     Student.end_time < end_date))
         if car_id:
             query = query.filter(Student.car_id == car_id)
         if license_plate_number:
             query = query.filter(Car.license_plate_number == license_plate_number)
 
         count = query.count()
-
-        results = query.order_by(Student.id.desc()).offset(offset).limit(size).all()
+        results = query.order_by(
+            Student.id.desc()).offset(offset).limit(size).all()
 
         data = []
         for row in results:
