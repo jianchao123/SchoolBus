@@ -388,6 +388,9 @@ def alarm_retrieve(args):
                 worker_info:
                   type: string
                   description: 工作人员信息
+                status:
+                  type: integer
+                  description: 1 正在报警 2已解除
 
     """
     periods = args['periods']
@@ -443,7 +446,14 @@ def alarm_cancel(args):
     open_id = args['open_id']
     cancel_type_id = args['cancel_type_id']
     cancel_reason = args.get('cancel_reason', None)
-    WxMPService.cancel_alert(open_id, periods, cancel_type_id, cancel_reason)
+    ret = WxMPService.cancel_alert(open_id, periods, cancel_type_id, cancel_reason)
+    if ret == -2:
+        raise AppError(*GlobalErrorCode.DB_COMMIT_ERR)
+    if ret == -10:
+        raise AppError(*GlobalErrorCode.OBJ_NOT_FOUND_ERROR)
+    if ret == -11:
+        raise AppError(*SubErrorCode.ALARM_STATUS_ERR)
+    return ret
 
 
 wx_msg = WeixinMsg(conf.config['MP_TOKEN'])

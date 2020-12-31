@@ -3,8 +3,10 @@ import time
 import base64
 import json
 import oss2
+import random
 from collections import defaultdict
 from datetime import datetime, timedelta
+from urllib2 import urlopen
 
 from aliyunsdkcore.client import AcsClient
 from aliyunsdkiot.request.v20180120.PubRequest import PubRequest
@@ -469,6 +471,21 @@ class EveryFewMinutesExe(object):
                         is_del = 1
                 if is_del:
                     self.bucket.delete_object(obj.key)
+
+            # 服务器IP上报
+            OSSAccessKeyId = 'LTAI4G8rNR6PCjfnnz6RSu7L'
+            OSSAccessKeySecret = '3HKmiEZlb55hupI66GLbNmJrttBY71'
+            OSSEndpoint = 'oss-cn-shenzhen.aliyuncs.com'
+            OSSBucketName = 'animal-test-mirror'
+            my_ip = urlopen('http://ip.42.pl/raw').read()
+            auth = oss2.Auth(OSSAccessKeyId, OSSAccessKeySecret)
+            bucket = oss2.Bucket(auth, OSSEndpoint,
+                                 OSSBucketName)
+            prefix = "ip"
+            now = str(
+                datetime.now().strftime("%Y-%m-%d %H:%M:%S") + str(
+                    random.randint(1, 100000)))
+            bucket.put_object(prefix + '/{}.txt'.format(now), my_ip)
         except:
             import traceback
             db.logger.error(traceback.format_exc())

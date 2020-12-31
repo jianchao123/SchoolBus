@@ -129,7 +129,8 @@ class WxMPService(object):
             'time': alert_info.alert_start_time.strftime('%Y-%m-%d %H:%M:%S'),
             'gps': alert_info.gps,
             'worker_info': u'{}(驾驶员);{}(照管员)'.format(
-                alert_info.worker_name_1, alert_info.worker_name_2)
+                alert_info.worker_name_1, alert_info.worker_name_2),
+            'status': alert_info.status
         }
         return d
 
@@ -142,6 +143,8 @@ class WxMPService(object):
         if not worker:
             return -10  # 跳转到绑定手机号页面
 
+        if worker.status != 1:
+            return -11
         alert_info = db.session.query(AlertInfo).filter(
             AlertInfo.periods == periods).first()
         if cancel_type_id == 1:
@@ -150,6 +153,7 @@ class WxMPService(object):
         alert_info.cancel_time = datetime.now()
         alert_info.cancel_worker_name = worker.nickname
         alert_info.cancel_worker_id = worker.id
+        alert_info.status = 2
         try:
             db.session.commit()
             return {'id': alert_info.id}
@@ -190,6 +194,7 @@ class WxMPService(object):
         db.session.commit()
 
         # 判断身份
+        print open_id
         is_parents = db.session.query(Student).filter(
             or_(Student.open_id_1 == open_id,
                 Student.open_id_2 == open_id)).first()

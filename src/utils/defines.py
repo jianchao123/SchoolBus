@@ -63,6 +63,8 @@ class SubErrorCode(object):
 
     TASK_EXECUTING = (200071, u"任务执行中")
 
+    ALARM_STATUS_ERR = (200080, u"报警状态错误")
+
 
 class RedisKey(object):
 

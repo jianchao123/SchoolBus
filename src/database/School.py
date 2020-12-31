@@ -8,4 +8,4 @@ class School(db.Model):
 
     id = db.Column(db.BigInteger, primary_key=True)
     school_name = db.Column(db.String(16))
-    status = db.Column(db.Integer)  # 有效
+    status = db.Column(db.Integer)  # 1有效 10删除

