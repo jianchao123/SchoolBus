@@ -96,6 +96,8 @@ class ReceiveMessage(object):
                     # acc关闭
                     if log_id == 3:
                         acs_manager.acc_close(dev_name, jdata['addtime'])
+                    elif log_id == 4:
+                        acs_manager.acc_open(dev_name)
                 else:
                     if not jdata['type']:
                         logger.info(u"添加订单")

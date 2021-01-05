@@ -32,6 +32,9 @@ class RedisKey(object):
     # ACC关闭HASH
     ACC_CLOSE = "ACC_CLOSE_HASH"
 
+    # ACC开启
+    ACC_OPEN_TIME = "ACC_OPEN_TIME_HASH"
+
     # 设备当前车上人数
     DEVICE_CUR_PEOPLE_NUMBER = "DEVICE_CUR_PEOPLE_NUMBER_HASH"
 

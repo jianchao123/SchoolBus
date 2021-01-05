@@ -307,7 +307,8 @@ class StudentBusiness(object):
             school = pgsql_db.get(pgsql_cur, sql.format(school_name))
             if not school:
                 d = {
-                    'school_name': school_name
+                    'school_name': school_name,
+                    'status': 1
                 }
                 pgsql_db.insert(pgsql_cur, d, 'school')
         rds_conn.delete('batch_add_school')

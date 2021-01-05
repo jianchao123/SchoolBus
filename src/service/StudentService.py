@@ -109,6 +109,7 @@ class StudentService(object):
         if student:
             return -11 # 身份证号已经存在
 
+        print end_time, type(end_time)
         student = Student()
         student.stu_no = stu_no
         student.nickname = nickname

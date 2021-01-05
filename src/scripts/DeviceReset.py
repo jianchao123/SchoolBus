@@ -71,7 +71,7 @@ class Test(object):
 
     def reset(self):
         d = {"cmd": "reset000"}
-        self.pub_msg('dev_59', d)
+        self.pub_msg('dev_61', d)
 
     @db.transaction(is_commit=True)
     def init_all_people(self):
@@ -246,7 +246,7 @@ if __name__ == '__main__':
     t = Test(config.Productkey, config.MNSAccessKeyId,
              config.MNSAccessKeySecret)
     #t.ddddddddd()
-    t.clear_car_number()
+    t.reset()
 
     # import struct
     #

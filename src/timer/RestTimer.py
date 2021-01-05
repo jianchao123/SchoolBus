@@ -137,7 +137,7 @@ class CheckAccClose(object):
 
                 results = pgsql_db.query(pgsql_cur, sql)
 
-                send_msg_student_info = ""
+                send_msg_student_info = []
                 student_info = []
                 for row in results:
                     info = defaultdict()
@@ -148,7 +148,7 @@ class CheckAccClose(object):
                     info['mobile_1'] = row[4]
                     info['mobile_2'] = row[5]
                     student_info.append(info)
-                    send_msg_student_info += row[0] + ","
+                    send_msg_student_info.append(row[0])
                 people_info = ""
                 for info in student_info:
                     people_info += '{},{},{},{},{}|'.format(
@@ -176,10 +176,12 @@ class CheckAccClose(object):
                 send_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 pgsql_db.insert(pgsql_cur, d, 'alert_info')
                 if open_id_1:
+                    send_msg_student_info = ','.join(send_msg_student_info)
                     producer.send_staff_template_message(
                         open_id_1, periods, number, send_msg_student_info.decode('utf8'),
                         u"首次报警".decode('utf8'), send_time, license_plate_number.decode('utf8'))
                 if open_id_2:
+                    send_msg_student_info = ','.join(send_msg_student_info)
                     producer.send_staff_template_message(
                         open_id_1, periods, number, send_msg_student_info.decode('utf8'),
                         u"首次报警".decode('utf8'), send_time, license_plate_number.decode('utf8'))
@@ -198,10 +200,10 @@ class CheckAccClose(object):
                 send_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 # 发送模板消息
                 number = result[2]
-                send_msg_student_info = ""
+                send_msg_student_info = []
                 stu_arr = result[3].split("|")
                 for row in stu_arr:
-                    send_msg_student_info += row.split(",")[0] + ","
+                    send_msg_student_info.append(row.split(",")[0])
                 license_plate_number = result[4]
 
                 sql = "SELECT duty_id,open_id FROM worker " \
@@ -215,10 +217,12 @@ class CheckAccClose(object):
                     elif row[0] == 2:
                         open_id_2 = row[1]
                 if open_id_1:
+                    send_msg_student_info = ','.join(send_msg_student_info)
                     producer.send_staff_template_message(
                         open_id_1, periods, number, send_msg_student_info.decode('utf8'),
                         u"二次报警".decode('utf8'), send_time, license_plate_number.decode('utf8'))
                 if open_id_2:
+                    send_msg_student_info = ','.join(send_msg_student_info)
                     producer.send_staff_template_message(
                         open_id_1, periods, number, send_msg_student_info.decode('utf8'),
                         u"二次报警".decode('utf8'), send_time, license_plate_number.decode('utf8'))
@@ -265,10 +269,19 @@ class GenerateFeature(object):
             devices = rds_conn.hgetall(RedisKey.DEVICE_USED)
             for k, v in devices.items():
                 used_devices.append(k)
-            unused_devices = list(set(online_generate_devices) - set(used_devices))
+            unused_devices = list(set(online_generate_devices)
+                                  - set(used_devices))
+
+            if used_devices:
+                for row in used_devices:
+                    use_timestamp = rds_conn.hget(RedisKey.DEVICE_USED, row)
+                    if use_timestamp and \
+                            (cur_timestamp - int(use_timestamp)) > 20:
+                        rds_conn.hdel(RedisKey.DEVICE_USED, row)
 
             if not unused_devices:
                 return
+
             self.execute(rds_conn, unused_devices)
         except:
             import traceback
@@ -298,7 +311,7 @@ class GenerateFeature(object):
             device_name = unused_devices.pop()
             pub_msg(rds_conn, device_name, jdata)
             # 将设备置为使用中
-            rds_conn.hset(RedisKey.DEVICE_USED, device_name, 1)
+            rds_conn.hset(RedisKey.DEVICE_USED, device_name, int(time.time()))
             # 更新face状态
             d = {
                 'id': face_id,

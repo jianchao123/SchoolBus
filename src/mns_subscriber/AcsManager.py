@@ -513,6 +513,8 @@ class AcsManager(object):
                 return 0
             pk, status, version_no, sound_volume, license_plate_number, \
                 device_type = self._get_device_info_data(device_name)
+            if status == 1:
+                d['device_iid'] = shd_devid
 
             # 设备为生成特征值设备
             if device_type == 2:
@@ -541,7 +543,6 @@ class AcsManager(object):
 
                 rds_conn.hset(RedisKey.DEVICE_CUR_STATUS, device_name, 5)
                 self._init_people([], device_name)
-                rds_conn.hset(RedisKey.DEVICE_CUR_STATUS, device_name, 5)
 
             if d:
                 d['id'] = pk
@@ -586,6 +587,7 @@ class AcsManager(object):
             workmode = 0 if device_type == 1 else 3
             producer.update_chepai(device_name, license_plate_number,
                                    sound_vol, workmode)
+
             # 清空车内人数
             rds_conn.delete(RedisKey.STUDENT_SET.format(device_name))
             producer.clear_device_person_count(device_name)
@@ -652,3 +654,10 @@ class AcsManager(object):
         value = str(add_time) + "|" + ",".join(face_ids) + "|" + periods
         rds_conn.hset(RedisKey.ACC_CLOSE, device_name, value)
 
+    def acc_open(self, device_name):
+        """
+        acc开启
+        """
+        rds_conn = db.rds_conn
+        rds_conn.hset(RedisKey.ACC_OPEN_TIME,
+                      device_name, int(time.time()))

@@ -220,7 +220,7 @@ def student_add(user_id, data):
     parents_2 = data['parents_2']
     mobile_2 = data['mobile_2']
     address = data['address']
-    remarks = data['remarks']
+    remarks = data.get('remarks', '')
     school_id = data['school_id']
     grade_id = data['grade_id']
     class_id = data['class_id']

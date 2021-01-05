@@ -35,8 +35,8 @@ class AlertInfoService(object):
                 AlertInfo.worker_name_1.like(query_str),
                 AlertInfo.worker_name_2.like(query_str)))
         if start_time and end_time:
-            query = query.filter(and_(AlertInfo.create_time > start_time,
-                                      AlertInfo.create_time < end_time))
+            query = query.filter(and_(AlertInfo.alert_start_time > start_time,
+                                      AlertInfo.alert_start_time < end_time))
         count = query.count()
         query = query.order_by(AlertInfo.id.desc())
         results = query.offset(offset).limit(size).all()

@@ -42,6 +42,7 @@ class SchoolService(object):
             return -10  # 学校名字已存在
         school = School()
         school.school_name = school_name
+        school.status = 1
         try:
             db.session.add(school)
             db.session.flush()
@@ -49,6 +50,8 @@ class SchoolService(object):
             db.session.commit()
             return {'id': new_id}
         except SQLAlchemyError:
+            import traceback
+            print traceback.format_exc()
             db.session.rollback()
             return -2
         finally:
