@@ -17,3 +17,4 @@ class Face(db.Model):
     update_time = db.Column(db.DateTime, default=datetime.now)
     aac_url = db.Column(db.String(128))
     end_timestamp = db.Column(db.String(16)) # 截至日期时间戳
+    school_id = db.Column(db.Integer)

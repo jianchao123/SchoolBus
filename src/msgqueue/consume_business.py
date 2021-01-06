@@ -208,7 +208,8 @@ class StudentBusiness(object):
                     'update_time': 'now()',
                     'end_timestamp': int(time.mktime(
                         datetime.strptime(end_time, '%Y-%m-%d').timetuple())),
-                    'stu_id': stu[0]
+                    'stu_id': stu[0],
+                    'school_id': school_id
                 }
                 pgsql_db.insert(pgsql_cur, face_d, 'face')
         rds_conn.delete('batch_add_student')

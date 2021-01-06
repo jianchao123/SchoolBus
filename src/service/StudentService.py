@@ -143,6 +143,7 @@ class StudentService(object):
             face.stu_id = new_id
             face.stu_no = stu_no
             face.end_timestamp = time.mktime(end_time.timetuple())
+            face.school_id = school_id
             db.session.add(face)
             db.session.commit()
             return {'id': new_id}
