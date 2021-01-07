@@ -167,7 +167,8 @@ class StudentBusiness(object):
             license_plate_number = row[14]
 
             parents1_mobile = str(int(float(parents1_mobile)))
-            parents2_mobile = str(int(float(parents2_mobile)))
+            if parents2_mobile:
+                parents2_mobile = str(int(float(parents2_mobile)))
 
             student = pgsql_db.get(pgsql_cur, stu_sql.format(stu_no))
             d = {
@@ -176,10 +177,10 @@ class StudentBusiness(object):
                 'gender': gender_id,
                 'parents_1': parents1_name,
                 'mobile_1': parents1_mobile,
-                'parents_2': parents2_name,
-                'mobile_2': parents2_mobile,
+                'parents_2': parents2_name if parents2_name else 'NULL',
+                'mobile_2': parents2_mobile if parents2_mobile else 'NULL',
                 'address': address,
-                'remarks': remarks,
+                'remarks': remarks if remarks else 'NULL',
                 'school_id': school_id,
                 'grade_id': grade_id,
                 'class_id': classes_id,

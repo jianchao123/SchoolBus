@@ -308,17 +308,9 @@ class StudentService(object):
             if not mobile_1:
                 err_str += u"家长1手机号为空,"
                 is_err = 1
-            if not parents_2:
-                err_str += u"家长2名字为空,"
-                is_err = 1
-            if not mobile_2:
-                err_str += u"家长2手机号为空,"
-                is_err = 1
+
             if not address:
                 err_str += u"地址为空,"
-                is_err = 1
-            if not remarks:
-                err_str += u"备注为空,"
                 is_err = 1
             if not school_name:
                 err_str += u"学校为空,"

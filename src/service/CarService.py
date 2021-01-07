@@ -143,6 +143,8 @@ class CarService(object):
                 Car.license_plate_number == license_plate_number).count()
             if cnt:
                 return -10  # 车牌已经存在
+
+            car.license_plate_number = license_plate_number
             # 更新学生关于车辆的信息
             producer.car_update(car.id, license_plate_number)
 

@@ -36,6 +36,7 @@ class ReceiveMessage(object):
 
     def msg_handler(self, acs_manager, logger):
         recv_msg = self.my_queue.receive_message(self.wait_seconds)
+        print recv_msg.message_body
         body = json.loads(recv_msg.message_body)
         dev_name = body['topic'].split('/')[2]
         jdata = json.loads(base64.b64decode(body["payload"]))
