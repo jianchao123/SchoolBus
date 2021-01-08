@@ -147,13 +147,14 @@ def car_update(car_id, license_plate_number):
     _publish_msg('cascade_exchange', 'cascade.carupdate', json.dumps(d))
 
 
-def update_chepai(device_name, chepai, cur_volume, workmode):
+def update_chepai(device_name, chepai, cur_volume, workmode, person_limit):
     """更新车牌"""
     data = {
         "chepai": chepai,
         "device_name": device_name,
         "cur_volume": cur_volume,
-        "workmode": workmode
+        "workmode": workmode,
+        "person_limit": person_limit
     }
     _publish_msg('device_exchange', 'device.updatechepai', json.dumps(data))
 

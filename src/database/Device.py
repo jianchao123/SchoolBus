@@ -19,3 +19,4 @@ class Device(db.Model):
     status = db.Column(db.Integer)      # 1已创建虚拟设备 2已关联车辆 3已设置工作模式 4已设置oss信息 5已初始化人员 10删除
     sound_volume = db.Column(db.Integer)
     device_type = db.Column(db.Integer)  # 1刷脸 2生成特征值 (0车载模式 3注册模式)
+    person_limit = db.Column(db.Integer)

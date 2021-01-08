@@ -155,12 +155,19 @@ class CarService(object):
                 workmode = 0 if device.device_type == 1 else 3
                 producer.update_chepai(device.device_name,
                                        device.license_plate_number,
-                                       device.sound_volume, workmode)
+                                       device.sound_volume, workmode,
+                                       car.capacity)
 
         if company_name:
             car.company_name = company_name
         if capacity:
             car.capacity = capacity
+
+            # 是否绑定设备
+            device = db.session.query(Device).filter(
+                Device.car_id == car.id).first()
+            if device:
+                device.person_limit = capacity
         try:
             d = {'id': car.id}
             db.session.commit()

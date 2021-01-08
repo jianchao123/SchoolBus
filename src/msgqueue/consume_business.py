@@ -432,7 +432,7 @@ class DeviceBusiness(object):
         k = "mns_list_" + devname
         rds_conn.rpush(k, json.dumps(jdata, encoding="utf-8"))
 
-    def _set_workmode(self, device_name, workmode, chepai, cur_volume):
+    def _set_workmode(self, device_name, workmode, chepai, cur_volume, person_limit):
         """
         设置设备工作模式 0车载 1通道闸口 3注册模式
         :param device_name:
@@ -461,7 +461,8 @@ class DeviceBusiness(object):
             "timezone": 8,
             "temperature": 0,
             "noreg": 1,
-            "light_type": 0
+            "light_type": 0,
+            'person_limit': person_limit
         }
 
         print jdata
@@ -482,7 +483,8 @@ class DeviceBusiness(object):
         device_name = data['device_name']
         cur_volume = data['cur_volume']
         workmode = data['workmode']
-        self._set_workmode(device_name, int(workmode), chepai, cur_volume)
+        person_limit = data['person_limit']
+        self._set_workmode(device_name, int(workmode), chepai, cur_volume, person_limit)
 
     @transaction(is_commit=True)
     def device_people_list_save(self, pgsql_cur, data):

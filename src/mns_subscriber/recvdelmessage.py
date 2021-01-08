@@ -36,15 +36,12 @@ class ReceiveMessage(object):
 
     def msg_handler(self, acs_manager, logger):
         recv_msg = self.my_queue.receive_message(self.wait_seconds)
-        print recv_msg.message_body
         body = json.loads(recv_msg.message_body)
+        print body["payload"]
+        #self.my_queue.delete_message(recv_msg.receipt_handle)
+
         dev_name = body['topic'].split('/')[2]
         jdata = json.loads(base64.b64decode(body["payload"]))
-        # if 'status' in jdata:
-        #     if jdata['status'] == "online":
-        #         acs_manager.device_open(jdata['deviceName'], jdata['lastTime'])
-        #     if jdata['status'] == "offline":
-        #         acs_manager.device_close(jdata['deviceName'], jdata['lastTime'])
 
         acs_manager.check_cur_stream_no(dev_name, jdata)
         print json.dumps(jdata)

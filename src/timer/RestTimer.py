@@ -437,12 +437,32 @@ class FromOssQueryFace(object):
                 d = {
                     'id': stu_no_pk_map[row],
                     'oss_url': config.OSSDomain + "/person/face/" + row + ".png",
-                    'status': -1  # 未处理
+                    'status': 2  # 未处理
                 }
                 mysql_db.update(pgsql_cur, d, table_name='face')
             rds_conn.delete(RedisKey.OSS_ID_CARD_SET + "CP")
         end = time.time()
         print u"从oss获取人脸函数总共用时{}s".format(end - start)
+
+
+class HeartBeat30s(object):
+
+    def heartbeat(self):
+        """心跳包"""
+        rds_conn = db.rds_conn
+
+        import redis
+        from redis import ConnectionPool
+        remote_rds_pool = ConnectionPool(
+            host="r-uf6aii687io4t6ghxlpd.redis.rds.aliyuncs.com",
+            port=6379, db=0, password='kIhHAWexFy7pU8qM')
+        remote_rds_conn = redis.StrictRedis(connection_pool=remote_rds_pool)
+        hkeys = remote_rds_conn.keys("DEVICE_INFO_*")
+        for devcie_key in hkeys:
+            run_status, dev_name = remote_rds_conn.hmget(
+                devcie_key, 'run_status', 'devname')
+            if run_status and int(run_status) and dev_name != "newdev":
+                pub_msg(rds_conn, dev_name, {"cmd": "heartbeat30s"})
 
 
 class EveryFewMinutesExe(object):

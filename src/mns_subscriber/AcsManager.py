@@ -422,7 +422,8 @@ class AcsManager(object):
                     "productkey": response['Data']['ProductKey'],
                     "devsecret": response['Data']['DeviceSecret'],
                     "devicetype": 0,
-                    "time": int(time.time())
+                    "time": int(time.time()),
+                    'dev_mac': mac
                 }
                 self._send_device_msg('newdev', msg)
                 rds_conn.hset(RedisKey.DEVICE_CUR_STATUS, dev_name, 1)
@@ -485,11 +486,12 @@ class AcsManager(object):
         pgsql_db = db.PgsqlDbUtil
 
         sql = "SELECT id,status,version_no,sound_volume," \
-              "license_plate_number,device_type" \
+              "license_plate_number,device_type,person_limit" \
               " FROM device WHERE device_name='{}' LIMIT 1"
         device = pgsql_db.get(pgsql_cur, sql.format(device_name))
         print device
-        return device[0], device[1], device[2], device[3], device[4], device[5]
+        return device[0], device[1], device[2], device[3], \
+               device[4], device[5], device[6]
 
     def init_device_params(self, cur_version, device_name,
                            dev_time, shd_devid, gps):
@@ -512,7 +514,7 @@ class AcsManager(object):
             if device_status and int(device_status) == 5:
                 return 0
             pk, status, version_no, sound_volume, license_plate_number, \
-                device_type = self._get_device_info_data(device_name)
+                device_type, person_limit = self._get_device_info_data(device_name)
             if status == 1:
                 d['device_iid'] = shd_devid
 
@@ -575,7 +577,7 @@ class AcsManager(object):
                 int(time.time()) - int(device_timestamp) > 60 * 1:
             producer.dev_while_list(device_name)
             pk, status, version_no, sound_volume, license_plate_number, \
-                device_type = self._get_device_info_data(device_name)
+                device_type, person_limit = self._get_device_info_data(device_name)
             d = defaultdict()
             d['id'] = pk
             d['open_time'] = 'TO_TIMESTAMP({})'.format(int(time.time()))
@@ -586,7 +588,7 @@ class AcsManager(object):
                 = self._get_sound_vol_by_name(device_name)
             workmode = 0 if device_type == 1 else 3
             producer.update_chepai(device_name, license_plate_number,
-                                   sound_vol, workmode)
+                                   sound_vol, workmode, person_limit)
 
             # 清空车内人数
             rds_conn.delete(RedisKey.STUDENT_SET.format(device_name))
