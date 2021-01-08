@@ -37,7 +37,6 @@ class ReceiveMessage(object):
     def msg_handler(self, acs_manager, logger):
         recv_msg = self.my_queue.receive_message(self.wait_seconds)
         body = json.loads(recv_msg.message_body)
-        print body["payload"]
         #self.my_queue.delete_message(recv_msg.receipt_handle)
 
         dev_name = body['topic'].split('/')[2]
