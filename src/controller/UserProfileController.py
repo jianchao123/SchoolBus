@@ -82,7 +82,7 @@ def user_login(args):
         raise AppError(*SubErrorCode.USER_PWD_ERR)
 
     user_obj = UserProfileService.get_user_by_username(username)
-    if not user_obj:
+    if user_obj == -10:
         raise AppError(*SubErrorCode.USER_PWD_ERR)
 
     password_md5_str = md5_encrypt(password)

