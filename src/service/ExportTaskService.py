@@ -30,3 +30,22 @@ class ExportTaskService(object):
                 'create_time': row.create_time.strftime('%Y-%m-%d %H:%M:%S')
             })
         return {'count': count, 'results': data}
+
+    @staticmethod
+    def export_task_delete(task_id):
+        """删除导出任务"""
+        db.session.commit()
+
+        results = db.session.query(ExportTask).filter(
+            ExportTask.id.in_(task_id)).first()
+        for row in results:
+            if row.status == 2:
+                row.status = 10
+        try:
+            db.session.commit()
+            return {'id': 0}
+        except SQLAlchemyError:
+            db.session.rollback()
+            return -2
+        finally:
+            db.session.close()

@@ -184,7 +184,7 @@ def send_staff_template_message(
         open_id, periods, number, student_info,
         alert_type, time, license_plate_number):
     """发送工作人员模板消息"""
-    data = defaultdict()
+    data = {}
     data['open_id'] = open_id
     data['periods'] = periods
     data['number'] = number
@@ -192,6 +192,7 @@ def send_staff_template_message(
     data['alert_type'] = alert_type
     data['time'] = time
     data['license_plate_number'] = license_plate_number
+    print data
     _publish_msg('mpmsg_exchange', 'mpmsg.staff', json.dumps(data))
 
 

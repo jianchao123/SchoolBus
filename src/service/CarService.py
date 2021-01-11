@@ -137,7 +137,9 @@ class CarService(object):
             Car.id == pk).first()
         if not car:
             return -1
-        if license_plate_number:
+        if license_plate_number and\
+                license_plate_number != car.license_plate_number:
+            print u"更新车牌"
             cnt = db.session.query(Car).filter(
                 Car.id != pk,
                 Car.license_plate_number == license_plate_number).count()

@@ -53,8 +53,8 @@ if env == "TEST":
     MP_ENCODING_AES_KEY = 'CAmGrrm1rJ0HqgcbIBQbhKAHLUKGGbv3RJTTFnixTaC'
     MP_PARENTS_TEMPLATE_ID = "aRznTze3zLqP9mSoOh45DhrAgL-OOz3ut2bE0c5TwpM"
     MP_STAFF_TEMP_ID = "NlJspxFFiPl4lH8gjf-pKU-dZiMuFYgdSJ4wSpmEesg"
-    MP_PARENTS_REDIRECT_URL = "http://cdmp.wgxing.com/index.html?order_id={}"
-    MP_STAFF_REDIRECT_URL = "http://cdmp.wgxing.com/alert.html?periods={}"
+    MP_PARENTS_REDIRECT_URL = "http://cdmp.wgxing.com/static/push.html?order_id={}"
+    MP_STAFF_REDIRECT_URL = "http://cdmp.wgxing.com/static/alert.html?periods={}"
 
 
 elif env == "PRO":
@@ -102,8 +102,8 @@ elif env == "PRO":
     MP_ENCODING_AES_KEY = 'CAmGrrm1rJ0HqgcbIBQbhKAHLUKGGbv3RJTTFnixTaC'
     MP_PARENTS_TEMPLATE_ID = "aRznTze3zLqP9mSoOh45DhrAgL-OOz3ut2bE0c5TwpM"
     MP_STAFF_TEMP_ID = "NlJspxFFiPl4lH8gjf-pKU-dZiMuFYgdSJ4wSpmEesg"
-    MP_PARENTS_REDIRECT_URL = "http://cdmp.wgxing.com/index.html?order_id={}"
-    MP_STAFF_REDIRECT_URL = "http://cdmp.wgxing.com/alert.html?periods={}"
+    MP_PARENTS_REDIRECT_URL = "http://cdmp.wgxing.com/static/push.html?order_id={}"
+    MP_STAFF_REDIRECT_URL = "http://cdmp.wgxing.com/static/alert.html?periods={}"
 
 else:
     # 物联网
@@ -150,8 +150,8 @@ else:
     MP_ENCODING_AES_KEY = 'CAmGrrm1rJ0HqgcbIBQbhKAHLUKGGbv3RJTTFnixTaC'
     MP_PARENTS_TEMPLATE_ID = "aRznTze3zLqP9mSoOh45DhrAgL-OOz3ut2bE0c5TwpM"
     MP_STAFF_TEMP_ID = "NlJspxFFiPl4lH8gjf-pKU-dZiMuFYgdSJ4wSpmEesg"
-    MP_PARENTS_REDIRECT_URL = "http://cdmp.wgxing.com/index.html?order_id={}"
-    MP_STAFF_REDIRECT_URL = "http://cdmp.wgxing.com/alert.html?periods={}"
+    MP_PARENTS_REDIRECT_URL = "http://cdmp.wgxing.com/static/push.html?order_id={}"
+    MP_STAFF_REDIRECT_URL = "http://cdmp.wgxing.com/static/alert.html?periods={}"
 
 redis_conf = dict(host="127.0.0.1", port=6379, db=0, decode_responses=True)
 pgsql_conf = dict(host=pgsql_host, database=pgsql_db, port=pgsql_port,

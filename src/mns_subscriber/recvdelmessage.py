@@ -95,6 +95,8 @@ class ReceiveMessage(object):
                         acs_manager.acc_close(dev_name, jdata['addtime'])
                     elif log_id == 4:
                         acs_manager.acc_open(dev_name)
+                    elif log_id == 20:
+                        print u"防滞留检测开启"
                 else:
                     if not jdata['type']:
                         logger.info(u"添加订单")
@@ -119,6 +121,9 @@ class ReceiveMessage(object):
             elif cmd == 'syndata_ext':
                 print u"syndata_ext"
                 print jdata
+            elif cmd == 'poweroff':
+                print u"关机"
+                acs_manager.clear_setting(dev_name, jdata['seconds'])
 
         # 删除消息
         try:

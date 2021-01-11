@@ -175,16 +175,22 @@ class CheckAccClose(object):
 
                 send_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 pgsql_db.insert(pgsql_cur, d, 'alert_info')
+                print license_plate_number, send_msg_student_info
+                send_msg_student_info = ','.join(send_msg_student_info)
                 if open_id_1:
-                    send_msg_student_info = ','.join(send_msg_student_info)
                     producer.send_staff_template_message(
-                        open_id_1, periods, number, send_msg_student_info.decode('utf8'),
-                        u"首次报警".decode('utf8'), send_time, license_plate_number.decode('utf8'))
+                        open_id_1, periods, number,
+                        send_msg_student_info,
+                        "首次报警",
+                        send_time,
+                        license_plate_number)
                 if open_id_2:
-                    send_msg_student_info = ','.join(send_msg_student_info)
                     producer.send_staff_template_message(
-                        open_id_1, periods, number, send_msg_student_info.decode('utf8'),
-                        u"首次报警".decode('utf8'), send_time, license_plate_number.decode('utf8'))
+                        open_id_2, periods, number,
+                        send_msg_student_info,
+                        "首次报警",
+                        send_time,
+                        license_plate_number)
         else:
             # 判断报警状态是否修改
             result = pgsql_db.get(pgsql_cur, get_alert_info_sql.format(periods))
@@ -203,7 +209,8 @@ class CheckAccClose(object):
                 send_msg_student_info = []
                 stu_arr = result[3].split("|")
                 for row in stu_arr:
-                    send_msg_student_info.append(row.split(",")[0])
+                    if row:
+                        send_msg_student_info.append(row.split(",")[0])
                 license_plate_number = result[4]
 
                 sql = "SELECT duty_id,open_id FROM worker " \
@@ -216,16 +223,19 @@ class CheckAccClose(object):
                         open_id_1 = row[1]
                     elif row[0] == 2:
                         open_id_2 = row[1]
+                send_msg_student_info = ','.join(send_msg_student_info)
                 if open_id_1:
-                    send_msg_student_info = ','.join(send_msg_student_info)
                     producer.send_staff_template_message(
-                        open_id_1, periods, number, send_msg_student_info.decode('utf8'),
-                        u"二次报警".decode('utf8'), send_time, license_plate_number.decode('utf8'))
+                        open_id_1, periods, number,
+                        send_msg_student_info,
+                        "二次报警", send_time,
+                        license_plate_number)
                 if open_id_2:
-                    send_msg_student_info = ','.join(send_msg_student_info)
                     producer.send_staff_template_message(
-                        open_id_1, periods, number, send_msg_student_info.decode('utf8'),
-                        u"二次报警".decode('utf8'), send_time, license_plate_number.decode('utf8'))
+                        open_id_2, periods, number,
+                        send_msg_student_info,
+                        "二次报警", send_time,
+                        license_plate_number)
             # 删除acc key
             rds_conn.hdel(RedisKey.ACC_CLOSE, dev_name)
 

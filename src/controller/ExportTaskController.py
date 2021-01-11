@@ -1,9 +1,12 @@
 # coding:utf-8
 from flask.blueprints import Blueprint
 
-from core.framework import get_require_check_with_user
+from core.framework import get_require_check_with_user, \
+    post_require_check_with_user
 
 from service.ExportTaskService import ExportTaskService
+from core.AppError import AppError
+from utils.defines import SubErrorCode, GlobalErrorCode
 
 try:
     import requests
@@ -79,3 +82,51 @@ def export_task_list(user_id, data):
     page = int(data['page'])
     size = int(data['size'])
     return ExportTaskService.export_task_list(page, size)
+
+
+@bp.route('/delete', methods=['POST'])
+@post_require_check_with_user(['task_ids'])
+def export_task_delete(user_id, data):
+    """
+    删除导出任务
+    删除导出任务，需要先登录
+    ---
+    tags:
+      - 导出任务
+    parameters:
+      - name: token
+        in: header
+        type: string
+        required: true
+        description: TOKEN
+      - name: body
+        in: body
+        required: true
+        schema:
+          properties:
+            task_ids:
+              type: string
+              description: 任务ids 逗号分割 1,2,3,4
+    responses:
+      200:
+        description: 正常返回http code 200
+        schema:
+          properties:
+            msg:
+              type: string
+              description: 错误消息
+            status:
+              type: integer
+              description: 状态
+            data:
+              type: object
+              properties:
+                id:
+                  type: integer
+                  description: 0表示删除成功
+    """
+    task_ids = data['task_ids']
+    ret = ExportTaskService.export_task_delete(task_ids)
+    if ret == -2:
+        raise AppError(*GlobalErrorCode.DB_COMMIT_ERR)
+    return ret

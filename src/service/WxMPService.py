@@ -77,7 +77,7 @@ class WxMPService(object):
         workers = db.session.query(Worker).filter(Worker.mobile == mobile).all()
         if not students and not workers:
             return -10
-
+        print students, workers
         # 保存到学生的家长字段
         for row in students:
             if row.mobile_1 == mobile:
@@ -121,17 +121,19 @@ class WxMPService(object):
 
         alert_info = db.session.query(AlertInfo).filter(
             AlertInfo.periods == periods).first()
-        d = {
-            'id': alert_info.id,
-            'numbers': alert_info.people_number,
-            'alert_info': alert_info.people_info,
-            'license_plate_number': alert_info.license_plate_number,
-            'time': alert_info.alert_start_time.strftime('%Y-%m-%d %H:%M:%S'),
-            'gps': alert_info.gps,
-            'worker_info': u'{}(驾驶员);{}(照管员)'.format(
-                alert_info.worker_name_1, alert_info.worker_name_2),
-            'status': alert_info.status
-        }
+        d = {}
+        if alert_info:
+            d = {
+                'id': alert_info.id,
+                'numbers': alert_info.people_number,
+                'alert_info': alert_info.people_info,
+                'license_plate_number': alert_info.license_plate_number,
+                'time': alert_info.alert_start_time.strftime('%Y-%m-%d %H:%M:%S'),
+                'gps': alert_info.gps,
+                'worker_info': u'{}(驾驶员);{}(照管员)'.format(
+                    alert_info.worker_name_1, alert_info.worker_name_2),
+                'status': alert_info.status
+            }
         return d
 
     @staticmethod
@@ -239,7 +241,7 @@ class WxMPService(object):
                 Worker.car_id == worker.car_id).all()
             string = ''
             for row in results:
-                string += '{} ({} {})\n'.format(row.nickname,
+                string += '{} ({} {})|'.format(row.nickname,
                                                 duty[row.duty_id],
                                                 row.mobile)
 

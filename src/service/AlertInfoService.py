@@ -7,6 +7,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from database.db import db
 from database.AlertInfo import AlertInfo
 from database.ExportTask import ExportTask
+from ext import cache
 
 
 class AlertInfoService(object):
@@ -51,6 +52,9 @@ class AlertInfoService(object):
             if row.alert_second_time:
                 alert_second_time_str = \
                     row.alert_second_time.strftime('%Y-%m-%d %H:%M:%S')
+            cancel_time_str = None
+            if row.cancel_time:
+                cancel_time_str = row.cancel_time.strftime('%Y-%m-%d %H:%M:%S')
             data.append({
                 'id': row.id,
                 'license_plate_number': row.license_plate_number,
@@ -64,8 +68,14 @@ class AlertInfoService(object):
                 'alert_start_time': alert_start_time_str,
                 'alert_second_time': alert_second_time_str,
                 'alert_location': row.gps,
-                'status': row.status
+                'status': row.status,
+                'cancel_worker_name': row.cancel_worker_name,
+                'cancel_type_id': row.cancel_type_id,
+                'cancel_time': cancel_time_str,
+                'cancel_reason': row.cancel_reason
             })
+        cnt = db.session.query(AlertInfo).count()
+        cache.hset('QUERY_CNT_ALARM', 'cnt', cnt)
         return {'results': data, 'count': count}
 
     @staticmethod
@@ -98,8 +108,8 @@ class AlertInfoService(object):
 
         if start_date and end_date:
             end_date = end_date + timedelta(days=1)
-            query = query.filter(and_(AlertInfo.create_time > start_date,
-                                      AlertInfo.create_time < end_date))
+            query = query.filter(and_(AlertInfo.alert_start_time > start_date,
+                                      AlertInfo.alert_start_time < end_date))
         count = query.count()
         if count > 15000000:
             return -11
@@ -113,10 +123,21 @@ class AlertInfoService(object):
             db.session.flush()
             new_id = et.id
             db.session.commit()
-            export_alert_info_msg()
+            export_alert_info_msg(status, start_date, end_date,
+                                  alert_info_type, car_id, new_id)
             return new_id
         except SQLAlchemyError:
             db.session.rollback()
             return -2
         finally:
             db.session.close()
+
+    @staticmethod
+    def is_display():
+        db.session.commit()
+
+        cnt = db.session.query(AlertInfo).count()
+        query_cnt = cache.hget('QUERY_CNT_ALARM', 'cnt')
+        if query_cnt < cnt:
+            return 1
+        return 0

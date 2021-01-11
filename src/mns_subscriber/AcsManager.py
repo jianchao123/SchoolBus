@@ -145,6 +145,11 @@ class AcsManager(object):
         redis_db = db.rds_conn
         pgsql_db = db.PgsqlDbUtil
 
+        # 刷脸时间小于开机时间的订单不要
+        # open_time = redis_db.hget(RedisKey.DEVICE_OPEN_TIME_HASH, dev_name)
+        # if open_time and int(open_time) >= int(add_time):
+        #     return
+
         now = datetime.now()
         cur_hour = now.hour
         odd_even = cnt % 2
@@ -591,8 +596,8 @@ class AcsManager(object):
                                    sound_vol, workmode, person_limit)
 
             # 清空车内人数
-            rds_conn.delete(RedisKey.STUDENT_SET.format(device_name))
-            producer.clear_device_person_count(device_name)
+            # rds_conn.delete(RedisKey.STUDENT_SET.format(device_name))
+            # producer.clear_device_person_count(device_name)
 
         rds_conn.hset(RedisKey.DEVICE_CUR_TIMESTAMP, device_name,
                       int(time.time()))
@@ -663,3 +668,12 @@ class AcsManager(object):
         rds_conn = db.rds_conn
         rds_conn.hset(RedisKey.ACC_OPEN_TIME,
                       device_name, int(time.time()))
+
+    def clear_setting(self, dev_name, seconds):
+        """清除关于这台设备的一些设置"""
+        rds_conn = db.rds_conn
+
+        # 学生相关的清除
+        if seconds < 20:
+            rds_conn.delete(RedisKey.STUDENT_SET.format(dev_name))
+            producer.clear_device_person_count(dev_name)

@@ -94,7 +94,7 @@ def alert_info_list(user_id, data):
                     type: string
                     description: 驾驶员
                   worker_name_2:
-                    type: stirng
+                    type: string
                     description: 照顾员
                   company_name:
                     type: string
@@ -123,6 +123,18 @@ def alert_info_list(user_id, data):
                   status:
                     type: string
                     description: 状态1 正在报警  2 已解除
+                  cancel_type_id:
+                    type: integer
+                    description: 取消类型 1其他 2无学生解除 3有学生解除
+                  cancel_time:
+                    type: string
+                    description: 取消时间
+                  cancel_reason:
+                    type: string
+                    description: 取消原因
+                  cancel_worker_name:
+                    type: string
+                    description: 解除的工作人员名字
 
     """
     status = data.get('status', None)
@@ -217,7 +229,43 @@ def alert_info_export(user_id, data):
     ret = AlertInfoService.alert_info_export(status, start_date, end_date,
                                              alert_info_type, car_id)
     if ret == -11:
-        raise AppError(*SubErrorCode.ORDER_NUMBER_TOO_BIG)
+        raise AppError(*SubErrorCode.ALARM_RECORD_NUMBER_TOO_MANY_LARGE)
     if ret == -10:
-        raise AppError(*SubErrorCode.ORDER_EXPORTING)
+        raise AppError(*SubErrorCode.ALARM_RECORD_EXPORTING)
     return {'id': ret}
+
+
+@bp.route('/is_display', methods=['GET'])
+@get_require_check_with_user([])
+def is_display(user_id, data):
+    """
+    是否显示红点
+    是否显示红点，需要先登录
+    ---
+    tags:
+      - 报警
+    parameters:
+      - name: token
+        in: header
+        type: string
+        required: true
+        description: TOKEN
+    responses:
+      200:
+        description: 正常返回http code 200
+        schema:
+          properties:
+            msg:
+              type: string
+              description: 错误消息
+            status:
+              type: integer
+              description: 状态
+            data:
+              type: object
+              properties:
+                is_display:
+                  type: integer
+                  description: 是否显示红点 1是 0否
+    """
+    return {'is_display': AlertInfoService.is_display()}

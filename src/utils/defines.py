@@ -40,7 +40,7 @@ class SubErrorCode(object):
 
     WORKER_EMP_NO_ALREADY_EXISTS = (200040, u"工号已经存在")
     WORKER_ALREADY_EXISTS_DUTY = (200041, u"该车辆已经存在该职务的工作人员")
-    WORKER_NO_CHANGE_DUTY = (200042, u"工作人员已绑车辆,不能修改职务,需先解绑")
+    WORKER_NO_CHANGE_DUTY = (200042, u"该车辆已有该职位绑定，请先对其解绑")
     WORKER_ALREADY_BOUNDING_CAR = (200043, u"工作人员已绑定车辆,不能删除,需先解绑")
 
     CAR_NOT_FOUND = (200050, u"车辆未找到")
@@ -64,6 +64,8 @@ class SubErrorCode(object):
     TASK_EXECUTING = (200071, u"任务执行中")
 
     ALARM_STATUS_ERR = (200080, u"报警状态错误")
+    ALARM_RECORD_EXPORTING = (200081, u"报警记录导出中")
+    ALARM_RECORD_NUMBER_TOO_MANY_LARGE = (200082, U"报警记录条数太大")
 
 
 class RedisKey(object):
