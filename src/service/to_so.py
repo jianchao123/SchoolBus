@@ -16,7 +16,7 @@ if __name__ == '__main__':
     ext10 = Cython.Build.cythonize("StudentService.py")
     ext11 = Cython.Build.cythonize("UserProfileService.py")
     ext12 = Cython.Build.cythonize("WorkerService.py")
-    ext13 = Cython.Build.cythonize("WxMPservice.py")
+    ext13 = Cython.Build.cythonize("WxMPService.py")
 
     # 下面还要导入另一个模块
     import distutils.core
