@@ -1,22 +1,24 @@
 # coding:utf-8
 # 导入模块
 import Cython.Build
+from os import path
+d = path.dirname(__file__)
 
 if __name__ == '__main__':
     # 传入要编译成pyd的py文件
-    ext1 = Cython.Build.cythonize("AlertInfoService.py")
-    ext2 = Cython.Build.cythonize("CarService.py")
-    ext3 = Cython.Build.cythonize("ConfigService.py")
-    ext4 = Cython.Build.cythonize("DeviceService.py")
-    ext5 = Cython.Build.cythonize("ExportTaskService.py")
-    ext6 = Cython.Build.cythonize("IndexService.py")
-    ext7 = Cython.Build.cythonize("MiniService.py")
-    ext8 = Cython.Build.cythonize("OrderService.py")
-    ext9 = Cython.Build.cythonize("SchoolService.py")
-    ext10 = Cython.Build.cythonize("StudentService.py")
-    ext11 = Cython.Build.cythonize("UserProfileService.py")
-    ext12 = Cython.Build.cythonize("WorkerService.py")
-    ext13 = Cython.Build.cythonize("WxMPService.py")
+    ext1 = Cython.Build.cythonize("{}/AlertInfoService.py".format(d))
+    ext2 = Cython.Build.cythonize("{}/CarService.py".format(d))
+    ext3 = Cython.Build.cythonize("{}/ConfigService.py".format(d))
+    ext4 = Cython.Build.cythonize("{}/DeviceService.py".format(d))
+    ext5 = Cython.Build.cythonize("{}/ExportTaskService.py".format(d))
+    ext6 = Cython.Build.cythonize("{}/IndexService.py".format(d))
+    ext7 = Cython.Build.cythonize("{}/MiniService.py".format(d))
+    ext8 = Cython.Build.cythonize("{}/OrderService.py".format(d))
+    ext9 = Cython.Build.cythonize("{}/SchoolService.py".format(d))
+    ext10 = Cython.Build.cythonize("{}/StudentService.py".format(d))
+    ext11 = Cython.Build.cythonize("{}/UserProfileService.py".format(d))
+    ext12 = Cython.Build.cythonize("{}/WorkerService.py".format(d))
+    ext13 = Cython.Build.cythonize("{}/WxMPService.py".format(d))
 
     # 下面还要导入另一个模块
     import distutils.core

@@ -117,13 +117,14 @@ class AlertInfoService(object):
         et = ExportTask()
         et.status = 1
         et.task_name = u"报警记录{}-{}".format(start_date, end_date)
-        et.task_type = 1
+        et.task_type = 2
         try:
             db.session.add(et)
             db.session.flush()
             new_id = et.id
             db.session.commit()
-            export_alert_info_msg(status, start_date, end_date,
+            export_alert_info_msg(status, start_date.strftime('%Y-%m-%d'),
+                                  end_date.strftime('%Y-%m-%d'),
                                   alert_info_type, car_id, new_id)
             return new_id
         except SQLAlchemyError:

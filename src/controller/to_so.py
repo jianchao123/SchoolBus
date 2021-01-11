@@ -1,21 +1,23 @@
 # coding:utf-8
 # 导入模块
 import Cython.Build
+from os import path
+d = path.dirname(__file__)
 
 if __name__ == '__main__':
     # 传入要编译成pyd的py文件
-    ext1 = Cython.Build.cythonize("AlertInfoController.py")
-    ext2 = Cython.Build.cythonize("CarController.py")
-    ext3 = Cython.Build.cythonize("ConfigController.py")
-    ext4 = Cython.Build.cythonize("DeviceController.py")
-    ext5 = Cython.Build.cythonize("ExportTaskController.py")
-    ext6 = Cython.Build.cythonize("IndexController.py")
-    ext7 = Cython.Build.cythonize("OrderController.py")
-    ext8 = Cython.Build.cythonize("SchoolController.py")
-    ext9 = Cython.Build.cythonize("StudentController.py")
-    ext10 = Cython.Build.cythonize("UserProfileController.py")
-    ext11 = Cython.Build.cythonize("WorkerController.py")
-    ext12 = Cython.Build.cythonize("WxMPController.py")
+    ext1 = Cython.Build.cythonize("{}/AlertInfoController.py".format(d))
+    ext2 = Cython.Build.cythonize("{}/CarController.py".format(d))
+    ext3 = Cython.Build.cythonize("{}/ConfigController.py".format(d))
+    ext4 = Cython.Build.cythonize("{}/DeviceController.py".format(d))
+    ext5 = Cython.Build.cythonize("{}/ExportTaskController.py".format(d))
+    ext6 = Cython.Build.cythonize("{}/IndexController.py".format(d))
+    ext7 = Cython.Build.cythonize("{}/OrderController.py".format(d))
+    ext8 = Cython.Build.cythonize("{}/SchoolController.py".format(d))
+    ext9 = Cython.Build.cythonize("{}/StudentController.py".format(d))
+    ext10 = Cython.Build.cythonize("{}/UserProfileController.py".format(d))
+    ext11 = Cython.Build.cythonize("{}/WorkerController.py".format(d))
+    ext12 = Cython.Build.cythonize("{}/WxMPController.py".format(d))
 
     # 下面还要导入另一个模块
     import distutils.core

@@ -827,14 +827,17 @@ class ExportExcelBusiness(object):
         sheet_data = [value_title]
         for index, row in enumerate(results):
             alert_status = u'正在报警' if row[8] == 1 else u'已解除'
+            cancel_worker_name = row[10].decode('utf-8') if row[10] else ''
+            cancel_time = row[11].strftime('%Y-%m-%d %H:%M:%S') if row[11] else ''
+            cancel_reason = row[12] if row[12] else ''
             sheet_data.append(
                 [row[0].decode('utf-8'), row[1].decode('utf-8'),
                  row[2].decode('utf-8'), row[3].decode('utf-8'), row[4],
                  row[5].decode('utf-8'), row[6].strftime('%Y-%m-%d %H:%M:%S'),
                  row[7].strftime('%Y-%m-%d %H:%M:%S'), alert_status,
-                 row[9], row[10].decode('utf-8'),
-                 row[11].strftime('%Y-%m-%d %H:%M:%S'),
-                 row[12]].decode('utf-8'))
+                 row[9], cancel_worker_name,
+                 cancel_time,
+                 cancel_reason])
 
         workbook = utils.create_new_workbook()
         utils.write_excel_xls(
@@ -845,7 +848,7 @@ class ExportExcelBusiness(object):
 
         oss_key = 'zips/' + excel_name
         utils.upload_zip(oss_key, path)
-        d = {'id': task_id, 'status': 3, 'zip_url': config.OSSDomain + "/" + oss_key}
+        d = {'id': task_id, 'status': 2, 'zip_url': config.OSSDomain + "/" + oss_key}
         pgsql_db.update(pgsql_cur, d, table_name='export_task')
         # 删除文件
         os.remove(path)

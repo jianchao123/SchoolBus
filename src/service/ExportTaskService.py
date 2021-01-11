@@ -37,7 +37,8 @@ class ExportTaskService(object):
         db.session.commit()
 
         results = db.session.query(ExportTask).filter(
-            ExportTask.id.in_(task_id)).first()
+            ExportTask.id.in_(task_id)).all()
+        print results
         for row in results:
             if row.status == 2:
                 row.status = 10

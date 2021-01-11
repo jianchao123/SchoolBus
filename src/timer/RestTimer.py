@@ -149,12 +149,14 @@ class CheckAccClose(object):
                     info['mobile_2'] = row[5]
                     student_info.append(info)
                     send_msg_student_info.append(row[0])
-                people_info = ""
+                people_info_list = []
                 for info in student_info:
-                    people_info += '{},{},{},{},{}|'.format(
+                    people_info_list.append('{},{},{},{},{}'.format(
                         info['nickname'], info['school_name'],
                         info['grade_name'], info['class_name'],
-                        info['mobile_1'], info['mobile_2'])
+                        info['mobile_1'], info['mobile_2']))
+
+                people_info = "|".join(people_info_list)
                 d = {
                     'car_id': car_id,
                     'license_plate_number': license_plate_number,
