@@ -477,6 +477,7 @@ class HeartBeat30s(object):
         for devcie_key in hkeys:
             run_status, dev_name = self.remote_rds_conn.hmget(
                 devcie_key, 'run_status', 'devname')
+            print "heatbeat=============={}".format(dev_name)
             if run_status and int(run_status) and dev_name != "newdev":
                 pub_msg(rds_conn, dev_name, {"cmd": "heartbeat30s"})
 
