@@ -459,22 +459,55 @@ class FromOssQueryFace(object):
 
 class HeartBeat30s(object):
 
-    def heartbeat(self):
-        """心跳包"""
-        rds_conn = db.rds_conn
+    def __init__(self):
 
         import redis
         from redis import ConnectionPool
         remote_rds_pool = ConnectionPool(
             host="r-uf6aii687io4t6ghxlpd.redis.rds.aliyuncs.com",
             port=6379, db=0, password='kIhHAWexFy7pU8qM')
-        remote_rds_conn = redis.StrictRedis(connection_pool=remote_rds_pool)
-        hkeys = remote_rds_conn.keys("DEVICE_INFO_*")
+        self.remote_rds_conn = \
+            redis.StrictRedis(connection_pool=remote_rds_pool)
+
+    def heartbeat(self):
+        """心跳包 29s"""
+        rds_conn = db.rds_conn
+
+        hkeys = self.remote_rds_conn.keys("DEVICE_INFO_*")
         for devcie_key in hkeys:
-            run_status, dev_name = remote_rds_conn.hmget(
+            run_status, dev_name = self.remote_rds_conn.hmget(
                 devcie_key, 'run_status', 'devname')
             if run_status and int(run_status) and dev_name != "newdev":
                 pub_msg(rds_conn, dev_name, {"cmd": "heartbeat30s"})
+
+    def mark_order_start(self):
+        """标记订单开始 10s"""
+        rds_conn = db.rds_conn
+        if rds_conn.get('MARK_FID'):
+            hkeys = self.remote_rds_conn.keys("DEVICE_INFO_*")
+            for devcie_key in hkeys:
+                run_status, dev_name = self.remote_rds_conn.hmget(
+                    devcie_key, 'run_status', 'devname')
+
+                if run_status and int(run_status) and dev_name != "newdev":
+                    print dev_name
+                    print dev_name == "newdev"
+                    print run_status, int(run_status)
+                    pub_msg(rds_conn, dev_name, {"cmd": "flagfidinx"})
+            rds_conn.delete('MARK_FID')
+
+    def send_order(self):
+        """发送订单 10s"""
+        rds_conn = db.rds_conn
+        if rds_conn.get('SEND_ORDER'):
+            hkeys = self.remote_rds_conn.keys("DEVICE_INFO_*")
+            for devcie_key in hkeys:
+                run_status, dev_name = self.remote_rds_conn.hmget(
+                    devcie_key, 'run_status', 'devname')
+                if run_status and int(run_status) and dev_name != "newdev":
+                    #print "sendorder===={}".format(dev_name)
+                    pub_msg(rds_conn, dev_name, {"cmd": "sendorder"})
+            rds_conn.delete('SEND_ORDER')
 
 
 class EveryFewMinutesExe(object):
@@ -650,11 +683,20 @@ class OrderSendMsg(object):
                     stream_no = data['stream_no']
                     rds_conn.set(k, stream_no)
                     rds_conn.expire(k, 30)
+
+                    # 测试,正式时注释
+                    print data
+                    if 'cmd' in data:
+                        if data['cmd'] in \
+                                ['heartbeat30s', 'flagfidinx', 'sendorder']:
+                            print u"删除-----------------------"
+                            rds_conn.delete(k)
+
                     # 发送消息
                     topic = '/' + self.product_key + '/' \
                             + device_name + '/user/get'
                     self.request.set_TopicFullName(topic)
-
+                    print data
                     b64_str = base64.b64encode(json.dumps(data))
                     self.request.set_MessageContent(b64_str)
                     self.request.set_ProductKey(self.product_key)

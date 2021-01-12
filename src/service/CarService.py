@@ -17,9 +17,9 @@ from ext import cache
 class CarService(object):
 
     @staticmethod
-    def car_list(query_str, device_status, page, size):
+    def car_list(query_str, is_online, status, page, size):
         db.session.commit()
-        print query_str, device_status, page, size
+        cur_timestamp = int(time.time())
         offset = (page - 1) * size
         query = db.session.query(Car)
         if query_str:
@@ -31,11 +31,42 @@ class CarService(object):
 
             query = query.filter(or_(
                 Car.id.in_(car_ids), Car.license_plate_number.like(query_str)))
-        if device_status:
-            results = db.session.query(Device).filter(
-                Device.status == device_status).all()
-            car_ids = [row.car_id for row in results]
+        if is_online:
+            is_online = int(is_online)
+            devices = []
+            ks = cache.hgetall(defines.RedisKey.DEVICE_CUR_TIMESTAMP)
+            for device_name, tstmp in ks.items():
+                print device_name, tstmp
+                if is_online == 1:
+                    if tstmp and (cur_timestamp - int(tstmp)) < 30:
+                        devices.append(device_name)
+                elif is_online == 2:
+                    if not tstmp or ((cur_timestamp - int(tstmp)) > 30):
+                        devices.append(device_name)
+            car_ids = []
+            device_results = db.session.query(Device).filter(
+                Device.device_name.in_(devices)).all()
+            for row in device_results:
+                if row.car_id:
+                    car_ids.append(row.car_id)
             query = query.filter(Car.id.in_(car_ids))
+
+        if status:
+            status = int(status)
+            if status == 1:
+                carids = []
+                devices = db.session.query(Device).filter(
+                    Device.car_id.isnot(None)).all()
+                for row in devices:
+                    carids.append(row.car_id)
+                query = query.filter(Car.id.in_(carids))
+            elif status == 2:
+                carids = []
+                devices = db.session.query(Device).filter(
+                    Device.car_id.isnot(None)).all()
+                for row in devices:
+                    carids.append(row.car_id)
+                query = query.filter(Car.id.notin_(carids))
 
         query = query.filter(Car.status == 1)
         count = query.count()

@@ -29,7 +29,7 @@ if __name__ == "__main__":
 
     sched = BlockingScheduler()
     # 顺序发送消息
-    sched.add_job(order_send_msg.order_sent_msg, 'interval', seconds=0.1)
+    sched.add_job(order_send_msg.order_sent_msg, 'interval', seconds=0.5)
     # 生成特征码
     sched.add_job(generate_feature.generate_feature, 'interval', seconds=1)
     # 生成aac文件
@@ -43,6 +43,9 @@ if __name__ == "__main__":
                   'interval', seconds=30)
     sched.add_job(heart_beat_30s.heartbeat,
                   'interval', seconds=29)
+    sched.add_job(heart_beat_30s.send_order,
+                  'interval', seconds=10)
+
     # 每分钟执行
     sched.add_job(func=every_minute_exe.every_minute_execute,
                   trigger='cron', day="*", hour="*", minute="*")

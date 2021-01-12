@@ -40,10 +40,14 @@ def car_list(user_id, data):
         in: query
         type: string
         description: 车牌/设备Id
-      - name: face_status
+      - name: is_online
         in: query
         type: integer
-        description: 人脸状态 1已创建虚拟设备 2已关联车辆 3已设置工作模式 4已设置oss信息 5已初始化人员
+        description: 是否在线 1上线 2下线
+      - name: status
+        in: query
+        type: integer
+        description: 状态 1已绑定 2未绑定
       - name: page
         in: query
         type: integer
@@ -97,10 +101,11 @@ def car_list(user_id, data):
 
     """
     query_str = data.get('query_str', None)
-    device_status = data.get('device_status', None)
+    is_online = data.get('is_online', None)
+    status = data.get('status', None)
     page = int(data['page'])
     size = int(data['size'])
-    return CarService.car_list(query_str, device_status, page, size)
+    return CarService.car_list(query_str, is_online, status, page, size)
 
 
 @bp.route('/add', methods=['POST'])

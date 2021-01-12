@@ -30,7 +30,7 @@ class DeviceService(object):
         offset = (page - 1) * size
         query = db.session.query(Device)
         if device_iid:
-            query = query.filter(Device.device_iid == device_iid)
+            query = query.filter(Device.device_iid.like('%%{}%%'.format(device_iid)))
         if license_plate_number:
             query = query.filter(Device.license_plate_number.like(
                 '%%{}%%'.format(license_plate_number)))
@@ -46,7 +46,6 @@ class DeviceService(object):
                     if tstmp and (cur_timestamp - int(tstmp)) < 30:
                         devices.append(device_name)
                 elif status == 2:
-                    print "========================="
                     if not tstmp or ((cur_timestamp - int(tstmp)) > 30):
                         devices.append(device_name)
 
