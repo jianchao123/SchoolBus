@@ -97,13 +97,6 @@ class DeviceService(object):
         if not device:
             return -1
 
-        # if license_plate_number:
-        #     # 这里只能修改设备上的车牌,需要先在车辆修改车牌
-        #     cnt = db.session.query(Car).filter(
-        #         Car.license_plate_number == license_plate_number).count()
-        #     if not cnt:
-        #         return -10  # 车牌找不到
-
         if sound_volume:
             device.sound_volume = sound_volume
 
@@ -144,6 +137,10 @@ class DeviceService(object):
                 # 如果用户关联设备和车辆,判断状态是否为1,为1就修改到2
                 if device.status == 1:
                     device.status = 2
+
+                # 修改设备关联的车辆需要删除缓存
+                cache.hdel(defines.RedisKey.CACHE_CAR_DATA,
+                           device.device_name)
 
         try:
             d = {'id': device.id}

@@ -136,6 +136,65 @@ class AcsManager(object):
             if rds_stream_no and str(rds_stream_no) == str(stream_no):
                 rds_conn.delete(k)
 
+    @staticmethod
+    def get_car_data(pgsql_db, pgsql_cur, redis_db, dev_name):
+        """获取车辆信息
+        什么时候删除缓存
+        1.修改车辆
+        2.修改设备
+        """
+        car_data = redis_db.hget(RedisKey.CACHE_CAR_DATA, dev_name)
+        if not car_data:
+            device_sql = """
+                    SELECT dev.id,CAR.id,CAR.license_plate_number 
+                    FROM device AS dev 
+                    INNER JOIN car CAR ON CAR.id=dev.car_id 
+                    WHERE dev.device_name='{}' LIMIT 1
+                    """
+            device_result = pgsql_db.get(pgsql_cur, device_sql.format(dev_name))
+            cur_device_id = device_result[0]
+            cur_car_id = device_result[1]
+            license_plate_number = device_result[2]
+            d = {'devid': cur_device_id,
+                 'carid': cur_car_id,
+                 'chepai': license_plate_number}
+            redis_db.hset(RedisKey.CACHE_CAR_DATA, dev_name, json.dumps(d))
+        else:
+            d = json.loads(car_data)
+        return d['devid'], d['carid'], d['chepai']
+
+    @staticmethod
+    def get_worker_data(pgsql_db, pgsql_cur, redis_db, cur_car_id):
+        """
+        什么时候删除缓存
+        1.修改工作人员删除缓存
+        """
+        staff_data = redis_db.hget(RedisKey.CACHE_STAFF_DATA, str(cur_car_id))
+        if not staff_data:
+            worker_sql = 'SELECT duty_id,mobile,nickname ' \
+                         'FROM worker WHERE car_id={}'
+            driver_name = ""
+            zgy_name = ""
+            driver_mobile = ""
+            zgy_mobile = ""
+            worker_result = pgsql_db.query(
+                pgsql_cur, worker_sql.format(cur_car_id))
+            for row in worker_result:
+                if row[0] == 1:
+                    driver_name = row[2]
+                    driver_mobile = row[1]
+                else:
+                    zgy_name = row[2]
+                    zgy_mobile = row[1]
+            d = {'driver_name': driver_name, 'zgy_name': zgy_name,
+                 'driver_mobile': driver_mobile, 'zgy_mobile': zgy_mobile}
+            redis_db.hset(RedisKey.CACHE_STAFF_DATA,
+                          str(cur_car_id), json.dumps(d))
+        else:
+            d = json.loads(staff_data)
+        return d['driver_name'], d['zgy_name'], \
+               d['driver_mobile'], d['zgy_mobile']
+
     @db.transaction(is_commit=True)
     def add_order(self, pgsql_cur, fid, gps_str, add_time, dev_name, cnt):
         """
@@ -144,11 +203,6 @@ class AcsManager(object):
         """
         redis_db = db.rds_conn
         pgsql_db = db.PgsqlDbUtil
-
-        # 刷脸时间小于开机时间的订单不要
-        # open_time = redis_db.hget(RedisKey.DEVICE_OPEN_TIME_HASH, dev_name)
-        # if open_time and int(open_time) >= int(add_time):
-        #     return
 
         now = datetime.now()
         cur_hour = now.hour
@@ -172,32 +226,12 @@ class AcsManager(object):
         else:                                   # 放学下车
             order_type = 4
 
-        device_sql = """
-        SELECT dev.id,CAR.id,CAR.license_plate_number FROM device AS dev 
-        INNER JOIN car CAR ON CAR.id=dev.car_id 
-        WHERE dev.device_name='{}' LIMIT 1
-        """
-        device_result = pgsql_db.get(pgsql_cur, device_sql.format(dev_name))
-        cur_device_id = device_result[0]
-        cur_car_id = device_result[1]
-        license_plate_number = device_result[2]
+        cur_device_id, cur_car_id, license_plate_number\
+            = AcsManager.get_car_data(pgsql_db, pgsql_cur, redis_db, dev_name)
 
-        # 工作人员信息
-        worker_sql = """
-        SELECT duty_id,mobile,nickname FROM worker WHERE car_id={}
-        """
-        driver_name = ""
-        zgy_name = ""
-        driver_mobile = ""
-        zgy_mobile = ""
-        worker_result = pgsql_db.query(pgsql_cur, worker_sql.format(cur_car_id))
-        for row in worker_result:
-            if row[0] == 1:
-                driver_name = row[2]
-                driver_mobile = row[1]
-            else:
-                zgy_name = row[2]
-                zgy_mobile = row[1]
+        driver_name, zgy_name, driver_mobile, zgy_mobile = \
+            AcsManager.get_worker_data(
+                pgsql_db, pgsql_cur, redis_db, cur_car_id)
 
         stu_sql = """
         SELECT stu.id, stu.stu_no, stu.nickname,shl.id,shl.school_name,
@@ -273,7 +307,6 @@ class AcsManager(object):
                 open_id_1, d['id'], stu_nickname,
                 order_type_name, up_time_str, license_plate_number)
         if open_id_2:
-            print "------------------------------open_id_2"
             producer.send_parents_template_message(
                 open_id_2, d['id'], stu_nickname,
                 order_type_name, up_time_str, license_plate_number)
@@ -527,10 +560,8 @@ class AcsManager(object):
             if device_type == 2:
                 license_plate_number = u'生成特征值专用'
                 workmode = 3
-            elif device_type == 1:
+            else: #device_type == 1:
                 workmode = 0
-            print "---------------------"
-            print status, type(status)
             # 已关联车辆
             if status == 2:
                 d['status'] = 3   # 设置工作模式
@@ -594,10 +625,6 @@ class AcsManager(object):
             workmode = 0 if device_type == 1 else 3
             producer.update_chepai(device_name, license_plate_number,
                                    sound_vol, workmode, person_limit)
-
-            # 清空车内人数
-            # rds_conn.delete(RedisKey.STUDENT_SET.format(device_name))
-            # producer.clear_device_person_count(device_name)
 
         rds_conn.hset(RedisKey.DEVICE_CUR_TIMESTAMP, device_name,
                       int(time.time()))

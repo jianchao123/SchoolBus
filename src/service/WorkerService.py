@@ -99,6 +99,10 @@ class WorkerService(object):
             Worker.id == pk).first()
         if not worker:
             return -1
+
+        # 修改工作人员需要删除缓存
+        cache.hdel(defines.RedisKey.CACHE_STAFF_DATA, str(worker.car_id))
+
         if emp_no:
             cnt = db.session.query(Worker).filter(
                 Worker.id != pk, Worker.emp_no == emp_no).count()
@@ -123,8 +127,6 @@ class WorkerService(object):
                 return -12
             worker.duty_id = duty_id
 
-        old_car_id = worker.car_id
-        old_duty_id = worker.duty_id
         if car_id:
             if car_id == -10:
                 worker.car_id = None
@@ -144,33 +146,6 @@ class WorkerService(object):
                 worker.car_id = car.id
                 worker.license_plate_number = car.license_plate_number
 
-        # if nickname or duty_id:
-        #     # 是否已经绑定车辆
-        #     if worker.car_id:
-        #         producer.worker_update(
-        #             worker.id, worker.car_id, worker.nickname,
-        #             worker.duty_id, defines.duty[worker.duty_id])
-        #
-        # # 原来有car_id 且 老car_id与新car_id不一样
-        # if old_car_id and car_id and old_car_id != car_id:
-        #     # 老car_id删除worker信息
-        #     producer.worker_update(
-        #         worker.id, old_car_id, 'NULL', 'NULL', 'NULL', empty=old_duty_id)
-        #
-        #     producer.worker_update(
-        #         worker.id, car_id, worker.nickname,
-        #         worker.duty_id, defines.duty[worker.duty_id])
-        #
-        # # 原来没有car_id 新关联car_id
-        # if not old_car_id and car_id:
-        #     producer.worker_update(
-        #         worker.id, car_id, worker.nickname,
-        #         worker.duty_id, defines.duty[worker.duty_id])
-        #
-        # if car_id == -10:
-        #     producer.worker_update(
-        #         worker.id, old_car_id, 'NULL', 'NULL', 'NULL',
-        #         empty=old_duty_id)
         try:
             d = {'id': worker.id}
             db.session.commit()

@@ -645,11 +645,8 @@ class OrderSendMsg(object):
                 k = "cur_{}_stream_no".format(device_name)
                 # 不存在就取出一条消息发送到物联网
                 if not rds_conn.get(k):
-                    print u"key 不存在"
                     raw_msg_content = rds_conn.lpop(queue_name)
-                    print raw_msg_content
                     data = json.loads(raw_msg_content)
-
                     stream_no = data['stream_no']
                     rds_conn.set(k, stream_no)
                     rds_conn.expire(k, 30)

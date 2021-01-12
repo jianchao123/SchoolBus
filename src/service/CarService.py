@@ -159,6 +159,8 @@ class CarService(object):
                                        device.license_plate_number,
                                        device.sound_volume, workmode,
                                        car.capacity)
+                # 修改车牌需要删除车辆数据缓存
+                cache.hdel(defines.RedisKey.CACHE_CAR_DATA, device.device_name)
 
         if company_name:
             car.company_name = company_name
@@ -170,6 +172,7 @@ class CarService(object):
                 Device.car_id == car.id).first()
             if device:
                 device.person_limit = capacity
+
         try:
             d = {'id': car.id}
             db.session.commit()
