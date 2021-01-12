@@ -444,7 +444,7 @@ def alarm_cancel(args):
     """
     periods = args['periods']
     open_id = args['open_id']
-    cancel_type_id = args['cancel_type_id']
+    cancel_type_id = int(args['cancel_type_id'])
     cancel_reason = args.get('cancel_reason', None)
     ret = WxMPService.cancel_alert(open_id, periods, cancel_type_id, cancel_reason)
     if ret == -2:
