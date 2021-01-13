@@ -14,7 +14,7 @@ class ProductionConfig(Config):
 
     # https://cdbus-dev.oss-cn-shanghai.aliyuncs.com/snap_77_1608629051.jpg
     # 阿里云OSS
-    OSS_BUCKET = "cdbus-dev"
+    OSS_BUCKET = "cdbus-pro"
     OSS_REGION = "oss-cn-shanghai"
     OSS_POINT = "oss-cn-shanghai.aliyuncs.com"
     OSS_ALL_KEY = "LTAIWE5CGeOiozf7"
@@ -26,4 +26,8 @@ class ProductionConfig(Config):
     MP_APP_SECRET = 'bf3e50ed4b549fc007d5ad39634cdc4d'
     MP_TOKEN = 'gK9gY3cV2bM6pH9gF7vJ5uC8vN9cI0cL'
     MP_ENCODING_AES_KEY = 'CAmGrrm1rJ0HqgcbIBQbhKAHLUKGGbv3RJTTFnixTaC'
-    MP_AUTH_URI = 'http://cdmp.wgxing.com/wxmp/get_open_id'
+    MP_AUTH_URI = 'http://cdmp.wgxing.com/static/getOpenid.html'
+
+    # 实时刷脸图片 format
+    REALTIME_FACE_IMG = 'http://' + OSS_BUCKET + '.' + \
+                        OSS_POINT + '/snap_{fid}_{timestamp}.jpg'

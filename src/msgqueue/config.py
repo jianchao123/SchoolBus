@@ -58,23 +58,24 @@ if env == "TEST":
 
 
 elif env == "PRO":
+
     # 物联网
-    Productkey = ''
-    ProductHost = ''
-    ProductSecret = ''
-    DeviceSecret = ''
+    Productkey = 'a1nppCCo0Y2'
+    ProductHost = 'a1nppCCo0Y2.iot-as-mqtt.cn-shanghai.aliyuncs.com'
+    ProductSecret = 'VYMQSqHamIQgREVi'
+    DeviceSecret = 'e2245121d52abc850b2fc220f937f512'
 
     # OSS
-    OSSDomain = ''
-    OSSAccessKeyId = ''
-    OSSAccessKeySecret = ''
-    OSSEndpoint = ''
-    OSSBucketName = ''
+    OSSDomain = 'cdbus-pro.oss-cn-shanghai.aliyuncs.com'
+    OSSAccessKeyId = 'LTAIWE5CGeOiozf7'
+    OSSAccessKeySecret = 'IGuoRIxwMlPQqJ9ujWyTvSq2em4RDj'
+    OSSEndpoint = 'http://oss-cn-shanghai.aliyuncs.com'
+    OSSBucketName = 'cdbus-pro'
 
     # MNS
-    MNSEndpoint = ''
-    MNSAccessKeyId = ''
-    MNSAccessKeySecret = ''
+    MNSEndpoint = 'http://1162097573951650.mns.cn-shanghai.aliyuncs.com/'
+    MNSAccessKeyId = 'LTAI4GL6gtEc4bnmj82yQ9wc'
+    MNSAccessKeySecret = 'vhuBLJpqlOsSisnuUQ1xvE02GCXhIC'
 
     # LOG
     log_path = "/data/logs/{}/mns".format(project_name)
@@ -100,10 +101,13 @@ elif env == "PRO":
     MP_APP_SECRET = 'bf3e50ed4b549fc007d5ad39634cdc4d'
     MP_TOKEN = 'gK9gY3cV2bM6pH9gF7vJ5uC8vN9cI0cL'
     MP_ENCODING_AES_KEY = 'CAmGrrm1rJ0HqgcbIBQbhKAHLUKGGbv3RJTTFnixTaC'
+
     MP_PARENTS_TEMPLATE_ID = "aRznTze3zLqP9mSoOh45DhrAgL-OOz3ut2bE0c5TwpM"
     MP_STAFF_TEMP_ID = "NlJspxFFiPl4lH8gjf-pKU-dZiMuFYgdSJ4wSpmEesg"
-    MP_PARENTS_REDIRECT_URL = "http://cdmp.wgxing.com/static/push.html?order_id={}"
-    MP_STAFF_REDIRECT_URL = "http://cdmp.wgxing.com/static/alert.html?periods={}"
+    MP_PARENTS_REDIRECT_URL = \
+        "http://cdmp.wgxing.com/static/push.html?order_id={}"
+    MP_STAFF_REDIRECT_URL = \
+        "http://cdmp.wgxing.com/static/alert.html?periods={}"
 
 else:
     # 物联网

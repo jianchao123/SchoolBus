@@ -12,7 +12,7 @@ def load_config():
     根据环境变量的值读取配置
     """
     try:
-        mode = os.environ.get("TRANS_ENV")
+        mode = os.environ.get("BUS_ENV")
         print "-------------------{}".format(mode)
         if mode == 'PRO':
             return ProductionConfig

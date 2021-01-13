@@ -55,22 +55,22 @@ if env == "TEST":
 
 elif env == "PRO":
     # 物联网
-    Productkey = ''
-    ProductHost = ''
-    ProductSecret = ''
-    DeviceSecret = ''
+    Productkey = 'a1nppCCo0Y2'
+    ProductHost = 'a1nppCCo0Y2.iot-as-mqtt.cn-shanghai.aliyuncs.com'
+    ProductSecret = 'VYMQSqHamIQgREVi'
+    DeviceSecret = 'e2245121d52abc850b2fc220f937f512'
 
     # OSS
-    OSSDomain = ''
-    OSSAccessKeyId = ''
-    OSSAccessKeySecret = ''
-    OSSEndpoint = ''
-    OSSBucketName = ''
+    OSSDomain = 'cdbus-pro.oss-cn-shanghai.aliyuncs.com'
+    OSSAccessKeyId = 'LTAIWE5CGeOiozf7'
+    OSSAccessKeySecret = 'IGuoRIxwMlPQqJ9ujWyTvSq2em4RDj'
+    OSSEndpoint = 'http://oss-cn-shanghai.aliyuncs.com'
+    OSSBucketName = 'cdbus-pro'
 
     # MNS
-    MNSEndpoint = ''
-    MNSAccessKeyId = ''
-    MNSAccessKeySecret = ''
+    MNSEndpoint = 'http://1162097573951650.mns.cn-shanghai.aliyuncs.com/'
+    MNSAccessKeyId = 'LTAI4GL6gtEc4bnmj82yQ9wc'
+    MNSAccessKeySecret = 'vhuBLJpqlOsSisnuUQ1xvE02GCXhIC'
 
     # LOG
     log_path = "/data/logs/{}/mns".format(project_name)

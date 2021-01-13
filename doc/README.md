@@ -39,3 +39,14 @@ python recvdelmessage.py
     "status": 0 # 0 接口正常,非0表示接口错误,具体错误看对应的接口
 }
 ```
+
+# pip安装包报错
+## psycopg2报错
+```python
+# sudo apt-get install python-psycopg2
+```
+
+## M2Crypto报错
+```python
+# sudo apt-get install swig libssl-dev
+```
