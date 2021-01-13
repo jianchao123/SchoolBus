@@ -62,6 +62,7 @@ class SubErrorCode(object):
     DEVICE_CAR_ALREADY_BINDING = (200077, u"车辆已经绑定设备")
 
     TASK_EXECUTING = (200071, u"任务执行中")
+    TASK_NON_RECORD = (200072, u"没有记录,无需导出")
 
     ALARM_STATUS_ERR = (200080, u"报警状态错误")
     ALARM_RECORD_EXPORTING = (200081, u"报警记录导出中")

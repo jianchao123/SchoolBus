@@ -186,11 +186,14 @@ def order_export(user_id, data):
             end_date = datetime.strptime(end_date, '%Y-%m-%d')
         except ValueError:
             raise AppError(*GlobalErrorCode.PARAM_ERROR)
-
+    else:
+        raise AppError(*GlobalErrorCode.PARAM_ERROR)
     ret = OrderService.order_export(school_id, car_id, order_type,
                                     start_date, end_date)
     if ret == -11:
         raise AppError(*SubErrorCode.ORDER_NUMBER_TOO_BIG)
     if ret == -10:
         raise AppError(*SubErrorCode.ORDER_EXPORTING)
+    if ret == -12:
+        raise AppError(*SubErrorCode.TASK_NON_RECORD)
     return {'id': ret}

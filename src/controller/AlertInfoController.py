@@ -225,13 +225,17 @@ def alert_info_export(user_id, data):
             end_date = datetime.strptime(end_date, '%Y-%m-%d')
         except ValueError:
             raise AppError(*GlobalErrorCode.PARAM_ERROR)
-        
+    else:
+        raise AppError(*GlobalErrorCode.PARAM_ERROR)
+
     ret = AlertInfoService.alert_info_export(status, start_date, end_date,
                                              alert_info_type, car_id)
     if ret == -11:
         raise AppError(*SubErrorCode.ALARM_RECORD_NUMBER_TOO_MANY_LARGE)
     if ret == -10:
         raise AppError(*SubErrorCode.ALARM_RECORD_EXPORTING)
+    if ret == -12:
+        raise AppError(*SubErrorCode.TASK_NON_RECORD)
     return {'id': ret}
 
 

@@ -826,6 +826,7 @@ class ExportExcelBusiness(object):
                 pass
         sheet_data = [value_title]
         for index, row in enumerate(results):
+            alert_second_time = row[7].strftime('%Y-%m-%d %H:%M:%S') if row[7] else ''
             alert_status = u'正在报警' if row[8] == 1 else u'已解除'
             cancel_worker_name = row[10].decode('utf-8') if row[10] else ''
             cancel_time = row[11].strftime('%Y-%m-%d %H:%M:%S') if row[11] else ''
@@ -834,7 +835,7 @@ class ExportExcelBusiness(object):
                 [row[0].decode('utf-8'), row[1].decode('utf-8'),
                  row[2].decode('utf-8'), row[3].decode('utf-8'), row[4],
                  row[5].decode('utf-8'), row[6].strftime('%Y-%m-%d %H:%M:%S'),
-                 row[7].strftime('%Y-%m-%d %H:%M:%S'), alert_status,
+                 alert_second_time, alert_status,
                  row[9], cancel_worker_name,
                  cancel_time,
                  cancel_reason])

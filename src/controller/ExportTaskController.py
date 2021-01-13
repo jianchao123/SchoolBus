@@ -129,4 +129,6 @@ def export_task_delete(user_id, data):
     ret = ExportTaskService.export_task_delete(task_ids)
     if ret == -2:
         raise AppError(*GlobalErrorCode.DB_COMMIT_ERR)
+    if ret == -10:
+        raise AppError(*SubErrorCode.TASK_EXECUTING)
     return ret

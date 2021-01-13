@@ -87,6 +87,8 @@ class OrderService(object):
             query = query.filter(and_(Order.create_time > start_date,
                                      Order.create_time < end_date))
         count = query.count()
+        if not count:
+            return -12
         if count > 15000000:
             return -11
 

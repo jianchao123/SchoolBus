@@ -32,16 +32,20 @@ class ExportTaskService(object):
         return {'count': count, 'results': data}
 
     @staticmethod
-    def export_task_delete(task_id):
+    def export_task_delete(task_ids):
         """删除导出任务"""
         db.session.commit()
 
+        task_id_list = [int(row) for row in task_ids.split(",")]
         results = db.session.query(ExportTask).filter(
-            ExportTask.id.in_(task_id)).all()
+            ExportTask.id.in_(task_id_list)).all()
         print results
         for row in results:
             if row.status == 2:
                 row.status = 10
+            else:
+                return -10
+
         try:
             db.session.commit()
             return {'id': 0}
