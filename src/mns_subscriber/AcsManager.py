@@ -104,7 +104,7 @@ class AcsManager(object):
             "delayoff": 2,
             "leftdetect": 1,
             "jiange": 10,
-            "cleartime": 40,
+            "cleartime": 70,
             "shxmode": 0,
             "volume": int(cur_volume),
             "facesize": 390,
