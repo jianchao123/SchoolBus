@@ -22,13 +22,14 @@ class AlertInfoService(object):
 
         offset = (page - 1) * size
         query = db.session.query(AlertInfo)
-        print status, "---------------------"
         if status:
             query = query.filter(AlertInfo.status == status)
-        if first_alert:
-            query = query.filter(AlertInfo.first_alert == 1)
-        if second_alert:
-            query = query.filter(AlertInfo.second_alert == 1)
+        if not (first_alert and second_alert):
+            if first_alert:
+                query = query.filter(AlertInfo.first_alert == 1).filter(
+                    AlertInfo.second_alert == 0)
+            if second_alert:
+                query = query.filter(AlertInfo.second_alert == 1)
         if query_str:
             query_str = '%{keyword}%'.format(keyword=query_str)
             query = query.filter(or_(

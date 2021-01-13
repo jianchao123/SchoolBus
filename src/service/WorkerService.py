@@ -108,6 +108,7 @@ class WorkerService(object):
                 Worker.id != pk, Worker.emp_no == emp_no).count()
             if cnt:
                 return -10  # 工号已经存在
+            worker.emp_no = emp_no
         if nickname:
             worker.nickname = nickname
 

@@ -62,11 +62,13 @@ class DeviceService(object):
                 defines.RedisKey.DEVICE_CUR_TIMESTAMP, row.device_name)
             if not device_timestamp or (cur_timestamp - int(device_timestamp) > 30):
                 is_online = u"离线"
-            elif cur_timestamp - int(device_timestamp) < 30:
+            else:   # if cur_timestamp - int(device_timestamp) < 30:
                 is_online = u"在线"
 
             device_gps = cache.hget(
                 defines.RedisKey.DEVICE_CUR_GPS, row.device_name)
+            device_last_time = datetime.fromtimestamp(
+                float(int(device_timestamp))).strftime('%Y-%m-%d %H:%M:%S')
             data.append({
                 'id': row.id,
                 'device_name': row.device_name,
@@ -79,7 +81,7 @@ class DeviceService(object):
                 'device_type': row.device_type,
                 'mac': row.mac,
                 'is_online': is_online,
-                'device_timestamp': device_timestamp,
+                'device_timestamp': device_last_time,
                 'gps': device_gps
             })
         return {'results': data, 'count': count}
