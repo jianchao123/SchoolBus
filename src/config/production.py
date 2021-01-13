@@ -10,7 +10,7 @@ class ProductionConfig(Config):
     DEBUG = False
 
     SQLALCHEMY_DATABASE_URI = 'postgresql://postgres:kIhHAWexFy7pU8qM@127.0.0.1/postgres'
-    LOG_PATH = '/home/jianchao/code/transport/logs/main'
+    LOG_PATH = '/data/logs/school_bus/main'
 
     # https://cdbus-dev.oss-cn-shanghai.aliyuncs.com/snap_77_1608629051.jpg
     # 阿里云OSS

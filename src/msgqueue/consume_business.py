@@ -692,7 +692,7 @@ class ExportExcelBusiness(object):
         SELECT O.stu_no,O.stu_name,O.school_name,O.order_type,O.create_time,
         O.license_plate_number,O.gps FROM public.order O 
         INNER JOIN school SHL ON SHL.id=O.school_id 
-        WHERE 1=1 {} 
+        WHERE 1=1 {}  ORDER BY O.id DESC 
         LIMIT {} OFFSET {}
         """
         limit = 10000
@@ -810,11 +810,11 @@ class ExportExcelBusiness(object):
         if start_date and end_date:
             sql += " AND alert_start_time BETWEEN TO_DATE('{}','YYYY-MM-DD') " \
                    "and TO_DATE('{}','YYYY-MM-DD')".format(start_date, end_date)
-
+        sql += ' ORDER BY id DESC '
         results = pgsql_db.query(pgsql_cur, sql)
         value_title = [u'车牌', u'驾驶员', u'照管员', u'校车公司名字', u'遗漏人数',
                        u'遗漏学生', u'一次报警时间',u'二次报警时间', u'状态',
-                       u'gps位置', u'解除人员', u'解除时间', u'移除理由']
+                       u'gps位置', u'解除人员', u'解除时间', u'解除理由']
         excel_name = u"报警记录.xls"
         sheet_name = u'报警记录'
 
@@ -826,11 +826,13 @@ class ExportExcelBusiness(object):
                 pass
         sheet_data = [value_title]
         for index, row in enumerate(results):
-            alert_second_time = row[7].strftime('%Y-%m-%d %H:%M:%S') if row[7] else ''
+            alert_second_time = row[7].strftime('%Y-%m-%d %H:%M:%S')\
+                if row[7] else ''
             alert_status = u'正在报警' if row[8] == 1 else u'已解除'
             cancel_worker_name = row[10].decode('utf-8') if row[10] else ''
-            cancel_time = row[11].strftime('%Y-%m-%d %H:%M:%S') if row[11] else ''
-            cancel_reason = row[12] if row[12] else ''
+            cancel_time = row[11].strftime('%Y-%m-%d %H:%M:%S')\
+                if row[11] else ''
+            cancel_reason = row[12].decode('utf-8') if row[12] else ''
             sheet_data.append(
                 [row[0].decode('utf-8'), row[1].decode('utf-8'),
                  row[2].decode('utf-8'), row[3].decode('utf-8'), row[4],

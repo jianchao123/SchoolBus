@@ -78,7 +78,7 @@ elif env == "PRO":
     MNSAccessKeySecret = 'vhuBLJpqlOsSisnuUQ1xvE02GCXhIC'
 
     # LOG
-    log_path = "/data/logs/{}/mns".format(project_name)
+    log_path = "/data/logs/{}/msgqueue".format(project_name)
 
     # PGSQL
     pgsql_host = '127.0.0.1'
