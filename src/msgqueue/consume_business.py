@@ -957,7 +957,7 @@ class MpMsgBusiness(object):
                 "color": "#173177"
             },
             "remark": {
-                "value": "点击详情,查看更多！",
+                "value": "请检查车厢,确认无遗漏学生方可点击详情,解除警报！",
                 "color": "#173177"
             }
         }
