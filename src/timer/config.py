@@ -99,10 +99,10 @@ elif env == "PRO":
 
     MP_PARENTS_TEMPLATE_ID = "aRznTze3zLqP9mSoOh45DhrAgL-OOz3ut2bE0c5TwpM"
     MP_STAFF_TEMP_ID = "NlJspxFFiPl4lH8gjf-pKU-dZiMuFYgdSJ4wSpmEesg"
-    MP_PARENTS_REDIRECT_URL = \
-        "http://cdmp.wgxing.com/static/push.html?order_id={}"
-    MP_STAFF_REDIRECT_URL = \
-        "http://cdmp.wgxing.com/static/alert.html?periods={}"
+    # MP_PARENTS_REDIRECT_URL = \
+    #     "http://cdmp.wgxing.com/static/push.html?order_id={}"
+    # MP_STAFF_REDIRECT_URL = \
+    #     "http://cdmp.wgxing.com/static/alert.html?periods={}"
 
 else:
     # 物联网

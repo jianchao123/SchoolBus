@@ -24,7 +24,7 @@ class AlertInfo(db.Model):
     status = db.Column(db.Integer)              # 1 正在报警 2已解除
     cancel_worker_id = db.Column(db.Integer)    # 取消的工作人员id
     cancel_worker_name = db.Column(db.String(16))   # 工作人员名字
-    cancel_type_id = db.Column(db.Integer)      # 取消类型 1其他 2无学生解除 3有学生解除
+    cancel_type_id = db.Column(db.Integer)      # 取消类型 1其他 2无学生遗漏 3有学生遗漏
     cancel_time = db.Column(db.DateTime)        # 取消时间
     cancel_reason = db.Column(db.Integer)       # cancel_type_id=1时需要此项
     gps = db.Column(db.String(32))

@@ -151,11 +151,16 @@ class WxMPService(object):
             AlertInfo.periods == periods).first()
         if cancel_type_id == 1:
             alert_info.cancel_reason = cancel_reason
+        elif cancel_type_id == 2:
+            alert_info.cancel_reason = u"无学生遗漏,已确认学生安全"
+        elif cancel_type_id == 3:
+            alert_info.cancel_reason = u"有学生遗漏,已确认学生安全"
         alert_info.cancel_type_id = cancel_type_id
         alert_info.cancel_time = datetime.now()
         alert_info.cancel_worker_name = worker.nickname
         alert_info.cancel_worker_id = worker.id
         alert_info.status = 2
+
         try:
             db.session.commit()
             return {'id': alert_info.id}

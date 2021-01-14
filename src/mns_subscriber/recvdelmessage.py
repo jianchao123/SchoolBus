@@ -43,14 +43,14 @@ class ReceiveMessage(object):
         jdata = json.loads(base64.b64decode(body["payload"]))
 
         acs_manager.check_cur_stream_no(dev_name, jdata)
-        print json.dumps(jdata)
+        #print json.dumps(jdata)
 
         if 'cmd' in jdata:
             cmd = jdata['cmd']
             if cmd == 'syndata':
                 dev_name = jdata['devid']
                 if dev_name == 'newdev':
-                    logger.info(u'注册新设备')
+                    #logger.info(u'注册新设备')
                     acs_manager.create_device(jdata['mac'])
 
                 else:
@@ -99,7 +99,6 @@ class ReceiveMessage(object):
                         print u"防滞留检测开启"
                 else:
                     if not jdata['type']:
-                        logger.info(u"添加订单")
                         acs_manager.add_order(jdata['fid'],
                                               jdata['gps'],
                                               jdata['addtime'],
@@ -128,9 +127,10 @@ class ReceiveMessage(object):
         # 删除消息
         try:
             self.my_queue.delete_message(recv_msg.receipt_handle)
-            print("Delete Message Succeed!  ReceiptHandle:%s" % recv_msg.receipt_handle)
+            #print("Delete Message Succeed!  ReceiptHandle:%s" % recv_msg.receipt_handle)
         except Exception as e:
-            print("Delete Message Fail! Exception:%s\n" % e)
+            pass
+            #print("Delete Message Fail! Exception:%s\n" % e)
 
     def run(self):
         print("%sReceive And Delete Message From Queue%s\nQueueName:"
@@ -146,10 +146,11 @@ class ReceiveMessage(object):
             try:
                 self.msg_handler(acs_manager, logger)
             except MNSServerException as e:
-                logger.error(e.message)
-
-                if hasattr(e, 'type') and e.type == u"MessageNotExist":
-                    print("Queue is empty")
+                pass
+                # logger.error(e.message)
+                #
+                # if hasattr(e, 'type') and e.type == u"MessageNotExist":
+                #     print("Queue is empty")
             except MNSClientNetworkException:
                 print u"network exception"
             except Exception as e:

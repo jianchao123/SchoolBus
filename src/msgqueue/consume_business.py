@@ -530,66 +530,6 @@ class DeviceBusiness(object):
                 'update_timestamp': '{}'.format(int(time.time()))
             }
             pgsql_db.insert(pgsql_cur, d, 'device_face_info')
-        # device_sql = "SELECT id FROM device WHERE device_name='{}'"
-        # device_id = pgsql_db.get(pgsql_cur, device_sql.format(device_name))[0]
-
-        # people_data = []
-        # if fid_list:
-        #     sql = "SELECT id,nickname,emp_no FROM face WHERE id IN (" \
-        #           + ",".join(fid_list) + ")"
-        #     results = pgsql_db.query(pgsql_cur, sql)
-        #     for row in results:
-        #         fid = str(row[0])
-        #         nickname = row[1]
-        #         emp_no = row[2]
-        #         s = emp_no + "|" + nickname + "|1"
-        #         people_data.append(s)
-
-        # not_updated_person_data = []
-        # if server_face_ids:
-        #     qq = [str(row) for row in list(set(server_face_ids) - set(fid_list))]
-        #     if qq:
-        #         sql = "SELECT id,nickname,emp_no FROM face " \
-        #               "WHERE id IN ({})".format(",".join(qq))
-        #         print sql
-        #         results = pgsql_db.query(pgsql_cur, sql)
-        #         for row in results:
-        #             fid = str(row[0])
-        #             nickname = row[1]
-        #             emp_no = row[2]
-        #             s = emp_no + "|" + nickname + "|0"
-        #             not_updated_person_data.append(s)
-        #
-        # get_sql = 'SELECT id FROM device_people_list ' \
-        #           'WHERE device_id={} LIMIT 1'
-        # result = pgsql_db.get(pgsql_cur, get_sql.format(device_id))
-        # print "-=-=-=-=-=========================="
-        # print result
-        # if result:
-        #     pk = result[0]
-        #
-        #     d = {
-        #         'id': int(pk),
-        #         'device_people_list_raw': ",".join(people_raw_list),
-        #         'total_number': len(server_face_ids),
-        #         'already_upgrade_number': len(fid_list),
-        #         'update_time': 'now()',
-        #         'device_people': ",".join(people_data),
-        #         'not_updated': ",".join(not_updated_person_data)
-        #     }
-        #     pgsql_db.update(pgsql_cur, d, table_name='device_people_list')
-        # else:
-        #
-        #     d = {
-        #         'device_id': device_id,
-        #         'device_people_list_raw': ",".join(people_raw_list),
-        #         'total_number': len(server_face_ids),
-        #         'already_upgrade_number': len(fid_list),
-        #         'update_time': 'now()',
-        #         'device_people': ",".join(people_data),
-        #         'not_updated': ",".join(not_updated_person_data)
-        #     }
-        #     pgsql_db.insert(pgsql_cur, d, table_name='device_people_list')
 
     @transaction(is_commit=False)
     def device_people_list_upgrade(self, pgsql_cur, data):
@@ -791,7 +731,7 @@ class ExportExcelBusiness(object):
         alert_info_type = data.get('alert_info_type', None)
         car_id = data.get('car_id', None)
         task_id = data['task_id']
-
+        print data
         sql = """
         SELECT license_plate_number,worker_name_1,worker_name_2,company_name,
         people_number,people_info,alert_start_time,alert_second_time,
@@ -801,8 +741,9 @@ class ExportExcelBusiness(object):
         if status:
             sql += " AND status={}".format(status)
         if alert_info_type:
+            alert_info_type = int(alert_info_type)
             if alert_info_type == 1:
-                sql += " AND first_alert=1"
+                sql += " AND first_alert=1 AND second_alert=0"
             elif alert_info_type == 2:
                 sql += " AND second_alert=1"
         if car_id:

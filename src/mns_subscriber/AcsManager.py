@@ -241,7 +241,6 @@ class AcsManager(object):
         WHERE f.id={} LIMIT 1
         """
         student_result = pgsql_db.get(pgsql_cur, stu_sql.format(fid))
-        print student_result
         if not student_result:
             return
         stu_id = student_result[0]

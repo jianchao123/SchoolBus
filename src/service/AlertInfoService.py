@@ -37,6 +37,8 @@ class AlertInfoService(object):
                 AlertInfo.worker_name_1.like(query_str),
                 AlertInfo.worker_name_2.like(query_str)))
         if start_time and end_time:
+            end_time += timedelta(days=1)
+            print end_time
             query = query.filter(and_(AlertInfo.alert_start_time > start_time,
                                       AlertInfo.alert_start_time < end_time))
         count = query.count()
@@ -98,12 +100,14 @@ class AlertInfoService(object):
         # 检查导出的条数
         query = db.session.query(AlertInfo)
         if status:
-            query = query.filter(AlertInfo.status == status)
+            query = query.filter(AlertInfo.status == int(status))
         if car_id:
-            query = query.filter(AlertInfo.car_id == car_id)
+            query = query.filter(AlertInfo.car_id == int(car_id))
         if alert_info_type:
+            alert_info_type = int(alert_info_type)
             if alert_info_type == 1:
-                query = query.filter(AlertInfo.first_alert == 1)
+                query = query.filter(AlertInfo.first_alert == 1,
+                                     AlertInfo.second_alert == 0)
             elif alert_info_type == 2:
                 query = query.filter(AlertInfo.second_alert == 1)
 
@@ -112,6 +116,9 @@ class AlertInfoService(object):
             query = query.filter(and_(AlertInfo.alert_start_time > start_date,
                                       AlertInfo.alert_start_time < end_date))
         count = query.count()
+        print "======================="
+        print count
+        print start_date, end_date
         if not count:
             return -12
         if count > 15000000:

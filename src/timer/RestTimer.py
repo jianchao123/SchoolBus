@@ -391,6 +391,12 @@ class EveryMinuteExe(object):
             if k not in device_names:
                 rds_conn.hdel(RedisKey.DEVICE_CUR_STATUS, k)
 
+        # GENERATE_DEVICE_NAMES_SET
+        devices = list(rds_conn.smembers(RedisKey.GENERATE_DEVICE_NAMES))
+        for k in devices:
+            if k not in device_names:
+                rds_conn.srem(RedisKey.GENERATE_DEVICE_NAMES, k)
+
         # msgqueue的心跳包
         try:
             from msgqueue import producer
