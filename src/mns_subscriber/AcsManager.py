@@ -361,13 +361,14 @@ class AcsManager(object):
         sql = """
         SELECT f.id, f.feature_crc FROM face AS F
         INNER JOIN student AS stu ON stu.id=F.stu_id 
-        INNER JOIN car AS CR ON CR.id=stu.car_id 
-        WHERE CR.id in (
-          SELECT D.car_id FROM device AS D WHERE D.device_name = '{}'
-        ) AND F.status = 4 AND stu.status = 1
+         WHERE F.status=4 AND stu.status=1 AND stu.car_id={} 
         """
+        device_sql = "SELECT car_id FROM device " \
+                     "WHERE device_name = '{}' LIMIT 1"
+        dev_car_id = pgsql_db.get(device_sql.format(device_name))[0]
+
         device_fid_set = set(fid_dict.keys())
-        results = pgsql_db.query(pgsql_cur, sql.format(device_name))
+        results = pgsql_db.query(pgsql_cur, sql.format(dev_car_id))
         face_ids = [str(row[0]) for row in results]
 
         add_list = list(set(face_ids) - set(device_fid_set))
@@ -493,13 +494,14 @@ class AcsManager(object):
         sql = """
         SELECT f.id, f.feature_crc FROM face AS F
         INNER JOIN student AS stu ON stu.id=F.stu_id 
-        INNER JOIN car AS CR ON CR.id=stu.car_id 
-        WHERE CR.id in (
-          SELECT D.car_id FROM device AS D WHERE D.device_name = '{}'
-        ) AND F.status = 4 AND stu.status = 1
+        WHERE F.status = 4 AND stu.status = 1 AND stu.car_id={} 
         """
+        device_sql = "SELECT car_id FROM device " \
+                     "WHERE device_name = '{}' LIMIT 1"
+        dev_car_id = pgsql_db.get(device_sql.format(device_name))[0]
+
         device_fid_set = set(fid_dict.keys())
-        results = pgsql_db.query(pgsql_cur, sql.format(device_name))
+        results = pgsql_db.query(pgsql_cur, sql.format(dev_car_id))
         face_ids = [str(row[0]) for row in results]
 
         add_list = list(set(face_ids) - set(device_fid_set))

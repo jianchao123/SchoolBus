@@ -30,7 +30,7 @@ class StudentService(object):
 
         offset = (page - 1) * size
         query = db.session.query(Student, Face).join(
-            Face, Face.stu_id == Student.id).join(Car, Car.id == Student.car_id)
+            Face, Face.stu_id == Student.id)
         if face_status:
             query = query.filter(Face.status == face_status)
         if school_id:
@@ -52,7 +52,10 @@ class StudentService(object):
         if car_id:
             query = query.filter(Student.car_id == car_id)
         if license_plate_number:
-            query = query.filter(Car.license_plate_number == license_plate_number)
+            car_results = db.session.query(Car).filter(
+                Car.license_plate_number == license_plate_number).all()
+            car_id_list = [row.id for row in car_results]
+            query = query.filter(Car.id.in_(car_id_list))
 
         count = query.count()
         results = query.order_by(
