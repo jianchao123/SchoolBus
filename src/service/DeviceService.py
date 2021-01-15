@@ -67,8 +67,11 @@ class DeviceService(object):
 
             device_gps = cache.hget(
                 defines.RedisKey.DEVICE_CUR_GPS, row.device_name)
-            device_last_time = datetime.fromtimestamp(
-                float(int(device_timestamp))).strftime('%Y-%m-%d %H:%M:%S')
+            if device_timestamp:
+                device_last_time = datetime.fromtimestamp(
+                    float(int(device_timestamp))).strftime('%Y-%m-%d %H:%M:%S')
+            else:
+                device_last_time = ""
             data.append({
                 'id': row.id,
                 'device_name': row.device_name,

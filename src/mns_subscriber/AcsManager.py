@@ -365,7 +365,7 @@ class AcsManager(object):
         """
         device_sql = "SELECT car_id FROM device " \
                      "WHERE device_name = '{}' LIMIT 1"
-        dev_car_id = pgsql_db.get(device_sql.format(device_name))[0]
+        dev_car_id = pgsql_db.get(pgsql_cur, device_sql.format(device_name))[0]
 
         device_fid_set = set(fid_dict.keys())
         results = pgsql_db.query(pgsql_cur, sql.format(dev_car_id))
@@ -498,7 +498,7 @@ class AcsManager(object):
         """
         device_sql = "SELECT car_id FROM device " \
                      "WHERE device_name = '{}' LIMIT 1"
-        dev_car_id = pgsql_db.get(device_sql.format(device_name))[0]
+        dev_car_id = pgsql_db.get(pgsql_cur, device_sql.format(device_name))[0]
 
         device_fid_set = set(fid_dict.keys())
         results = pgsql_db.query(pgsql_cur, sql.format(dev_car_id))
