@@ -43,7 +43,7 @@ class ReceiveMessage(object):
         jdata = json.loads(base64.b64decode(body["payload"]))
 
         acs_manager.check_cur_stream_no(dev_name, jdata)
-        #print json.dumps(jdata)
+        print json.dumps(jdata)
 
         if 'cmd' in jdata:
             cmd = jdata['cmd']

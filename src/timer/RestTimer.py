@@ -283,7 +283,6 @@ class GenerateFeature(object):
                 used_devices.append(k)
             unused_devices = list(set(online_generate_devices)
                                   - set(used_devices))
-
             if used_devices:
                 for row in used_devices:
                     use_timestamp = rds_conn.hget(RedisKey.DEVICE_USED, row)
@@ -314,7 +313,6 @@ class GenerateFeature(object):
         sql = "SELECT id,oss_url FROM face " \
               "WHERE status = 2 LIMIT {}".format(len(unused_devices))
         results = pgsql_db.query(pgsql_cur, sql)
-
         for row in results:
             face_id = row[0]
             oss_url = row[1]
@@ -443,8 +441,6 @@ class FromOssQueryFace(object):
             server_face_list.append(stu_no)
             stu_no_pk_map[stu_no] = pk
 
-        print "-==-=-=-=--=======================================1"
-        print server_face_list
         if server_face_list:
             rds_conn.sadd(RedisKey.OSS_ID_CARD_SET + "CP", *server_face_list)
             intersection = list(rds_conn.sinter(

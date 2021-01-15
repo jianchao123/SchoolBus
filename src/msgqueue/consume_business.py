@@ -191,12 +191,13 @@ class StudentBusiness(object):
             print d
 
             if student:
-                d['id'] = student[0]
-                if student[1] and student[1] != parents1_mobile:
-                    d['open_id_1'] = 'NULL'
-                if student[2] and student[2] != parents2_mobile:
-                    d['open_id_2'] = 'NULL'
-                pgsql_db.update(pgsql_cur, d, 'student')
+                # d['id'] = student[0]
+                # if student[1] and student[1] != parents1_mobile:
+                #     d['open_id_1'] = 'NULL'
+                # if student[2] and student[2] != parents2_mobile:
+                #     d['open_id_2'] = 'NULL'
+                # pgsql_db.update(pgsql_cur, d, 'student')
+                pass
             else:
                 d['create_time'] = 'now()'
                 d['status'] = 1

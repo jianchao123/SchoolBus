@@ -209,8 +209,7 @@ class StudentService(object):
             student.address = address
         if remarks:
             student.remarks = remarks
-        if school_id:
-            student.school_id = school_id
+
         if grade_id:
             student.grade_id = grade_id
         if class_id:

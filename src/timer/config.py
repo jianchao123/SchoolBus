@@ -15,7 +15,7 @@ if env == "TEST":
     DeviceSecret = 'bmq66tsx0OGju0CGqeYjzCTYlwA454j0'
 
     # OSS
-    OSSDomain = 'https://cdbus-dev.oss-cn-shanghai.aliyuncs.com'
+    OSSDomain = 'http://cdbus-dev.oss-cn-shanghai.aliyuncs.com'
     OSSAccessKeyId = 'LTAIWE5CGeOiozf7'
     OSSAccessKeySecret = 'IGuoRIxwMlPQqJ9ujWyTvSq2em4RDj'
     OSSEndpoint = ''
@@ -61,7 +61,7 @@ elif env == "PRO":
     DeviceSecret = 'e2245121d52abc850b2fc220f937f512'
 
     # OSS
-    OSSDomain = 'https://cdbus-pro.oss-cn-shanghai.aliyuncs.com'
+    OSSDomain = 'http://cdbus-pro.oss-cn-shanghai.aliyuncs.com'
     OSSAccessKeyId = 'LTAIWE5CGeOiozf7'
     OSSAccessKeySecret = 'IGuoRIxwMlPQqJ9ujWyTvSq2em4RDj'
     OSSEndpoint = 'http://oss-cn-shanghai.aliyuncs.com'
@@ -105,16 +105,22 @@ elif env == "PRO":
     #     "http://cdmp.wgxing.com/static/alert.html?periods={}"
 
 else:
-    # 物联网
-    Productkey = 'a1vperyb2Cg'
-    ProductHost = 'a1vperyb2Cg.iot-as-mqtt.cn-shanghai.aliyuncs.com'
-    ProductSecret = 'jqSbrJZ11baH1aAH'
-    DeviceSecret = 'bmq66tsx0OGju0CGqeYjzCTYlwA454j0'
+    # # 物联网
+    # Productkey = 'a1vperyb2Cg'
+    # ProductHost = 'a1vperyb2Cg.iot-as-mqtt.cn-shanghai.aliyuncs.com'
+    # ProductSecret = 'jqSbrJZ11baH1aAH'
+    # DeviceSecret = 'bmq66tsx0OGju0CGqeYjzCTYlwA454j0'
+
+    # 正式环境的
+    Productkey = 'a1nppCCo0Y2'
+    ProductHost = 'a1nppCCo0Y2.iot-as-mqtt.cn-shanghai.aliyuncs.com'
+    ProductSecret = 'VYMQSqHamIQgREVi'
+    DeviceSecret = 'e2245121d52abc850b2fc220f937f512'
 
     # OSS
-    OSSDomain = 'https://cdbus-dev.oss-cn-shanghai.aliyuncs.com'
+    OSSDomain = 'http://cdbus-pro.oss-cn-shanghai.aliyuncs.com'
     OSSEndpoint = 'http://oss-cn-shanghai.aliyuncs.com'
-    OSSBucketName = 'cdbus-dev'
+    OSSBucketName = 'cdbus-pro'
     OSSAccessKeyId = 'LTAIWE5CGeOiozf7'
     OSSAccessKeySecret = 'IGuoRIxwMlPQqJ9ujWyTvSq2em4RDj'
 
@@ -127,7 +133,7 @@ else:
     log_path = project_dir + "/logs/timer"
 
     # PGSQL
-    pgsql_host = '127.0.0.1'
+    pgsql_host = 'cdmp.wgxing.com'
     pgsql_db = "postgres"
     pgsql_port = 5432
     pgsql_user = "postgres"

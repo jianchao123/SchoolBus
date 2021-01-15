@@ -29,7 +29,7 @@ if __name__ == "__main__":
 
     sched = BlockingScheduler()
     # 顺序发送消息
-    sched.add_job(order_send_msg.order_sent_msg, 'interval', seconds=0.5)
+    sched.add_job(order_send_msg.order_sent_msg, 'interval', seconds=1)
     # 生成特征码
     sched.add_job(generate_feature.generate_feature, 'interval', seconds=1)
     # 生成aac文件
