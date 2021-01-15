@@ -174,10 +174,10 @@ class WorkerService(object):
 
         try:
             workers = db.session.query(Worker).filter(
-                Worker.id.in_(worker_id_list))
+                Worker.id.in_(worker_id_list)).all()
 
-            workers.update(
-                {Worker.status: 10}, synchronize_session=False)
+            for row in workers:
+                row.status = 10
 
             db.session.commit()
             return {'id': 1}

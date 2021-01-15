@@ -237,9 +237,10 @@ class CarService(object):
             return -12
 
         try:
-            db.session.query(Car).filter(
-                Car.id.in_(car_id_list)).update(
-                {Car.status: 10}, synchronize_session=False)
+            results = db.session.query(Car).filter(
+                Car.id.in_(car_id_list)).all()
+            for row in results:
+                row.status = 10
             db.session.commit()
             return {'id': 1}
         except SQLAlchemyError:

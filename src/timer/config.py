@@ -61,7 +61,7 @@ elif env == "PRO":
     DeviceSecret = 'e2245121d52abc850b2fc220f937f512'
 
     # OSS
-    OSSDomain = 'cdbus-pro.oss-cn-shanghai.aliyuncs.com'
+    OSSDomain = 'https://cdbus-pro.oss-cn-shanghai.aliyuncs.com'
     OSSAccessKeyId = 'LTAIWE5CGeOiozf7'
     OSSAccessKeySecret = 'IGuoRIxwMlPQqJ9ujWyTvSq2em4RDj'
     OSSEndpoint = 'http://oss-cn-shanghai.aliyuncs.com'

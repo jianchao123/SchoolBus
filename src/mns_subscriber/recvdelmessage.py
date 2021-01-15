@@ -154,6 +154,8 @@ class ReceiveMessage(object):
             except MNSClientNetworkException:
                 print u"network exception"
             except Exception as e:
+                import traceback
+                print traceback.format_exc()
                 if hasattr(e, 'type') and e.type == u"QueueNotExist":
                     print("Queue not exist!")
                     sys.exit(0)
