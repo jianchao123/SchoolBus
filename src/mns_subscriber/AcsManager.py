@@ -367,39 +367,40 @@ class AcsManager(object):
                      "WHERE device_name = '{}' LIMIT 1"
         dev_car_id = pgsql_db.get(pgsql_cur, device_sql.format(device_name))[0]
 
-        device_fid_set = set(fid_dict.keys())
-        results = pgsql_db.query(pgsql_cur, sql.format(dev_car_id))
-        face_ids = [str(row[0]) for row in results]
+        if dev_car_id:
+            device_fid_set = set(fid_dict.keys())
+            results = pgsql_db.query(pgsql_cur, sql.format(dev_car_id))
+            face_ids = [str(row[0]) for row in results]
 
-        add_list = list(set(face_ids) - set(device_fid_set))
+            add_list = list(set(face_ids) - set(device_fid_set))
 
-        del_list = list(set(device_fid_set) - set(face_ids))
+            del_list = list(set(device_fid_set) - set(face_ids))
 
-        intersection_list = list(set(face_ids) & set(device_fid_set))
+            intersection_list = list(set(face_ids) & set(device_fid_set))
 
-        print fid_dict
-        print "=================List=============="
-        print add_list
-        print del_list
-        # 需要更新的feature
-        update_list = []
-        for row in results:
-            pk = row[0]
-            feature_crc = row[1]
-            if str(pk) in fid_dict and str(pk) in intersection_list:
-                if feature_crc != fid_dict[str(pk)]:
-                    update_list.append(str(pk))
+            print fid_dict
+            print "=================List=============="
+            print add_list
+            print del_list
+            # 需要更新的feature
+            update_list = []
+            for row in results:
+                pk = row[0]
+                feature_crc = row[1]
+                if str(pk) in fid_dict and str(pk) in intersection_list:
+                    if feature_crc != fid_dict[str(pk)]:
+                        update_list.append(str(pk))
 
-        print update_list
-        if rds_conn.get(RedisKey.QUERY_DEVICE_PEOPLE):
-            # 保存设备上的人员到数据库
-            rds_conn.delete(RedisKey.QUERY_DEVICE_PEOPLE)
-            producer.device_people_list_save(
-                ",".join(people_list), face_ids, device_name)
-        else:
-            # 更新设备上的人员
-            producer.device_people_update_msg(
-                add_list, del_list, update_list, device_name)
+            print update_list
+            if rds_conn.get(RedisKey.QUERY_DEVICE_PEOPLE):
+                # 保存设备上的人员到数据库
+                rds_conn.delete(RedisKey.QUERY_DEVICE_PEOPLE)
+                producer.device_people_list_save(
+                    ",".join(people_list), face_ids, device_name)
+            else:
+                # 更新设备上的人员
+                producer.device_people_update_msg(
+                    add_list, del_list, update_list, device_name)
 
     @db.transaction(is_commit=True)
     def create_device(self, pgsql_cur, mac):
@@ -499,16 +500,16 @@ class AcsManager(object):
         device_sql = "SELECT car_id FROM device " \
                      "WHERE device_name = '{}' LIMIT 1"
         dev_car_id = pgsql_db.get(pgsql_cur, device_sql.format(device_name))[0]
+        if dev_car_id:
+            device_fid_set = set(fid_dict.keys())
+            results = pgsql_db.query(pgsql_cur, sql.format(dev_car_id))
+            face_ids = [str(row[0]) for row in results]
 
-        device_fid_set = set(fid_dict.keys())
-        results = pgsql_db.query(pgsql_cur, sql.format(dev_car_id))
-        face_ids = [str(row[0]) for row in results]
+            add_list = list(set(face_ids) - set(device_fid_set))
 
-        add_list = list(set(face_ids) - set(device_fid_set))
-
-        # 放到消息队列
-        producer.device_people_update_msg(
-            add_list, [], [], device_name)
+            # 放到消息队列
+            producer.device_people_update_msg(
+                add_list, [], [], device_name)
 
     def check_version(self, device_name, cur_version, dev_time):
         """检查版本号"""
