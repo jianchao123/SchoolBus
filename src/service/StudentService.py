@@ -55,7 +55,8 @@ class StudentService(object):
             car_results = db.session.query(Car).filter(
                 Car.license_plate_number == license_plate_number).all()
             car_id_list = [row.id for row in car_results]
-            query = query.filter(Car.id.in_(car_id_list))
+            query = query.filter(Student.car_id.in_(car_id_list))
+            print car_id_list
 
         count = query.count()
         results = query.order_by(

@@ -82,8 +82,9 @@ class UserProfileService(object):
             user.passwd = tools.md5_encrypt(passwd_raw)
             db.session.add(user)
             db.session.commit()
+            return {'id': 0}
         except:
             db.session.rollback()
+            return -2
         finally:
             db.session.close()
-        return True

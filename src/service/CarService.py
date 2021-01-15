@@ -222,6 +222,8 @@ class CarService(object):
         db.session.commit()
 
         car_id_list = car_ids.split(",")
+        db.session.execute(
+            "SET LOCAL citus.multi_shard_modify_mode TO 'sequential';")
         # 1.查询车辆是否已经被绑定学生或设备或工作人员
         cnt = db.session.query(Student).filter(
             Student.car_id.in_(car_id_list)).count()
@@ -236,11 +238,11 @@ class CarService(object):
         if cnt:
             return -12
 
+        results = db.session.query(Car).filter(
+            Car.id.in_(car_id_list)).all()
+        for row in results:
+            row.status = 10
         try:
-            results = db.session.query(Car).filter(
-                Car.id.in_(car_id_list)).all()
-            for row in results:
-                row.status = 10
             db.session.commit()
             return {'id': 1}
         except SQLAlchemyError:

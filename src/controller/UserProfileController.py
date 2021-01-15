@@ -5,7 +5,7 @@ from core.framework import post_require_check, \
     post_require_check_with_permissions
 from core.AppError import AppError
 from utils.tools import gen_token, md5_encrypt
-from utils.defines import SubErrorCode
+from utils.defines import SubErrorCode,GlobalErrorCode
 from ext import conf
 
 from service.UserProfileService import UserProfileService
@@ -137,7 +137,10 @@ def change_password(user_id, args):
             data:
               type: object
     """
-    password = args['password']
+    password = str(args['password'])
     if 16 < len(password) < 8:
         raise AppError(*SubErrorCode.USER_PWD_LEN_ERR)
-    return UserProfileService.modify_pwd(user_id, password)
+    ret = UserProfileService.modify_pwd(user_id, password)
+    if ret == -2:
+        raise AppError(*GlobalErrorCode.DB_COMMIT_ERR)
+    return ret
