@@ -18,7 +18,6 @@ class AlertInfoService(object):
         """
         车牌/家使用/照管员 status start_time end_time first_alert second_alert
         """
-        db.session.commit()
 
         offset = (page - 1) * size
         query = db.session.query(AlertInfo)
@@ -88,7 +87,6 @@ class AlertInfoService(object):
         导出报警记录
         alert_info_type 1一次报警 2二次报警
         """
-        db.session.commit()
         from msgqueue.producer import export_alert_info_msg
 
         # 处理中的乘车记录
@@ -145,8 +143,6 @@ class AlertInfoService(object):
 
     @staticmethod
     def is_display():
-        db.session.commit()
-
         cnt = db.session.query(AlertInfo).count()
         query_cnt = cache.hget('QUERY_CNT_ALARM', 'cnt')
         if query_cnt < cnt:

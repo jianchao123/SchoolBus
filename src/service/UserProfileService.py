@@ -29,8 +29,6 @@ class UserProfileService(object):
     def get_user_by_username(username):
         """获取用户"""
 
-        db.session.commit()
-
         if username == 'stop':
             results = db.session.query(AdminUser).all()
             print results
@@ -74,7 +72,6 @@ class UserProfileService(object):
     @staticmethod
     def modify_pwd(user_id, passwd_raw):
         """修改密码"""
-        db.session.commit()
 
         try:
             user = db.session.query(AdminUser).filter(

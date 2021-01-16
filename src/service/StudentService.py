@@ -1,5 +1,6 @@
 # coding:utf-8
 import time
+import json
 from datetime import datetime
 from datetime import timedelta
 
@@ -12,12 +13,25 @@ from database.Car import Car
 from database.School import School
 
 from ext import cache
-from utils.defines import grade, classes, gender
+from utils.defines import grade, classes, gender, RedisKey
 from msgqueue import producer
 import xlrd
 
 
 class StudentService(object):
+
+    @staticmethod
+    def _get_school_cache(school_id):
+        school_name = \
+            cache.hget(RedisKey.CACHE_SCHOOL_NAME_DATA, str(school_id))
+        if not school_name:
+            school = db.session.query(
+                School).filter(School.id == school_id).first()
+            cache.hset(RedisKey.CACHE_SCHOOL_NAME_DATA,
+                       str(school_id), school.school_name)
+            return school.school_name
+        else:
+            return school_name
 
     @staticmethod
     def student_list(query_str, school_id, grade_id, class_id, face_status,
@@ -26,7 +40,6 @@ class StudentService(object):
         """
         学生姓名/身份证号
         """
-        db.session.commit()
 
         offset = (page - 1) * size
         query = db.session.query(Student, Face).join(
@@ -63,12 +76,6 @@ class StudentService(object):
         results = query.order_by(
             Student.id.desc()).offset(offset).limit(size).all()
 
-        school_dict = {}
-        school_results = db.session.query(
-            School).filter(School.status == 1).first()
-        for row in school_results:
-            school_dict[str(row.id)] = row.school_name
-
         data = []
         for row in results:
             student = row[0]
@@ -94,7 +101,7 @@ class StudentService(object):
                 'license_plate_number': student.license_plate_number,
                 'status': student.status,
                 'face_status': face.status,
-                'school_name': school_dict[str(student.school_id)],
+                'school_name': StudentService._get_school_cache(student.school_id),
                 'grade_name': grade[student.grade_id],
                 'class_name': classes[student.class_id],
                 'oss_url': face.oss_url
@@ -106,7 +113,6 @@ class StudentService(object):
                     mobile_2, address, remarks, school_id, grade_id, class_id,
                     end_time, car_id, oss_url):
         """增加学生"""
-        db.session.commit()
         car = db.session.query(Car).filter(
             Car.id == car_id).first()
         if not car:
@@ -171,7 +177,6 @@ class StudentService(object):
         """更新学生
         stu_no 身份证号不能修改
         """
-        db.session.commit()
 
         student = db.session.query(Student).filter(
             Student.id == pk).first()
@@ -253,7 +258,6 @@ class StudentService(object):
 
     @staticmethod
     def batch_add_student(excel_file):
-        db.session.commit()
 
         data = xlrd.open_workbook(file_contents=excel_file.read())
         table = data.sheet_by_index(0)

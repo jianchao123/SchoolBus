@@ -25,8 +25,6 @@ class DeviceService(object):
         """
         设备id  车牌号 设备状态
         """
-        db.session.commit()
-
         offset = (page - 1) * size
         query = db.session.query(Device)
         if device_iid:
@@ -159,7 +157,6 @@ class DeviceService(object):
     @staticmethod
     def get_device_person_data(pk):
         """获取设备上的人员信息"""
-        db.session.commit()
         try:
             device = db.session.query(Device).filter(
                 Device.id == pk).one()
