@@ -18,7 +18,6 @@ class CarService(object):
 
     @staticmethod
     def car_list(query_str, is_online, status, page, size):
-        #db.session.commit()
         cur_timestamp = int(time.time())
         offset = (page - 1) * size
         query = db.session.query(Car)
@@ -219,7 +218,6 @@ class CarService(object):
         """
         car_ids 1,2,3
         """
-        db.session.commit()
 
         car_id_list = car_ids.split(",")
         db.session.execute(
@@ -258,7 +256,6 @@ class CarService(object):
         """
         车牌 载客量 公司
         """
-        db.session.commit()
 
         data = xlrd.open_workbook(file_contents=excel_file.read())
         table = data.sheet_by_index(0)

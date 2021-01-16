@@ -59,7 +59,7 @@ class StudentService(object):
             query = query.filter(Student.car_id.in_(car_id_list))
             print car_id_list
 
-        count = query.count()
+        count = query.with_entities(func.count(Student.id)).scalar()
         results = query.order_by(
             Student.id.desc()).offset(offset).limit(size).all()
 

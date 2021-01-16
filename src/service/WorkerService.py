@@ -14,7 +14,6 @@ class WorkerService(object):
 
     @staticmethod
     def worker_list(query_str, page, size):
-        db.session.commit()
 
         offset = (page - 1) * size
         query = db.session.query(Worker)
@@ -162,7 +161,6 @@ class WorkerService(object):
         """
         worker_ids 1,2,3
         """
-        db.session.commit()
 
         worker_id_list = worker_ids.split(",")
         # 1.如果工作人员已经绑定了车辆不能删除该工作人员
@@ -191,7 +189,6 @@ class WorkerService(object):
     def batch_add_worker(excel_file):
         """工号 姓名 性别 手机号 备注 公司 部门职务 车牌
         """
-        db.session.commit()
 
         data = xlrd.open_workbook(file_contents=excel_file.read())
         table = data.sheet_by_index(0)
