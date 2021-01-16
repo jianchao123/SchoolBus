@@ -26,6 +26,7 @@ class WxMPService(object):
         u'refresh_token': u'40_KJC73GIkm7xsDAYeKteMt-gzhL1Vk3tuCPdSnZS2uKOvhUnqimjb6eUkoAx0Bz1z7z4Va5wfrEE00wOMOhGTpwdLwYL76wbE4MPsrFuwp2A',
         u'scope': u'snsapi_base'}
         """
+        db.session.commit()
         url = "https://api.weixin.qq.com/sns/oauth2/access_token?" \
               "appid={}&secret={}&code={}&grant_type=authorization_code"
         res = requests.get(url.format(conf.config['MP_APP_ID'],
@@ -45,6 +46,7 @@ class WxMPService(object):
 
     @staticmethod
     def get_role(open_id):
+        db.session.commit()
         student = db.session.query(Student).filter(
             or_(Student.open_id_1 == open_id,
                 Student.open_id_2 == open_id)).first()
@@ -70,6 +72,7 @@ class WxMPService(object):
 
     @staticmethod
     def save_mobile(mobile, open_id):
+        db.session.commit()
         students = db.session.query(Student).filter(
             or_(Student.mobile_1 == mobile, Student.mobile_2 == mobile)).all()
         workers = db.session.query(Worker).filter(Worker.mobile == mobile).all()
@@ -99,7 +102,7 @@ class WxMPService(object):
 
     @staticmethod
     def get_order_by_id(order_id):
-
+        db.session.commit()
         order = db.session.query(Order).filter(
             Order.id == order_id).first()
         take_bus_time = order.create_time.strftime('%Y-%m-%d %H:%M:%S')
@@ -114,7 +117,7 @@ class WxMPService(object):
 
     @staticmethod
     def alert_info_by_id(periods):
-
+        db.session.commit()
         alert_info = db.session.query(AlertInfo).filter(
             AlertInfo.periods == periods).first()
         d = {}
@@ -134,6 +137,7 @@ class WxMPService(object):
 
     @staticmethod
     def cancel_alert(open_id, periods, cancel_type_id, cancel_reason):
+        db.session.commit()
         # 查询工作人员手机号
         worker = db.session.query(Worker).filter(
             Worker.open_id == open_id).first()
@@ -168,6 +172,7 @@ class WxMPService(object):
     @staticmethod
     def cancel_binding(open_id):
         """解除绑定"""
+        db.session.commit()
         student = db.session.query(Student).filter(
             or_(Student.open_id_1 == open_id,
                 Student.open_id_2 == open_id)).first()
@@ -192,7 +197,7 @@ class WxMPService(object):
         """
         校车在那儿
         """
-
+        db.session.commit()
         # 判断身份
         print open_id
         is_parents = db.session.query(Student).filter(
