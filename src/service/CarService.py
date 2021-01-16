@@ -219,11 +219,11 @@ class CarService(object):
         """
         car_ids 1,2,3
         """
-        db.session.commit()
+#        db.session.commit()
 
         car_id_list = car_ids.split(",")
-        db.session.execute(
-            "SET LOCAL citus.multi_shard_modify_mode TO 'sequential';")
+        # db.session.execute(
+        #     "SET LOCAL citus.multi_shard_modify_mode TO 'sequential';")
         # 1.查询车辆是否已经被绑定学生或设备或工作人员
         cnt = db.session.query(Student).filter(
             Student.car_id.in_(car_id_list)).count()
