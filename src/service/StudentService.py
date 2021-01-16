@@ -52,6 +52,7 @@ class StudentService(object):
         if car_id:
             query = query.filter(Student.car_id == car_id)
         if license_plate_number:
+            # TODO 前端修改为car_id
             car_results = db.session.query(Car).filter(
                 Car.license_plate_number == license_plate_number).all()
             car_id_list = [row.id for row in car_results]
@@ -62,13 +63,16 @@ class StudentService(object):
         results = query.order_by(
             Student.id.desc()).offset(offset).limit(size).all()
 
+        school_dict = {}
+        school_results = db.session.query(
+            School).filter(School.status == 1).first()
+        for row in school_results:
+            school_dict[str(row.id)] = row.school_name
+
         data = []
         for row in results:
             student = row[0]
             face = row[1]
-
-            school = db.session.query(School).filter(
-                School.id == student.school_id).first()
 
             data.append({
                 'id': student.id,
@@ -90,7 +94,7 @@ class StudentService(object):
                 'license_plate_number': student.license_plate_number,
                 'status': student.status,
                 'face_status': face.status,
-                'school_name': school.school_name,
+                'school_name': school_dict[str(student.school_id)],
                 'grade_name': grade[student.grade_id],
                 'class_name': classes[student.class_id],
                 'oss_url': face.oss_url

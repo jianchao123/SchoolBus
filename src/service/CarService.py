@@ -18,7 +18,7 @@ class CarService(object):
 
     @staticmethod
     def car_list(query_str, is_online, status, page, size):
-        db.session.commit()
+        #db.session.commit()
         cur_timestamp = int(time.time())
         offset = (page - 1) * size
         query = db.session.query(Car)

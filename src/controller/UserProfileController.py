@@ -77,7 +77,8 @@ def user_login(args):
     """
     username = args['username']
     password = args['password']
-
+    import time
+    start = time.time()
     if username == '' or password == '':
         raise AppError(*SubErrorCode.USER_PWD_ERR)
 
@@ -91,7 +92,8 @@ def user_login(args):
 
     token = gen_token(password, conf.config["SALT"], 3600)
     UserProfileService.login(user_obj["id"], token)
-
+    end = time.time()
+    print end - start
     return {
         'token': token,
         'user': {
