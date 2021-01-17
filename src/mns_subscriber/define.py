@@ -59,6 +59,9 @@ class RedisKey(object):
     # 工作人员数据
     CACHE_STAFF_DATA = "CACHE_STAFF_DATA_HASH"
 
+    # 学校名字
+    CACHE_SCHOOL_NAME_DATA = "CACHE_SCHOOL_NAME_DATA_HASH"
+
 
 grade = [u"TBD", u'小班', u'中班', u'大班', u'学前班', u'一年级', u'二年级', u'三年级',
          u'四年级', u'五年级', u'六年级']

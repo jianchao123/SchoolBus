@@ -195,6 +195,20 @@ class AcsManager(object):
         return d['driver_name'], d['zgy_name'], \
                d['driver_mobile'], d['zgy_mobile']
 
+    @staticmethod
+    def _get_school_cache(pgsql_db, pgsql_cur, redis_db, school_id):
+        school_name = \
+            redis_db.hget(RedisKey.CACHE_SCHOOL_NAME_DATA, str(school_id))
+        if not school_name:
+            sql = "SELECT school_name FROM school " \
+                  "WHERE id={} LIMIT 1".format(school_id)
+            school_name = pgsql_db.get(pgsql_cur, sql)[0]
+            redis_db.hset(RedisKey.CACHE_SCHOOL_NAME_DATA,
+                          str(school_id), school_name)
+            return school_name
+        else:
+            return school_name
+
     @db.transaction(is_commit=True)
     def add_order(self, pgsql_cur, fid, gps_str, add_time, dev_name, cnt):
         """
@@ -234,10 +248,9 @@ class AcsManager(object):
                 pgsql_db, pgsql_cur, redis_db, cur_car_id)
 
         stu_sql = """
-        SELECT stu.id, stu.stu_no, stu.nickname,shl.id,shl.school_name,
-        stu.open_id_1,stu.open_id_2,stu.grade_id,stu.class_id FROM student stu 
+        SELECT stu.id, stu.stu_no, stu.nickname,stu.open_id_1,stu.open_id_2,
+        stu.grade_id,stu.class_id,stu.school_id FROM student stu 
         INNER JOIN face f ON f.stu_id=stu.id 
-        INNER JOIN school shl ON shl.id=stu.school_id 
         WHERE f.id={} LIMIT 1
         """
         student_result = pgsql_db.get(pgsql_cur, stu_sql.format(fid))
@@ -246,20 +259,23 @@ class AcsManager(object):
         stu_id = student_result[0]
         stu_no = student_result[1]
         stu_nickname = student_result[2]
-        school_id = student_result[3]
-        school_name = student_result[4]
-        open_id_1 = student_result[5]
-        open_id_2 = student_result[6]
-        grade_id = student_result[7]
-        class_id = student_result[8]
+        # school_id = student_result[3]
+        # school_name = student_result[4]
+        open_id_1 = student_result[3]
+        open_id_2 = student_result[4]
+        grade_id = student_result[5]
+        class_id = student_result[6]
+        school_id = student_result[7]
+        school_name = AcsManager._get_school_cache(
+            pgsql_db, pgsql_cur, redis_db, school_id)
 
         # gps
         arr = gps_str.split(',')
         if arr[0] and arr[1]:
             longitude = AcsManager._jwd_swap(float(arr[0]))
             latitude = AcsManager._jwd_swap(float(arr[1]))
-            longitude, latitude = utils.gcj_02_to_gorde_gpd(
-                str(longitude), str(latitude))
+            longitude, latitude = utils.wgs84togcj02(
+                float(longitude), float(latitude))
             gps_str = '{},{}'.format(longitude, latitude)
         else:
             gps_str = '116.290435,40.032377'

@@ -5,6 +5,7 @@ from database.db import db
 from database.School import School
 from msgqueue import producer
 from ext import cache
+from utils.defines import RedisKey
 
 
 class SchoolService(object):
@@ -64,7 +65,7 @@ class SchoolService(object):
             School.id == pk).first()
         if not school:
             return -1
-
+        cache.hdel(RedisKey.CACHE_SCHOOL_NAME_DATA, str(school.id))
         if school_name:
             cnt = db.session.query(School).filter(
                 School.id != pk, School.school_name == school_name).count()
