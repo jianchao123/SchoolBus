@@ -73,7 +73,10 @@ class WxMPService(object):
     @staticmethod
     def save_mobile(mobile, open_id):
 
-        db.session.commit()
+        from flask_sqlalchemy import SQLAlchemy
+
+        # 获取db
+        db = SQLAlchemy()
 
         students = db.session.query(Student).filter(
             or_(Student.mobile_1 == mobile, Student.mobile_2 == mobile)).all()
@@ -92,9 +95,9 @@ class WxMPService(object):
         for row in workers:
             row.open_id = open_id
         try:
-            db.session.execute("BEGIN;")
-            db.session.execute(
-                "SET LOCAL citus.multi_shard_modify_mode TO 'sequential';")
+            # db.session.execute("BEGIN;")
+            # db.session.execute(
+            #     "SET LOCAL citus.multi_shard_modify_mode TO 'sequential';")
             db.session.commit()
             return {'open_id': open_id}
         except SQLAlchemyError:
