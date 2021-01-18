@@ -77,7 +77,7 @@ class WxMPService(object):
 
         # 获取db
         db = SQLAlchemy()
-
+        db.session.execute("SET LOCAL citus.multi_shard_modify_mode TO 'sequential';")
         students = db.session.query(Student).filter(
             or_(Student.mobile_1 == mobile, Student.mobile_2 == mobile)).all()
         workers = db.session.query(Worker).filter(Worker.mobile == mobile).all()
@@ -96,8 +96,7 @@ class WxMPService(object):
             row.open_id = open_id
         try:
             # db.session.execute("BEGIN;")
-            # db.session.execute(
-            #     "SET LOCAL citus.multi_shard_modify_mode TO 'sequential';")
+
             db.session.commit()
             return {'open_id': open_id}
         except SQLAlchemyError:
