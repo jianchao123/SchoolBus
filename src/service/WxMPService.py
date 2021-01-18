@@ -72,9 +72,8 @@ class WxMPService(object):
 
     @staticmethod
     def save_mobile(mobile, open_id):
-        db.session.execute("SET LOCAL citus.multi_shard_modify_mode "
-                           "TO 'sequential';")
-        db.session.commit()
+
+        #db.session.commit()
         students = db.session.query(Student).filter(
             or_(Student.mobile_1 == mobile, Student.mobile_2 == mobile)).all()
         workers = db.session.query(Worker).filter(Worker.mobile == mobile).all()
@@ -91,7 +90,7 @@ class WxMPService(object):
         # 保存到工作人员
         for row in workers:
             row.open_id = open_id
-
+        db.session.execute("SET LOCAL citus.multi_shard_modify_mode TO 'sequential';")
         try:
             db.session.commit()
             return {'open_id': open_id}
