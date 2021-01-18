@@ -74,7 +74,6 @@ class WxMPService(object):
     def save_mobile(mobile, open_id):
 
         db.session.commit()
-        db.session.execute("SET LOCAL citus.multi_shard_modify_mode TO 'parallel';")
 
         students = db.session.query(Student).filter(
             or_(Student.mobile_1 == mobile, Student.mobile_2 == mobile)).all()
@@ -93,6 +92,9 @@ class WxMPService(object):
         for row in workers:
             row.open_id = open_id
         try:
+            db.session.execute("BEGIN;")
+            db.session.execute(
+                "SET LOCAL citus.multi_shard_modify_mode TO 'sequential';")
             db.session.commit()
             return {'open_id': open_id}
         except SQLAlchemyError:
