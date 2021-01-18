@@ -179,7 +179,12 @@ class WxMPService(object):
     @staticmethod
     def cancel_binding(open_id):
         """解除绑定"""
-        db.session.commit()
+        from flask_sqlalchemy import SQLAlchemy
+
+        # 获取db
+        db = SQLAlchemy()
+        db.session.execute(
+            "SET LOCAL citus.multi_shard_modify_mode TO 'sequential';")
         student = db.session.query(Student).filter(
             or_(Student.open_id_1 == open_id,
                 Student.open_id_2 == open_id)).first()
