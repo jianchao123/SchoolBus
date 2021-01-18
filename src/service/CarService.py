@@ -222,6 +222,7 @@ class CarService(object):
         car_ids 1,2,3
         """
         db.session.commit()
+        db.session.execute("SET LOCAL citus.multi_shard_modify_mode TO '2pc';")
         car_id_list = car_ids.split(",")
         # db.session.execute(
         #     "set citus.multi_shard_commit_protocol TO '2pc';")
