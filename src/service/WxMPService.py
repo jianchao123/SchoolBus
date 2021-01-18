@@ -79,6 +79,9 @@ class WxMPService(object):
         if not students and not workers:
             return -10
         print students, workers
+        if workers:
+            db.session.execute("SET LOCAL citus.multi_shard_modify_mode "
+                               "TO 'sequential';")
         # 保存到学生的家长字段
         for row in students:
             if row.mobile_1 == mobile:
