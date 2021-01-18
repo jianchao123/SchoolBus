@@ -199,6 +199,8 @@ class WxMPService(object):
             db.session.commit()
             return {'id': 0}
         except SQLAlchemyError:
+            import traceback
+            print traceback.format_exc()
             db.session.rollback()
             return -2
         finally:
