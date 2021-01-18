@@ -3,4 +3,4 @@ swagger_yaml
 logs
 tests
 *.pyc
-src/**/temp/
+# src/**/temp/

@@ -130,4 +130,5 @@ class PgsqlDbUtil(object):
 
 
 from weixin import WeixinMP
-wx_mp = WeixinMP(conf.MP_APP_ID, conf.MP_APP_SECRET)
+wx_mp = WeixinMP(conf.MP_APP_ID, conf.MP_APP_SECRET,
+                 ac_path=conf.project_dir + "/acpath")
