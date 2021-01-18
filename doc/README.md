@@ -44,9 +44,16 @@ python recvdelmessage.py
 ## psycopg2报错
 ```python
 # sudo apt-get install python-psycopg2
+# sudo apt-get install libpq-dev
+
 ```
 
 ## M2Crypto报错
 ```python
 # sudo apt-get install swig libssl-dev
+```
+
+## -- unavailable modifier requested: 0 --
+```python
+# apt-get install uwsgi-plugin-python
 ```
