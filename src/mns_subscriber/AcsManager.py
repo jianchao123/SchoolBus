@@ -480,7 +480,7 @@ class AcsManager(object):
                     "time": int(time.time()),
                     'dev_mac': mac
                 }
-                self._send_device_msg('newdev', msg)
+                print self._send_device_msg('newdev', msg)
                 rds_conn.hset(RedisKey.DEVICE_CUR_STATUS, dev_name, 1)
             finally:
                 rds_conn.delete('create_device')

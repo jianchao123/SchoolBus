@@ -1,6 +1,6 @@
 # coding=utf-8
 
-env = "DEV"
+env = "PRO"
 if env == "TEST":
     # 物联网
     Productkey = 'a1vperyb2Cg'
