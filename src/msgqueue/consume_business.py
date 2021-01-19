@@ -902,7 +902,7 @@ class MpMsgBusiness(object):
             },
             "remark": {
                 "value": "请检查车厢,确认无遗漏学生方可点击详情,解除警报！",
-                "color": "#173177"
+                "color": "#FF0000"
             }
         }
         wx_mp.template_send(
