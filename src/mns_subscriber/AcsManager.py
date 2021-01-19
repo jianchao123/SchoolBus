@@ -230,15 +230,17 @@ class AcsManager(object):
             # 集合为空,删除acc
             if not redis_db.scard(k):
                 redis_db.delete(RedisKey.ACC_CLOSE)
+        if cur_hour <= 12:
+            if odd_even:            # 上学上车
+                order_type = 1
+            elif not odd_even:      # 上学下车
+                order_type = 2
 
-        if cur_hour < 12 and odd_even:          # 上学上车
-            order_type = 1
-        elif cur_hour < 12 and not odd_even:    # 上学下车
-            order_type = 2
-        elif cur_hour > 12 and odd_even:        # 放学上车
-            order_type = 3
-        else:                                   # 放学下车
-            order_type = 4
+        if cur_hour > 12:
+            if odd_even:            # 放学上车
+                order_type = 3
+            elif not odd_even:      # 放学下车
+                order_type = 4
 
         cur_device_id, cur_car_id, license_plate_number\
             = AcsManager.get_car_data(pgsql_db, pgsql_cur, redis_db, dev_name)
