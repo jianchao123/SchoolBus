@@ -238,6 +238,8 @@ class StudentBusiness(object):
             worker = pgsql_db.get(pgsql_cur, worker_sql.format(emp_no))
             if emp_no.isdigit():
                 emp_no = str(int(float(emp_no)))
+            if type(emp_no) == float:
+                emp_no = str(int(emp_no))
             mobile = str(int(float(mobile)))
             d = {
                 'emp_no': emp_no,
