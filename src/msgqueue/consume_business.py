@@ -715,7 +715,7 @@ class ExportExcelBusiness(object):
         utils.upload_zip(oss_key, local_path)
         
         d = {'id': task_id, 'status': 2,
-             'zip_url': config.OSSDomain + "/" + oss_key}
+             'zip_url': 'http://' + config.OSSDomain + "/" + oss_key}
         pgsql_db.update(pgsql_cur, d, table_name='export_task')
         # 删除文件
         shutil.rmtree(path)
@@ -795,7 +795,8 @@ class ExportExcelBusiness(object):
 
         oss_key = 'zips/' + excel_name
         utils.upload_zip(oss_key, path)
-        d = {'id': task_id, 'status': 2, 'zip_url': config.OSSDomain + "/" + oss_key}
+        d = {'id': task_id, 'status': 2,
+             'zip_url': 'http://' + config.OSSDomain + "/" + oss_key}
         pgsql_db.update(pgsql_cur, d, table_name='export_task')
         # 删除文件
         os.remove(path)
