@@ -634,7 +634,6 @@ class ExportExcelBusiness(object):
         sql = """
         SELECT O.stu_no,O.stu_name,O.school_name,O.order_type,O.create_time,
         O.license_plate_number,O.gps FROM public.order O 
-        INNER JOIN school SHL ON SHL.id=O.school_id 
         WHERE 1=1 {}  ORDER BY O.id DESC 
         LIMIT {} OFFSET {}
         """
