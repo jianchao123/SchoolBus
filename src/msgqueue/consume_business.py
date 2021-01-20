@@ -452,7 +452,7 @@ class DeviceBusiness(object):
             "time": int(time.time()),
             "chepai": chepai.encode('utf-8'),
             "workmode": workmode,
-            "delayoff": 7,
+            "delayoff": 10,
             "leftdetect": 5,
             "jiange": 10,
             "cleartime": 70,

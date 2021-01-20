@@ -93,13 +93,14 @@ class CheckAccClose(object):
         company_name = results[1]
         car_id = results[2]
 
-        if time_diff < 15:
+        # 保证在acc关闭之后车内人数的rediskey已经被更新
+        if time_diff < 31:
             return
 
         get_alert_info_sql = "SELECT id,status,people_number,people_info," \
                              "license_plate_number FROM alert_info " \
                              "WHERE periods='{}' LIMIT 1"
-        if time_diff < 60:
+        if time_diff < 331:
             number = int(rds_conn.hget(
                 RedisKey.DEVICE_CUR_PEOPLE_NUMBER, dev_name))
             if number:
