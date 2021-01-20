@@ -250,9 +250,10 @@ class AcsManager(object):
                 pgsql_db, pgsql_cur, redis_db, cur_car_id)
 
         stu_sql = """
-        SELECT stu.id, stu.stu_no, stu.nickname,stu.open_id_1,stu.open_id_2,
-        stu.grade_id,stu.class_id,stu.school_id FROM student stu 
+        SELECT stu.id, stu.stu_no, stu.nickname,shl.id,shl.school_name,
+        stu.open_id_1,stu.open_id_2,stu.grade_id,stu.class_id FROM student stu 
         INNER JOIN face f ON f.stu_id=stu.id 
+        INNER JOIN school shl ON shl.id=stu.school_id 
         WHERE f.id={} LIMIT 1
         """
         student_result = pgsql_db.get(pgsql_cur, stu_sql.format(fid))
@@ -261,15 +262,12 @@ class AcsManager(object):
         stu_id = student_result[0]
         stu_no = student_result[1]
         stu_nickname = student_result[2]
-        # school_id = student_result[3]
-        # school_name = student_result[4]
-        open_id_1 = student_result[3]
-        open_id_2 = student_result[4]
-        grade_id = student_result[5]
-        class_id = student_result[6]
-        school_id = student_result[7]
-        school_name = AcsManager._get_school_cache(
-            pgsql_db, pgsql_cur, redis_db, school_id)
+        school_id = student_result[3]
+        school_name = student_result[4]
+        open_id_1 = student_result[5]
+        open_id_2 = student_result[6]
+        grade_id = student_result[7]
+        class_id = student_result[8]
 
         # gps
         arr = gps_str.split(',')
