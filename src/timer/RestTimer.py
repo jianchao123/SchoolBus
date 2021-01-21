@@ -517,6 +517,10 @@ class HeartBeat30s(object):
         rds_conn = db.rds_conn
         if rds_conn.get('SEND_REG_DEV'):
             pub_msg(rds_conn, 'newdev', {"cmd": "callnewdevn"})
+            pub_msg(rds_conn, 'newdev', {"cmd": "callnewdevn"})
+            pub_msg(rds_conn, 'newdev', {"cmd": "callnewdevn"})
+            pub_msg(rds_conn, 'newdev', {"cmd": "callnewdevn"})
+            pub_msg(rds_conn, 'newdev', {"cmd": "callnewdevn"})
 
 
 class EveryFewMinutesExe(object):
