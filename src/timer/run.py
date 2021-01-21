@@ -38,10 +38,7 @@ if __name__ == "__main__":
     sched.add_job(generate_aac.generate_aac2, 'interval', seconds=10)
     sched.add_job(generate_aac.generate_aac3, 'interval', seconds=10)
     sched.add_job(generate_aac.generate_aac4, 'interval', seconds=10)
-    sched.add_job(generate_aac.generate_aac5, 'interval', seconds=10)
-    sched.add_job(generate_aac.generate_aac6, 'interval', seconds=10)
-    sched.add_job(generate_aac.generate_aac7, 'interval', seconds=10)
-    sched.add_job(generate_aac.generate_aac8, 'interval', seconds=10)
+
 
     # 检查acc熄火key
     sched.add_job(check_acc_close.check_acc_close, 'interval', seconds=5)
