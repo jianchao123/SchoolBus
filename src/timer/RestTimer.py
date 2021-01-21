@@ -487,7 +487,7 @@ class HeartBeat30s(object):
             run_status, dev_name = self.remote_rds_conn.hmget(
                 devcie_key, 'run_status', 'devname')
             if run_status and int(run_status) and dev_name != "newdev":
-                data = json.dumps({"cmd": "heartbeat30s"})
+                data = {"cmd": "heartbeat30s"}
 
                 # 发送消息
                 topic = '/' + self.product_key + '/' \
@@ -523,7 +523,7 @@ class HeartBeat30s(object):
                 run_status, dev_name = self.remote_rds_conn.hmget(
                     devcie_key, 'run_status', 'devname')
                 if run_status and int(run_status) and dev_name != "newdev":
-                    data = json.dumps({"cmd": "sendorder"})
+                    data = {"cmd": "sendorder"}
 
                     # 发送消息
                     topic = '/' + self.product_key + '/' \
