@@ -515,8 +515,10 @@ class HeartBeat30s(object):
 
     def send_reg_dev_msg(self):
         rds_conn = db.rds_conn
-        if rds_conn.get('SEND_REG_DEV'):
-            pub_msg(rds_conn, 'newdev', {"cmd": "callnewdevn"})
+        k = rds_conn.get('SEND_REG_DEV')
+        if k and int(k) > 0:
+            for x in range(k):
+                pub_msg(rds_conn, 'newdev', {"cmd": "callnewdevn"})
 
 
 class EveryFewMinutesExe(object):
