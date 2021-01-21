@@ -36,28 +36,16 @@ class GenerateAAC(object):
     """生成AAC音频格式文件"""
 
     def generate_aac1(self):
-        self.generate_audio(1, 10000)
+        self.generate_audio(1, 20000)
 
     def generate_aac2(self):
-        self.generate_audio(10001, 20000)
+        self.generate_audio(20001, 40000)
 
     def generate_aac3(self):
-        self.generate_audio(20001, 30000)
+        self.generate_audio(40001, 60000)
 
     def generate_aac4(self):
-        self.generate_audio(30001, 40000)
-
-    def generate_aac5(self):
-        self.generate_audio(40001, 50000)
-
-    def generate_aac6(self):
-        self.generate_audio(50001, 60000)
-
-    def generate_aac7(self):
-        self.generate_audio(60001, 70000)
-
-    def generate_aac8(self):
-        self.generate_audio(70001, 80000)
+        self.generate_audio(60001, 80000)
 
     @db.transaction(is_commit=True)
     def generate_audio(self, pgsql_cur, begin_num, end_num):
