@@ -35,26 +35,13 @@ def pub_msg(rds_conn, devname, jdata):
 class GenerateAAC(object):
     """生成AAC音频格式文件"""
 
-    def generate_aac1(self):
-        self.generate_audio(1, 20000)
-
-    def generate_aac2(self):
-        self.generate_audio(20001, 40000)
-
-    def generate_aac3(self):
-        self.generate_audio(40001, 60000)
-
-    def generate_aac4(self):
-        self.generate_audio(60001, 80000)
-
     @db.transaction(is_commit=True)
-    def generate_audio(self, pgsql_cur, begin_num, end_num):
+    def generate_audio(self, pgsql_cur):
         """大概0.3秒一个"""
         pgsql_db = db.PgsqlDbUtil
         begin = time.time()
         sql = "SELECT id,nickname,stu_no,feature FROM face " \
-              "WHERE aac_url IS NULL AND id >= {} AND id <= {} LIMIT 27".format(
-            begin_num, end_num)
+              "WHERE aac_url IS NULL LIMIT 27"
         results = pgsql_db.query(pgsql_cur, sql)
         for row in results:
             feature = row[3]
@@ -525,6 +512,11 @@ class HeartBeat30s(object):
                     #print "sendorder===={}".format(dev_name)
                     pub_msg(rds_conn, dev_name, {"cmd": "sendorder"})
             rds_conn.delete('SEND_ORDER')
+
+    def send_reg_dev_msg(self):
+        rds_conn = db.rds_conn
+        if rds_conn.get('SEND_REG_DEV'):
+            pub_msg(rds_conn, 'newdev', {"cmd": "callnewdevn"})
 
 
 class EveryFewMinutesExe(object):
