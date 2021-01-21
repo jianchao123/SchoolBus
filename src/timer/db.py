@@ -15,7 +15,7 @@ logger = utils.get_logger(conf.log_path)
 # pgsql
 pgsql_pool = PooledDB(
     creator=psycopg2,   # 使用连接数据库的模块 psycopg2
-    maxconnections=6,   # 连接池允许的最大连接数，0 和 None 表示不限制连接数
+    maxconnections=16,   # 连接池允许的最大连接数，0 和 None 表示不限制连接数
     mincached=1,        # 初始化时，链接池中至少创建的空闲的链接，0 表示不创建
     maxcached=4,        # 链接池中最多闲置的链接，0 和 None 不限制
     blocking=False,     # 连接池中如果没有可用连接后，是否阻塞等待。True，等待；False，不等待然后报错
