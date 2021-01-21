@@ -468,7 +468,7 @@ class HeartBeat30s(object):
         from redis import ConnectionPool
         remote_rds_pool = ConnectionPool(
             host="r-uf6aii687io4t6ghxlpd.redis.rds.aliyuncs.com",
-            port=6379, db=0, password='kIhHAWexFy7pU8qM')
+            port=6379, db=1, password='kIhHAWexFy7pU8qM')
         self.remote_rds_conn = \
             redis.StrictRedis(connection_pool=remote_rds_pool)
 
