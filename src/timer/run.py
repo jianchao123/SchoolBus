@@ -33,7 +33,16 @@ if __name__ == "__main__":
     # 生成特征码
     sched.add_job(generate_feature.generate_feature, 'interval', seconds=1)
     # 生成aac文件
-    sched.add_job(generate_aac.generate_audio, 'interval', seconds=10)
+    #sched.add_job(generate_aac.generate_audio, 'interval', seconds=10)
+    sched.add_job(generate_aac.generate_aac1, 'interval', seconds=10)
+    sched.add_job(generate_aac.generate_aac2, 'interval', seconds=10)
+    sched.add_job(generate_aac.generate_aac3, 'interval', seconds=10)
+    sched.add_job(generate_aac.generate_aac4, 'interval', seconds=10)
+    sched.add_job(generate_aac.generate_aac5, 'interval', seconds=10)
+    sched.add_job(generate_aac.generate_aac6, 'interval', seconds=10)
+    sched.add_job(generate_aac.generate_aac7, 'interval', seconds=10)
+    sched.add_job(generate_aac.generate_aac8, 'interval', seconds=10)
+
     # 检查acc熄火key
     sched.add_job(check_acc_close.check_acc_close, 'interval', seconds=5)
     # 上传人脸zip包到oss,将人脸匹配到记录
