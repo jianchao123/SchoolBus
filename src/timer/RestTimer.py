@@ -472,6 +472,12 @@ class HeartBeat30s(object):
         self.remote_rds_conn = \
             redis.StrictRedis(connection_pool=remote_rds_pool)
 
+        self.client = AcsClient(config.MNSAccessKeyId,
+                                config.MNSAccessKeySecret, 'cn-shanghai')
+        self.product_key = config.Productkey
+        self.request = PubRequest()
+        self.request.set_accept_format('json')
+
     def heartbeat(self):
         """心跳包 29s"""
         rds_conn = db.rds_conn
@@ -480,9 +486,17 @@ class HeartBeat30s(object):
         for devcie_key in hkeys:
             run_status, dev_name = self.remote_rds_conn.hmget(
                 devcie_key, 'run_status', 'devname')
-            print "heatbeat=============={}".format(dev_name)
             if run_status and int(run_status) and dev_name != "newdev":
-                pub_msg(rds_conn, dev_name, {"cmd": "heartbeat30s"})
+                data = json.dumps({"cmd": "heartbeat30s"})
+
+                # 发送消息
+                topic = '/' + self.product_key + '/' \
+                        + dev_name + '/user/get'
+                self.request.set_TopicFullName(topic)
+                b64_str = base64.b64encode(json.dumps(data))
+                self.request.set_MessageContent(b64_str)
+                self.request.set_ProductKey(self.product_key)
+                self.client.do_action_with_exception(self.request)
 
     def mark_order_start(self):
         """标记订单开始 10s"""
@@ -509,8 +523,16 @@ class HeartBeat30s(object):
                 run_status, dev_name = self.remote_rds_conn.hmget(
                     devcie_key, 'run_status', 'devname')
                 if run_status and int(run_status) and dev_name != "newdev":
-                    #print "sendorder===={}".format(dev_name)
-                    pub_msg(rds_conn, dev_name, {"cmd": "sendorder"})
+                    data = json.dumps({"cmd": "sendorder"})
+
+                    # 发送消息
+                    topic = '/' + self.product_key + '/' \
+                            + dev_name + '/user/get'
+                    self.request.set_TopicFullName(topic)
+                    b64_str = base64.b64encode(json.dumps(data))
+                    self.request.set_MessageContent(b64_str)
+                    self.request.set_ProductKey(self.product_key)
+                    self.client.do_action_with_exception(self.request)
             rds_conn.delete('SEND_ORDER')
 
     def send_reg_dev_msg(self):
