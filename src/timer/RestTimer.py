@@ -517,7 +517,7 @@ class HeartBeat30s(object):
         rds_conn = db.rds_conn
         k = rds_conn.get('SEND_REG_DEV')
         if k and int(k) > 0:
-            for x in range(k):
+            for x in range(int(k)):
                 pub_msg(rds_conn, 'newdev', {"cmd": "callnewdevn"})
 
 
