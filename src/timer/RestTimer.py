@@ -472,6 +472,12 @@ class HeartBeat30s(object):
         self.remote_rds_conn = \
             redis.StrictRedis(connection_pool=remote_rds_pool)
 
+        self.client = AcsClient(config.MNSAccessKeyId,
+                                config.MNSAccessKeySecret, 'cn-shanghai')
+        self.product_key = config.Productkey
+        self.request = PubRequest()
+        self.request.set_accept_format('json')
+
     def heartbeat(self):
         """心跳包 29s"""
         from gevent import monkey
@@ -481,7 +487,7 @@ class HeartBeat30s(object):
 
         start = time.time()
         func_list = []
-        prefix = 'DEVICE_INFO_'
+        prefix = 'dev_'
         for inx in range(3, 2003):
             dev_name = prefix + str(inx)
             func_list.append(gevent.spawn(self.heartbeat_func, dev_name))
@@ -490,26 +496,17 @@ class HeartBeat30s(object):
         end = time.time()
         print "Time. ={}".format(end - start)
 
-    def heartbeat_func(self):
+    def heartbeat_func(self, dev_name):
 
-        prefix = 'DEVICE_INFO_'
-        for inx in range(3, 2003):
-            dev_name = prefix + str(inx)
-            data = {"cmd": "heartbeat30s"}
-            # 发送消息
-            client = AcsClient(config.MNSAccessKeyId,
-                                    config.MNSAccessKeySecret, 'cn-shanghai')
-            product_key = config.Productkey
-
-            request = PubRequest()
-            request.set_accept_format('json')
-            topic = '/' + product_key + '/' \
-                    + dev_name + '/user/get'
-            request.set_TopicFullName(topic)
-            b64_str = base64.b64encode(json.dumps(data))
-            request.set_MessageContent(b64_str)
-            request.set_ProductKey(product_key)
-            client.do_action_with_exception(request)
+        data = {"cmd": "heartbeat30s"}
+        # 发送消息
+        topic = '/' + self.product_key + '/' \
+                + dev_name + '/user/get'
+        self.request.set_TopicFullName(topic)
+        b64_str = base64.b64encode(json.dumps(data))
+        self.request.set_MessageContent(b64_str)
+        self.request.set_ProductKey(self.product_key)
+        self.client.do_action_with_exception(self.request)
 
     def mark_order_start(self):
         """标记订单开始 10s"""
