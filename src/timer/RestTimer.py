@@ -496,18 +496,19 @@ class HeartBeat30s(object):
 
         data = {"cmd": "heartbeat30s"}
         # 发送消息
-        self.client = AcsClient(config.MNSAccessKeyId,
+        client = AcsClient(config.MNSAccessKeyId,
                                 config.MNSAccessKeySecret, 'cn-shanghai')
-        self.product_key = config.Productkey
-        self.request = PubRequest()
-        self.request.set_accept_format('json')
-        topic = '/' + self.product_key + '/' \
+        product_key = config.Productkey
+
+        request = PubRequest()
+        request.set_accept_format('json')
+        topic = '/' + product_key + '/' \
                 + dev_name + '/user/get'
-        self.request.set_TopicFullName(topic)
+        request.set_TopicFullName(topic)
         b64_str = base64.b64encode(json.dumps(data))
-        self.request.set_MessageContent(b64_str)
-        self.request.set_ProductKey(self.product_key)
-        self.client.do_action_with_exception(self.request)
+        request.set_MessageContent(b64_str)
+        request.set_ProductKey(product_key)
+        client.do_action_with_exception(request)
 
     def mark_order_start(self):
         """标记订单开始 10s"""
