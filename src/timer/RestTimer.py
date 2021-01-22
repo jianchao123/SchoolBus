@@ -472,11 +472,7 @@ class HeartBeat30s(object):
         self.remote_rds_conn = \
             redis.StrictRedis(connection_pool=remote_rds_pool)
 
-        self.client = AcsClient(config.MNSAccessKeyId,
-                                config.MNSAccessKeySecret, 'cn-shanghai')
-        self.product_key = config.Productkey
-        self.request = PubRequest()
-        self.request.set_accept_format('json')
+
 
     def heartbeat(self):
         """心跳包 29s"""
@@ -500,6 +496,11 @@ class HeartBeat30s(object):
 
         data = {"cmd": "heartbeat30s"}
         # 发送消息
+        self.client = AcsClient(config.MNSAccessKeyId,
+                                config.MNSAccessKeySecret, 'cn-shanghai')
+        self.product_key = config.Productkey
+        self.request = PubRequest()
+        self.request.set_accept_format('json')
         topic = '/' + self.product_key + '/' \
                 + dev_name + '/user/get'
         self.request.set_TopicFullName(topic)
