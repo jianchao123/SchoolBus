@@ -483,10 +483,10 @@ class HeartBeat30s(object):
         rds_conn = db.rds_conn
         if not rds_conn.get("HEART_BEAT"):
             return
-        from gevent import monkey
-        monkey.patch_all()
-        import gevent
-        import urllib2
+        # from gevent import monkey
+        # monkey.patch_all()
+        # import gevent
+        # import urllib2
 
         start = time.time()
         func_list = []
@@ -495,10 +495,10 @@ class HeartBeat30s(object):
             dev_name = prefix + str(inx)
             run_status = self.remote_rds_conn.hget('DEVICE_INFO_' + dev_name, 'run_status')
             if run_status and int(run_status) and dev_name != "newdev":
-                func_list.append(gevent.spawn(self.heartbeat_func, dev_name))
-                #self.heartbeat_func(dev_name)
+                #func_list.append(gevent.spawn(self.heartbeat_func, dev_name))
+                self.heartbeat_func(dev_name)
 
-        gevent.joinall(func_list)
+        #gevent.joinall(func_list)
         end = time.time()
         print "Time. ={}".format(end - start)
 
