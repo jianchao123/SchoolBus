@@ -480,23 +480,33 @@ class HeartBeat30s(object):
 
     def heartbeat(self):
         """心跳包 29s"""
-        rds_conn = db.rds_conn
+        from gevent import monkey
+        monkey.patch_all()
+        import gevent
+        import urllib2
 
-        hkeys = self.remote_rds_conn.keys("DEVICE_INFO_*")
-        for devcie_key in hkeys:
-            run_status, dev_name = self.remote_rds_conn.hmget(
-                devcie_key, 'run_status', 'devname')
+        func_list = []
+        prefix = 'DEVICE_INFO_'
+        for inx in range(3, 2003):
+            dev_name = prefix + str(inx)
+            run_status = self.remote_rds_conn.hget(
+                dev_name, 'run_status')
             if run_status and int(run_status) and dev_name != "newdev":
-                data = {"cmd": "heartbeat30s"}
+                func_list.append(gevent.spawn(self.heartbeat_func, dev_name))
 
-                # 发送消息
-                topic = '/' + self.product_key + '/' \
-                        + dev_name + '/user/get'
-                self.request.set_TopicFullName(topic)
-                b64_str = base64.b64encode(json.dumps(data))
-                self.request.set_MessageContent(b64_str)
-                self.request.set_ProductKey(self.product_key)
-                self.client.do_action_with_exception(self.request)
+        gevent.joinall(func_list)
+
+    def heartbeat_func(self, dev_name):
+
+        data = {"cmd": "heartbeat30s"}
+        # 发送消息
+        topic = '/' + self.product_key + '/' \
+                + dev_name + '/user/get'
+        self.request.set_TopicFullName(topic)
+        b64_str = base64.b64encode(json.dumps(data))
+        self.request.set_MessageContent(b64_str)
+        self.request.set_ProductKey(self.product_key)
+        self.client.do_action_with_exception(self.request)
 
     def mark_order_start(self):
         """标记订单开始 10s"""
