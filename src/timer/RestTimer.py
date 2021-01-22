@@ -490,7 +490,7 @@ class HeartBeat30s(object):
         prefix = 'dev_'
         for inx in range(3, 2003):
             dev_name = prefix + str(inx)
-            run_status = self.remote_rds_conn.hget(dev_name, 'run_status')
+            run_status = self.remote_rds_conn.hget('DEVICE_INFO_' + dev_name, 'run_status')
             print run_status, type(run_status), dev_name
             if run_status and int(run_status) and dev_name != "newdev":
                 func_list.append(gevent.spawn(self.heartbeat_func, dev_name))
