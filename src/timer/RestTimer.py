@@ -485,6 +485,7 @@ class HeartBeat30s(object):
         import gevent
         import urllib2
 
+        start = time.time()
         func_list = []
         prefix = 'DEVICE_INFO_'
         for inx in range(3, 2003):
@@ -495,6 +496,8 @@ class HeartBeat30s(object):
                 func_list.append(gevent.spawn(self.heartbeat_func, dev_name))
 
         gevent.joinall(func_list)
+        end = time.time()
+        print "Time. ={}".format(end - start)
 
     def heartbeat_func(self, dev_name):
 
