@@ -41,12 +41,12 @@ if __name__ == "__main__":
     # 刷新微信access token
     sched.add_job(refresh_wx_access_token.refresh_wechat_token,
                   'interval', seconds=30)
-    sched.add_job(heart_beat_30s.heartbeat,
-                  'interval', seconds=29)
-    sched.add_job(heart_beat_30s.send_order,
-                  'interval', seconds=10)
-    sched.add_job(heart_beat_30s.send_reg_dev_msg,
-                  'interval', seconds=2)
+    # sched.add_job(heart_beat_30s.heartbeat,
+    #               'interval', seconds=29)
+    # sched.add_job(heart_beat_30s.send_order,
+    #               'interval', seconds=10)
+    # sched.add_job(heart_beat_30s.send_reg_dev_msg,
+    #               'interval', seconds=2)
 
     # 每分钟执行
     sched.add_job(func=every_minute_exe.every_minute_execute,

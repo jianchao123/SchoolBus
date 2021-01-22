@@ -43,7 +43,7 @@ class ReceiveMessage(object):
         jdata = json.loads(base64.b64decode(body["payload"]))
 
         acs_manager.check_cur_stream_no(dev_name, jdata)
-        print json.dumps(jdata)
+        #print json.dumps(jdata)
 
         if 'cmd' in jdata:
             cmd = jdata['cmd']
@@ -68,8 +68,7 @@ class ReceiveMessage(object):
                                 dev_name, jdata['cnt'])
 
             elif cmd == 'devwhitelist2':
-                logger.info(u"人员列表")
-                print u"人员列表"
+
                 acs_manager.add_redis_queue(
                     dev_name, jdata['data'], jdata['pkt_cnt'])
 
@@ -88,7 +87,7 @@ class ReceiveMessage(object):
                 pass
             elif cmd == 'record':
                 if jdata['fid'] == -1:
-                    logger.info(u"日志信息")
+
                     log_id = int(jdata['gps'].split('|')[0])
                     # acc关闭
                     if log_id == 3:
@@ -105,7 +104,6 @@ class ReceiveMessage(object):
                                               dev_name,
                                               jdata['cnt'])
             elif cmd == 'syndevinfo':
-                print u'4g模块\sim卡信息'
                 acs_manager.save_imei(dev_name, jdata['imei'])
             elif cmd == 'update':
                 if jdata['status'] == 'success':
@@ -115,13 +113,11 @@ class ReceiveMessage(object):
             elif cmd == 'batchaddface':
                 logger.info(u"批量注册人脸")
             elif cmd == 'batchdelface':
-                print u"批量删除人脸"
-                print jdata
+                pass
+
             elif cmd == 'syndata_ext':
-                print u"syndata_ext"
-                print jdata
+                pass
             elif cmd == 'poweroff':
-                print u"关机"
                 acs_manager.clear_setting(dev_name, jdata['seconds'])
 
         # 删除消息
