@@ -490,7 +490,7 @@ class HeartBeat30s(object):
         end = time.time()
         print "Time. ={}".format(end - start)
 
-    def heartbeat_func(self, dev_name):
+    def heartbeat_func(self):
 
         prefix = 'DEVICE_INFO_'
         for inx in range(3, 2003):
