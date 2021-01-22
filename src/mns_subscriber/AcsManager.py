@@ -394,10 +394,6 @@ class AcsManager(object):
 
             intersection_list = list(set(face_ids) & set(device_fid_set))
 
-            print fid_dict
-            print "=================List=============="
-            print add_list
-            print del_list
             # 需要更新的feature
             update_list = []
             for row in results:
@@ -407,7 +403,6 @@ class AcsManager(object):
                     if feature_crc != fid_dict[str(pk)]:
                         update_list.append(str(pk))
 
-            print update_list
             if rds_conn.get(RedisKey.QUERY_DEVICE_PEOPLE):
                 # 保存设备上的人员到数据库
                 rds_conn.delete(RedisKey.QUERY_DEVICE_PEOPLE)
@@ -455,7 +450,6 @@ class AcsManager(object):
                 request.set_DeviceName(dev_name)
                 response = self.client.do_action_with_exception(request)
                 response = json.loads(response)
-                print response
                 if not response['Success']:
                     return None
                 # 添加记录
@@ -480,7 +474,6 @@ class AcsManager(object):
                     "time": int(time.time()),
                     'dev_mac': mac
                 }
-                print self._send_device_msg('newdev', msg)
                 rds_conn.hset(RedisKey.DEVICE_CUR_STATUS, dev_name, 1)
             finally:
                 rds_conn.delete('create_device')
@@ -545,7 +538,6 @@ class AcsManager(object):
               "license_plate_number,device_type,person_limit" \
               " FROM device WHERE device_name='{}' LIMIT 1"
         device = pgsql_db.get(pgsql_cur, sql.format(device_name))
-        print device
         return device[0], device[1], device[2], device[3], \
                device[4], device[5], device[6]
 
@@ -668,8 +660,6 @@ class AcsManager(object):
         rds_conn = db.rds_conn
         d = defaultdict()
         d['id'] = fid
-        print "==============save_feature============"
-        print feature
         if feature:
             # aac_url不为空则修改状态
             sql = "SELECT id FROM face WHERE id={} " \

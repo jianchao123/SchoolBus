@@ -37,20 +37,14 @@ class ReceiveMessage(object):
     def msg_handler(self, acs_manager, logger):
         recv_msg = self.my_queue.receive_message(self.wait_seconds)
         body = json.loads(recv_msg.message_body)
-        #self.my_queue.delete_message(recv_msg.receipt_handle)
-
         dev_name = body['topic'].split('/')[2]
         jdata = json.loads(base64.b64decode(body["payload"]))
-
         acs_manager.check_cur_stream_no(dev_name, jdata)
-        #print json.dumps(jdata)
-
         if 'cmd' in jdata:
             cmd = jdata['cmd']
             if cmd == 'syndata':
                 dev_name = jdata['devid']
                 if dev_name == 'newdev':
-                    #logger.info(u'注册新设备')
                     acs_manager.create_device(jdata['mac'])
 
                 else:
