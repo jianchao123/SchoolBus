@@ -83,7 +83,8 @@ class AcsManager(object):
         response = self.client.do_action_with_exception(request)
         return json.loads(response)
 
-    def _set_workmode(self, device_name, workmode, chepai, cur_volume):
+    def _set_workmode(self, device_name, workmode, chepai,
+                      cur_volume, person_limit):
         """
         设置设备工作模式 0车载 1通道闸口 3注册模式
         :param device_name:
@@ -113,7 +114,8 @@ class AcsManager(object):
             "timezone": 8,
             "temperature": 0,
             "noreg": 1,
-            "light_type": 0
+            "light_type": 0,
+            "person_limit": int(person_limit)
         }
         return self._send_device_msg(device_name, jdata)
 
@@ -479,11 +481,13 @@ class AcsManager(object):
                 rds_conn.delete('create_device')
         return None
 
-    def _set_device_work_mode(self, dev_name, license_plate_number, cur_volume, workmode):
+    def _set_device_work_mode(self, dev_name, license_plate_number,
+                              cur_volume, workmode, person_limit):
         """设置设备工作模式
         0车载 1通道闸口 3注册模式
         """
-        self._set_workmode(dev_name, workmode, license_plate_number, cur_volume)
+        self._set_workmode(dev_name, workmode, license_plate_number,
+                           cur_volume, person_limit)
 
     @db.transaction(is_commit=False)
     def _init_people(self, pgsql_cur, people_list, device_name):
@@ -577,7 +581,8 @@ class AcsManager(object):
                 d['status'] = 3   # 设置工作模式
                 print u"设置工作模式"
                 self._set_device_work_mode(
-                    device_name, license_plate_number, sound_volume, workmode)
+                    device_name, license_plate_number, sound_volume,
+                    workmode, person_limit)
                 rds_conn.hset(RedisKey.DEVICE_CUR_STATUS, device_name, 3)
             elif status == 3:       # 已设置工作模式
                 d['status'] = 4     # 设置oss信息
