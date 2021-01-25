@@ -704,6 +704,7 @@ class EveryHoursExecute(object):
         rds_conn.set(RedisKey.STATISTICS, json.dumps(d))
 
 
+from db import logger
 class OrderSendMsg(object):
 
     def __init__(self):
@@ -752,7 +753,7 @@ class OrderSendMsg(object):
                     self.request.set_ProductKey(self.product_key)
                     self.client.do_action_with_exception(self.request)
             end = time.time()
-            print u"Time.={}".format(end - start)
+            logger.error("Time.={}".format(end - start))
         except:
             import traceback
             err_msg = traceback.format_exc()
