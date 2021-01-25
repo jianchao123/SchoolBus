@@ -720,6 +720,7 @@ class OrderSendMsg(object):
     def order_sent_msg(self):
         """顺序发送消息"""
         try:
+            start = time.time()
             rds_conn = db.rds_conn
             device_queues = rds_conn.keys('mns_list_*')
             for queue_name in device_queues:
@@ -750,6 +751,8 @@ class OrderSendMsg(object):
                     self.request.set_MessageContent(b64_str)
                     self.request.set_ProductKey(self.product_key)
                     self.client.do_action_with_exception(self.request)
+            end = time.time()
+            print u"Time.={}".format(end - start)
         except:
             import traceback
             err_msg = traceback.format_exc()
