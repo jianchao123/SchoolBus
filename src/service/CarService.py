@@ -21,10 +21,18 @@ class CarService(object):
         db.session.commit()
 
         d = []
-        results = db.session.query(Car).filter(
+        start = time.time()
+        results = db.session.query(Car.name).filter(
             Car.status == 1).order_by(Car.id.desc()).all()
+        print results
+        end = time.time()
+        print end - start
+
+        start = time.time()
         for row in results:
             d.append({"id": row.id, "name": row.license_plate_number})
+        end = time.time()
+        print end - start
 
         return {'results': d, 'count': 0}
 
