@@ -716,6 +716,7 @@ class OrderSendMsg(object):
                                 config.MNSAccessKeySecret, 'cn-shanghai')
         self.product_key = config.Productkey
         self.request = PubRequest()
+        self.request.set_Qos(0)
         self.request.set_accept_format('json')
 
     def order_sent_msg(self):
@@ -751,6 +752,7 @@ class OrderSendMsg(object):
                     b64_str = base64.b64encode(json.dumps(data))
                     self.request.set_MessageContent(b64_str)
                     self.request.set_ProductKey(self.product_key)
+
                     self.client.do_action_with_exception(self.request)
             end = time.time()
             logger.error("Order Time.={}".format(end - start))
