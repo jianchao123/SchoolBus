@@ -189,10 +189,11 @@ class CarService(object):
             if device:
                 workmode = 0 if device.device_type == 1 else 3
                 sound_vol = int(device.sound_volume) if device.sound_volume else 100
+                person_limit = int(car.capacity) if car.capacity else 40
                 producer.update_chepai(device.device_name,
                                        device.license_plate_number,
                                        int(sound_vol), workmode,
-                                       car.capacity)
+                                       person_limit)
                 # 修改车牌需要删除车辆数据缓存
                 cache.hdel(defines.RedisKey.CACHE_CAR_DATA, device.device_name)
 
