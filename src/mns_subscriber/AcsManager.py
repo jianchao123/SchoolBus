@@ -580,6 +580,7 @@ class AcsManager(object):
             if status == 2:
                 d['status'] = 3   # 设置工作模式
                 print u"设置工作模式"
+                person_limit = int(person_limit) if person_limit else 40
                 self._set_device_work_mode(
                     device_name, license_plate_number, sound_volume,
                     workmode, person_limit)
