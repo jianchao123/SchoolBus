@@ -21,21 +21,14 @@ class CarService(object):
     def car_name_list():
         db.session.commit()
 
-        print "------------{}-----------".format(time.time())
         d = []
-        start = time.time()
         results = db.session.query(Car.id, Car.license_plate_number).filter(
             Car.status == 1).order_by(Car.id.desc()).all()
-        end = time.time()
-        print end - start
 
-        start = Decimal(str(time.time()))
         for row in results:
             rid = row[0]
             license_plate_number = row[1]
             d.append({"id": rid, "name": license_plate_number})
-        end = Decimal(str(time.time()))
-        print end - start
 
         return {'results': d, 'count': 0}
 
