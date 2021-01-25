@@ -134,6 +134,7 @@ class AcsManager(object):
             rds_conn = db.rds_conn
             stream_no = jdata["stream_no"]
             k = "cur_{}_stream_no".format(device_name)
+            print "ttl={}".format(rds_conn.ttl(k))
             rds_stream_no = rds_conn.get(k)
             if rds_stream_no and str(rds_stream_no) == str(stream_no):
                 rds_conn.delete(k)
