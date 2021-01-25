@@ -43,7 +43,7 @@ def order_sent_msg():
                         rds_conn.expire(k, 30)
 
                         # 测试使用,需要删除
-                        rds_conn.delete(k)
+                        #rds_conn.delete(k)
 
                         # 发送消息
                         topic = '/' + product_key + '/' \

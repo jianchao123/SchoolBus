@@ -136,7 +136,6 @@ class AcsManager(object):
             k = "cur_{}_stream_no".format(device_name)
             rds_stream_no = rds_conn.get(k)
             if rds_stream_no and str(rds_stream_no) == str(stream_no):
-                print "delete {} ttl={}".format(device_name, rds_conn.ttl(k))
                 rds_conn.delete(k)
 
     @staticmethod
