@@ -17,6 +17,18 @@ from ext import cache
 class CarService(object):
 
     @staticmethod
+    def car_name_list():
+        db.session.commit()
+
+        d = []
+        results = db.session.query(Car).filter(
+            Car.status == 1).order_by(Car.id.desc()).all()
+        for row in results:
+            d.append({"id": row.id, "name": row.license_plate_number})
+
+        return {'results': d, 'count': 0}
+
+    @staticmethod
     def car_list(query_str, is_online, status, page, size):
         db.session.commit()
         cur_timestamp = int(time.time())

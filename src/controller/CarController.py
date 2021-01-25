@@ -338,3 +338,42 @@ def car_batch_add(user_id, data):
     return data
 
 
+@bp.route('/names', methods=['GET'])
+@get_require_check_with_user([])
+def car_names(user_id, data):
+    """
+    车辆名字列表
+    车辆名字列表，需要先登录
+    ---
+    tags:
+      - 车辆名字列表
+    parameters:
+      - name: token
+        in: header
+        type: string
+        required: true
+        description: TOKEN
+    responses:
+      200:
+        description: 正常返回http code 200
+        schema:
+          properties:
+            msg:
+              type: string
+              description: 错误消息
+            status:
+              type: integer
+              description: 状态
+            data:
+              type: array
+              items:
+                properties:
+                  id:
+                    type: integer
+                    description: PK
+                  name:
+                    type: string
+                    description: 名字
+
+    """
+    return CarService.car_name_list()

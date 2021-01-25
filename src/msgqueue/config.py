@@ -111,23 +111,17 @@ elif env == "PRO":
 
 else:
     # # 物联网
-    # Productkey = 'a1vperyb2Cg'
-    # ProductHost = 'a1vperyb2Cg.iot-as-mqtt.cn-shanghai.aliyuncs.com'
-    # ProductSecret = 'jqSbrJZ11baH1aAH'
-    # DeviceSecret = 'bmq66tsx0OGju0CGqeYjzCTYlwA454j0'
-
-    # 正式环境的
-    Productkey = 'a1nppCCo0Y2'
-    ProductHost = 'a1nppCCo0Y2.iot-as-mqtt.cn-shanghai.aliyuncs.com'
-    ProductSecret = 'VYMQSqHamIQgREVi'
-    DeviceSecret = 'e2245121d52abc850b2fc220f937f512'
+    Productkey = 'a1vperyb2Cg'
+    ProductHost = 'a1vperyb2Cg.iot-as-mqtt.cn-shanghai.aliyuncs.com'
+    ProductSecret = 'jqSbrJZ11baH1aAH'
+    DeviceSecret = 'bmq66tsx0OGju0CGqeYjzCTYlwA454j0'
 
     # OSS
-    OSSDomain = 'http://cdbus-pro.oss-cn-shanghai.aliyuncs.com'
+    OSSDomain = 'http://cdbus-dev.oss-cn-shanghai.aliyuncs.com'
     OSSAccessKeyId = 'LTAIWE5CGeOiozf7'
     OSSAccessKeySecret = 'IGuoRIxwMlPQqJ9ujWyTvSq2em4RDj'
     OSSEndpoint = 'oss-cn-shanghai.aliyuncs.com'
-    OSSBucketName = 'cdbus-pro'
+    OSSBucketName = 'cdbus-dev'
 
     # MNS
     MNSEndpoint = 'http://1162097573951650.mns.cn-shanghai.aliyuncs.com/'
@@ -138,7 +132,7 @@ else:
     log_path = project_dir + "/logs/msgqueue"
 
     # PGSQL
-    pgsql_host = 'cdmp.wgxing.com'
+    pgsql_host = '127.0.0.1'
     pgsql_db = "postgres"
     pgsql_port = 5432
     pgsql_user = "postgres"
@@ -160,10 +154,9 @@ else:
     MP_ENCODING_AES_KEY = 'CAmGrrm1rJ0HqgcbIBQbhKAHLUKGGbv3RJTTFnixTaC'
     MP_PARENTS_TEMPLATE_ID = "aRznTze3zLqP9mSoOh45DhrAgL-OOz3ut2bE0c5TwpM"
     MP_STAFF_TEMP_ID = "NlJspxFFiPl4lH8gjf-pKU-dZiMuFYgdSJ4wSpmEesg"
-    # MP_PARENTS_REDIRECT_URL = "http://cdmpdev.wgxing.com/static/push.html?order_id={}"
-    # MP_STAFF_REDIRECT_URL = "http://cdmpdev.wgxing.com/static/alert.html?periods={}"
-    MP_PARENTS_REDIRECT_URL = "http://cdmp.wgxing.com/static/push.html?order_id={}"
-    MP_STAFF_REDIRECT_URL = "http://cdmp.wgxing.com/static/alert.html?periods={}"
+    MP_PARENTS_REDIRECT_URL = "http://cdmpdev.wgxing.com/static/push.html?order_id={}"
+    MP_STAFF_REDIRECT_URL = "http://cdmpdev.wgxing.com/static/alert.html?periods={}"
+
 
 redis_conf = dict(host="127.0.0.1", port=6379, db=0, decode_responses=True)
 pgsql_conf = dict(host=pgsql_host, database=pgsql_db, port=pgsql_port,
