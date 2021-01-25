@@ -2,6 +2,7 @@
 import xlrd
 import time
 from datetime import datetime
+from decimal import Decimal
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import or_
 from database.db import db
@@ -22,16 +23,18 @@ class CarService(object):
 
         d = []
         start = time.time()
-        results = db.session.query(Car.name).filter(
+        results = db.session.query(Car.id, Car.license_plate_number).filter(
             Car.status == 1).order_by(Car.id.desc()).all()
         print results
         end = time.time()
         print end - start
 
-        start = time.time()
+        start = Decimal(str(time.time()))
         for row in results:
-            d.append({"id": row.id, "name": row.license_plate_number})
-        end = time.time()
+            rid = row[0]
+            license_plate_number = row[1]
+            d.append({"id": rid, "name": license_plate_number})
+        end = Decimal(str(time.time()))
         print end - start
 
         return {'results': d, 'count': 0}
