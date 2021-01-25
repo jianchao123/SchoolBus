@@ -638,6 +638,7 @@ class AcsManager(object):
             sound_vol, license_plate_number, device_type \
                 = self._get_sound_vol_by_name(device_name)
             workmode = 0 if device_type == 1 else 3
+            sound_vol = int(sound_vol) if sound_vol else 100
             producer.update_chepai(device_name, license_plate_number,
                                    sound_vol, workmode, person_limit)
 
