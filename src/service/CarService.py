@@ -21,11 +21,11 @@ class CarService(object):
     def car_name_list():
         db.session.commit()
 
+        print "------------{}-----------".format(time.time())
         d = []
         start = time.time()
         results = db.session.query(Car.id, Car.license_plate_number).filter(
             Car.status == 1).order_by(Car.id.desc()).all()
-        print results
         end = time.time()
         print end - start
 
