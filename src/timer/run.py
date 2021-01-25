@@ -13,7 +13,7 @@ from apscheduler.schedulers.gevent import BlockingScheduler
 
 from timer.RestTimer import GenerateFeature, EveryMinuteExe, \
     FromOssQueryFace, EveryFewMinutesExe, OrderSendMsg, GenerateAAC, \
-    EveryHoursExecute, CheckAccClose, RefreshWxAccessToken, HeartBeat30s
+    EveryHoursExecute, CheckAccClose, RefreshWxAccessToken
 
 if __name__ == "__main__":
     generate_feature = GenerateFeature()
@@ -21,15 +21,13 @@ if __name__ == "__main__":
     from_oss_query_face = FromOssQueryFace()
     every_few_minutes_exe = EveryFewMinutesExe()
     every_hours_exe = EveryHoursExecute()
-    order_send_msg = OrderSendMsg()
     generate_aac = GenerateAAC()
     check_acc_close = CheckAccClose()
     refresh_wx_access_token = RefreshWxAccessToken()
-    heart_beat_30s = HeartBeat30s()
 
     sched = BlockingScheduler()
     # 顺序发送消息
-    sched.add_job(order_send_msg.order_sent_msg, 'interval', seconds=1)
+    #sched.add_job(order_send_msg.order_sent_msg, 'interval', seconds=1)
     # 生成特征码
     sched.add_job(generate_feature.generate_feature, 'interval', seconds=1)
     # 生成aac文件

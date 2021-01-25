@@ -54,18 +54,18 @@ class AcsManager(object):
         }
         self._send_device_msg(device_name, jdata)
 
-    @staticmethod
-    def _pub_msg(devname, jdata):
-        rds_conn = db.rds_conn
-        k = rds_conn.get("stream_no_incr")
-        if k:
-            stream_no = rds_conn.incr("stream_no_incr")
-        else:
-            rds_conn.set("stream_no_incr", 1000000)
-            stream_no = 1000000
-
-        jdata["stream_no"] = stream_no
-        rds_conn.rpush("mns_list_" + devname, json.dumps(jdata, encoding="utf-8"))
+    # @staticmethod
+    # def _pub_msg(devname, jdata):
+    #     rds_conn = db.rds_conn
+    #     k = rds_conn.get("stream_no_incr")
+    #     if k:
+    #         stream_no = rds_conn.incr("stream_no_incr")
+    #     else:
+    #         rds_conn.set("stream_no_incr", 1000000)
+    #         stream_no = 1000000
+    #
+    #     jdata["stream_no"] = stream_no
+    #     rds_conn.rpush("mns_list_" + devname, json.dumps(jdata, encoding="utf-8"))
 
     def _send_device_msg(self, devname, jdata):
         request = PubRequest()
@@ -477,7 +477,9 @@ class AcsManager(object):
                     "time": int(time.time()),
                     'dev_mac': mac
                 }
+                self._send_device_msg('newdev', msg)
                 rds_conn.hset(RedisKey.DEVICE_CUR_STATUS, dev_name, 1)
+                rds_conn.rpush('DEVICE_NAME_QUEUE', dev_name)
             finally:
                 rds_conn.delete('create_device')
         return None
