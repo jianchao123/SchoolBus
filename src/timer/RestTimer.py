@@ -731,29 +731,30 @@ class OrderSendMsg(object):
                 # 不存在就取出一条消息发送到物联网
                 if not rds_conn.get(k):
                     raw_msg_content = rds_conn.lpop(queue_name)
-                    data = json.loads(raw_msg_content)
-                    stream_no = data['stream_no']
-                    rds_conn.set(k, stream_no)
-                    rds_conn.expire(k, 30)
+                    if raw_msg_content:
+                        data = json.loads(raw_msg_content)
+                        stream_no = data['stream_no']
+                        rds_conn.set(k, stream_no)
+                        rds_conn.expire(k, 30)
 
-                    # 测试,正式时注释
-                    # print data
-                    # if 'cmd' in data:
-                    #     if data['cmd'] in \
-                    #             ['heartbeat30s', 'flagfidinx', 'sendorder' ,'callnewdevn']:
-                    #         print u"删除-----------------------"
-                    #         rds_conn.delete(k)
+                        # 测试,正式时注释
+                        # print data
+                        # if 'cmd' in data:
+                        #     if data['cmd'] in \
+                        #             ['heartbeat30s', 'flagfidinx', 'sendorder' ,'callnewdevn']:
+                        #         print u"删除-----------------------"
+                        #         rds_conn.delete(k)
 
-                    # 发送消息
-                    topic = '/' + self.product_key + '/' \
-                            + device_name + '/user/get'
-                    self.request.set_TopicFullName(topic)
+                        # 发送消息
+                        topic = '/' + self.product_key + '/' \
+                                + device_name + '/user/get'
+                        self.request.set_TopicFullName(topic)
 
-                    b64_str = base64.b64encode(json.dumps(data))
-                    self.request.set_MessageContent(b64_str)
-                    self.request.set_ProductKey(self.product_key)
+                        b64_str = base64.b64encode(json.dumps(data))
+                        self.request.set_MessageContent(b64_str)
+                        self.request.set_ProductKey(self.product_key)
 
-                    self.client.do_action_with_exception(self.request)
+                        self.client.do_action_with_exception(self.request)
             end = time.time()
             logger.error("Order Time.={}".format(end - start))
         except:
