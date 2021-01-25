@@ -1,4 +1,13 @@
 # coding:utf-8
+import os
+import sys
+reload(sys)
+sys.setdefaultencoding('utf8')
+
+project_src_dir = os.path.dirname(os.path.realpath(__file__))
+project_src_dir = os.path.dirname(project_src_dir)
+sys.path.insert(0, project_src_dir)
+
 import time
 import base64
 import json
