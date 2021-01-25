@@ -28,7 +28,6 @@ def order_sent_msg():
     """顺序发送消息"""
     while True:
         try:
-            start = time.time()
             rds_conn = db.rds_conn
             device_name_queue = rds_conn.lrange('DEVICE_NAME_QUEUE', 0, -1)
             for device_name in device_name_queue:
@@ -53,8 +52,6 @@ def order_sent_msg():
                         request.set_ProductKey(product_key)
 
                         client.do_action_with_exception(request)
-            end = time.time()
-            db.logger.error("Order Time.={}".format(end - start))
         except:
             import traceback
             err_msg = traceback.format_exc()
