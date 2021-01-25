@@ -14,7 +14,7 @@ import json
 from aliyunsdkcore.client import AcsClient
 from aliyunsdkiot.request.v20180120.PubRequest import PubRequest
 from timer import db
-import config
+from timer import config
 
 client = AcsClient(config.MNSAccessKeyId,
                    config.MNSAccessKeySecret, 'cn-shanghai')
