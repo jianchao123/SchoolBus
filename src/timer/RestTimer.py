@@ -753,7 +753,7 @@ class OrderSendMsg(object):
                     self.request.set_ProductKey(self.product_key)
                     self.client.do_action_with_exception(self.request)
             end = time.time()
-            logger.error("Time.={}".format(end - start))
+            logger.error("Order Time.={}".format(end - start))
         except:
             import traceback
             err_msg = traceback.format_exc()
