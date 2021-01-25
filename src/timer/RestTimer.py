@@ -734,18 +734,18 @@ class OrderSendMsg(object):
                     rds_conn.expire(k, 30)
 
                     # 测试,正式时注释
-                    print data
-                    if 'cmd' in data:
-                        if data['cmd'] in \
-                                ['heartbeat30s', 'flagfidinx', 'sendorder' ,'callnewdevn']:
-                            print u"删除-----------------------"
-                            rds_conn.delete(k)
+                    # print data
+                    # if 'cmd' in data:
+                    #     if data['cmd'] in \
+                    #             ['heartbeat30s', 'flagfidinx', 'sendorder' ,'callnewdevn']:
+                    #         print u"删除-----------------------"
+                    #         rds_conn.delete(k)
 
                     # 发送消息
                     topic = '/' + self.product_key + '/' \
                             + device_name + '/user/get'
                     self.request.set_TopicFullName(topic)
-                    print data
+
                     b64_str = base64.b64encode(json.dumps(data))
                     self.request.set_MessageContent(b64_str)
                     self.request.set_ProductKey(self.product_key)
