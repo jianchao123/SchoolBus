@@ -444,6 +444,8 @@ class DeviceBusiness(object):
         """
         if workmode not in [0, 1, 3]:
             return -1
+        if not cur_volume:
+            cur_volume = 100
         cur_volume = cur_volume - 94
         if not chepai:
             return
