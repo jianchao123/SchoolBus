@@ -305,7 +305,7 @@ class AcsManager(object):
         d['driver_mobile'] = driver_mobile
         d['zgy_mobile'] = zgy_mobile
 
-        #pgsql_db.insert(pgsql_cur, d, table_name='public.order')
+        pgsql_db.insert(pgsql_cur, d, table_name='public.order')
 
         if order_type == 1:
             order_type_name = u"上学上车"

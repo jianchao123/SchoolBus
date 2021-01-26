@@ -36,92 +36,90 @@ class ReceiveMessage(object):
 
     def msg_handler(self, acs_manager, logger):
         recv_msg = self.my_queue.receive_message(self.wait_seconds)
-        body = json.loads(recv_msg.message_body)
-        dev_name = body['topic'].split('/')[2]
-        jdata = json.loads(base64.b64decode(body["payload"]))
-        acs_manager.check_cur_stream_no(dev_name, jdata)
-        if 'cmd' in jdata:
-            cmd = jdata['cmd']
-            if cmd == 'syndata':
-                dev_name = jdata['devid']
-                if dev_name == 'newdev':
-                    acs_manager.create_device(jdata['mac'])
-
-                else:
-                    acs_manager.check_version(
-                        dev_name, jdata['version'], jdata['devtime'])
-                    if jdata['version'] == RedisKey.APPOINT_VERSION_NO:
-                        ret = acs_manager.init_device_params(
-                            jdata['version'], dev_name, jdata['devtime'],
-                            jdata['shd_devid'], jdata['gps'])
-                        acs_manager.device_rebooted_setting_open_time(
-                            dev_name, jdata['gps'])
-                        # 非0直接跳过,0表示已经初始化完成,因为低版本jdata没有cnt
-                        if not ret:
-                            acs_manager.device_incar_person_number(
-                                dev_name, jdata['cnt'])
-
-            elif cmd == 'devwhitelist2':
-
-                acs_manager.add_redis_queue(
-                    dev_name, jdata['data'], jdata['pkt_cnt'])
-
-            elif cmd == 'addface':
-                # 生成特征值返回的信息
-                if 'feature_type' in jdata:
-                    acs_manager.save_feature(
-                        dev_name, jdata['fid'], jdata['feature'])
-                    if jdata['feature']:
-                        logger.info(u'生成特征值成功{}'.format(jdata['fid']))
-                    else:
-                        logger.info(u"生成特征值失败{}".format(jdata['fid']))
-            elif cmd == 'updateface':
-                pass
-            elif cmd == 'delface':
-                pass
-            elif cmd == 'record':
-                if jdata['fid'] == -1:
-
-                    log_id = int(jdata['gps'].split('|')[0])
-                    # acc关闭
-                    if log_id == 3:
-                        acs_manager.acc_close(dev_name, jdata['addtime'])
-                    elif log_id == 4:
-                        acs_manager.acc_open(dev_name)
-                    elif log_id == 20:
-                        print u"防滞留检测开启"
-                else:
-                    if not jdata['type']:
-                        pass
-                        # acs_manager.add_order(jdata['fid'],
-                        #                       jdata['gps'],
-                        #                       jdata['addtime'],
-                        #                       dev_name,
-                        #                       jdata['cnt'])
-            elif cmd == 'syndevinfo':
-                acs_manager.save_imei(dev_name, jdata['imei'])
-            elif cmd == 'update':
-                if jdata['status'] == 'success':
-                    logger.info(u"升级成功")
-                else:
-                    logger.info(u"升级失败")
-            elif cmd == 'batchaddface':
-                logger.info(u"批量注册人脸")
-            elif cmd == 'batchdelface':
-                pass
-
-            elif cmd == 'syndata_ext':
-                pass
-            elif cmd == 'poweroff':
-                acs_manager.clear_setting(dev_name, jdata['seconds'])
-
-        # 删除消息
-        try:
-            self.my_queue.delete_message(recv_msg.receipt_handle)
-            #print("Delete Message Succeed!  ReceiptHandle:%s" % recv_msg.receipt_handle)
-        except Exception as e:
-            pass
-            #print("Delete Message Fail! Exception:%s\n" % e)
+        self.my_queue.delete_message(recv_msg.receipt_handle)
+        # body = json.loads(recv_msg.message_body)
+        # dev_name = body['topic'].split('/')[2]
+        # jdata = json.loads(base64.b64decode(body["payload"]))
+        # acs_manager.check_cur_stream_no(dev_name, jdata)
+        # if 'cmd' in jdata:
+        #     cmd = jdata['cmd']
+        #     if cmd == 'syndata':
+        #         dev_name = jdata['devid']
+        #         if dev_name == 'newdev':
+        #             acs_manager.create_device(jdata['mac'])
+        #
+        #         else:
+        #             acs_manager.check_version(
+        #                 dev_name, jdata['version'], jdata['devtime'])
+        #             if jdata['version'] == RedisKey.APPOINT_VERSION_NO:
+        #                 ret = acs_manager.init_device_params(
+        #                     jdata['version'], dev_name, jdata['devtime'],
+        #                     jdata['shd_devid'], jdata['gps'])
+        #                 acs_manager.device_rebooted_setting_open_time(
+        #                     dev_name, jdata['gps'])
+        #                 # 非0直接跳过,0表示已经初始化完成,因为低版本jdata没有cnt
+        #                 if not ret:
+        #                     acs_manager.device_incar_person_number(
+        #                         dev_name, jdata['cnt'])
+        #
+        #     elif cmd == 'devwhitelist2':
+        #
+        #         acs_manager.add_redis_queue(
+        #             dev_name, jdata['data'], jdata['pkt_cnt'])
+        #
+        #     elif cmd == 'addface':
+        #         # 生成特征值返回的信息
+        #         if 'feature_type' in jdata:
+        #             acs_manager.save_feature(
+        #                 dev_name, jdata['fid'], jdata['feature'])
+        #             if jdata['feature']:
+        #                 logger.info(u'生成特征值成功{}'.format(jdata['fid']))
+        #             else:
+        #                 logger.info(u"生成特征值失败{}".format(jdata['fid']))
+        #     elif cmd == 'updateface':
+        #         pass
+        #     elif cmd == 'delface':
+        #         pass
+        #     elif cmd == 'record':
+        #         if jdata['fid'] == -1:
+        #
+        #             log_id = int(jdata['gps'].split('|')[0])
+        #             # acc关闭
+        #             if log_id == 3:
+        #                 acs_manager.acc_close(dev_name, jdata['addtime'])
+        #             elif log_id == 4:
+        #                 acs_manager.acc_open(dev_name)
+        #             elif log_id == 20:
+        #                 print u"防滞留检测开启"
+        #         else:
+        #             if not jdata['type']:
+        #                 acs_manager.add_order(jdata['fid'],
+        #                                       jdata['gps'],
+        #                                       jdata['addtime'],
+        #                                       dev_name,
+        #                                       jdata['cnt'])
+        #     elif cmd == 'syndevinfo':
+        #         acs_manager.save_imei(dev_name, jdata['imei'])
+        #     elif cmd == 'update':
+        #         if jdata['status'] == 'success':
+        #             logger.info(u"升级成功")
+        #         else:
+        #             logger.info(u"升级失败")
+        #     elif cmd == 'batchaddface':
+        #         logger.info(u"批量注册人脸")
+        #     elif cmd == 'batchdelface':
+        #         pass
+        #
+        #     elif cmd == 'syndata_ext':
+        #         pass
+        #     elif cmd == 'poweroff':
+        #         acs_manager.clear_setting(dev_name, jdata['seconds'])
+        #
+        # # 删除消息
+        # try:
+        #     self.my_queue.delete_message(recv_msg.receipt_handle)
+        # except Exception as e:
+        #     pass
 
     def run(self):
         print("%sReceive And Delete Message From Queue%s\nQueueName:"
