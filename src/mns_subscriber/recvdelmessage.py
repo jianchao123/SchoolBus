@@ -92,11 +92,12 @@ class ReceiveMessage(object):
                         print u"防滞留检测开启"
                 else:
                     if not jdata['type']:
-                        acs_manager.add_order(jdata['fid'],
-                                              jdata['gps'],
-                                              jdata['addtime'],
-                                              dev_name,
-                                              jdata['cnt'])
+                        pass
+                        # acs_manager.add_order(jdata['fid'],
+                        #                       jdata['gps'],
+                        #                       jdata['addtime'],
+                        #                       dev_name,
+                        #                       jdata['cnt'])
             elif cmd == 'syndevinfo':
                 acs_manager.save_imei(dev_name, jdata['imei'])
             elif cmd == 'update':
