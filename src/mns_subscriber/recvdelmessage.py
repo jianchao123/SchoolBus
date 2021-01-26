@@ -32,6 +32,7 @@ class ReceiveMessage(object):
         self.queue_name = "aliyun-iot-" + product_key
         self.my_queue = self.my_account.get_queue(self.queue_name)
         self.my_queue.set_encoding(True)
+        self.my_queue.set_qos(0)
         self.wait_seconds = 3
 
     def msg_handler(self, acs_manager, logger):
