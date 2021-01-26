@@ -113,7 +113,7 @@ else:
     OSSAccessKeySecret = 'IGuoRIxwMlPQqJ9ujWyTvSq2em4RDj'
 
     # MNS
-    MNSEndpoint = 'http://1162097573951650.mns.cn-shanghai.aliyuncs.com/'
+    MNSEndpoint = 'http://1162097573951650.mns.cn-shanghai-internal.aliyuncs.com/'
     MNSAccessKeyId = 'LTAI4GL6gtEc4bnmj82yQ9wc'
     MNSAccessKeySecret = 'vhuBLJpqlOsSisnuUQ1xvE02GCXhIC'
 
