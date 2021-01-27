@@ -36,7 +36,6 @@ class InsertUpdateConsumer(object):
         self.business = InsertUpdateBusiness(self.logger)
 
     def insert_update_callback(self, ch, method, properties, body):
-        print method
         data = json.loads(body.decode('utf-8'))
         arr = method.routing_key.split(".")
         routing_suffix = arr[-1]
@@ -119,7 +118,6 @@ class StudentConsumer(object):
         self.student_business = StudentBusiness(self.logger)
 
     def student_callback(self, ch, method, properties, body):
-        print method
         data = json.loads(body.decode('utf-8'))
         arr = method.routing_key.split(".")
         routing_suffix = arr[-1]
@@ -188,7 +186,6 @@ class StudentBusiness(object):
                 'car_id': car_id,
                 'license_plate_number': license_plate_number
             }
-            print d
 
             if student:
                 # d['id'] = student[0]
@@ -264,7 +261,6 @@ class StudentBusiness(object):
                 pgsql_db.insert(pgsql_cur, d, 'worker')
                 # 查询
                 new_worker = pgsql_db.get(pgsql_cur, worker_sql.format(emp_no))
-                print new_worker
 
         rds_conn.delete('batch_add_worker')
 
@@ -327,7 +323,6 @@ class DeviceConsumer(object):
             config.MNSAccessKeySecret, self.logger)
 
     def device_callback(self, ch, method, properties, body):
-        print method
         data = json.loads(body.decode('utf-8'))
         arr = method.routing_key.split(".")
         routing_suffix = arr[-1]
@@ -367,8 +362,6 @@ class DeviceBusiness(object):
             "url": url,
             "cmd": "batchaddface"
         }
-        print jdata
-        print device_name
         self._pub_msg(device_name, jdata)
 
     def _publish_del_people_msg(self, device_name, fid):
@@ -424,7 +417,6 @@ class DeviceBusiness(object):
 
     def _pub_msg(self, devname, jdata):
         print u"-----------加入顺序发送消息的队列--------"
-        print jdata
         k = rds_conn.get("stream_no_incr")
         if k:
             stream_no = rds_conn.incr("stream_no_incr")
@@ -470,7 +462,6 @@ class DeviceBusiness(object):
             'person_limit': person_limit
         }
 
-        print jdata
         return self._pub_msg(device_name, jdata)
 
     def dev_white_list_msg(self, data):
@@ -551,9 +542,7 @@ class DeviceBusiness(object):
         if len(del_list) < 60:
             for fid in del_list:
                 self._publish_del_people_msg(device_name, fid)
-        print del_list
-        print update_list
-        print add_list
+
         sql = "SELECT feature,nickname,aac_url " \
               "FROM face WHERE id in ({}) "
         # update list
@@ -599,7 +588,7 @@ class ExportExcelConsumer(object):
             config.MNSAccessKeySecret, self.logger)
 
     def excel_callback(self, ch, method, properties, body):
-        print method
+
         data = json.loads(body.decode('utf-8'))
         arr = method.routing_key.split(".")
         routing_suffix = arr[-1]
@@ -692,14 +681,12 @@ class ExportExcelBusiness(object):
                 else:
                     order_type_str = u"放学下车"
                 create_time_str = row[4].strftime('%Y-%m-%d %H:%M:%S')
-                print row
-                print row[0], row[1], row[2]
+
                 sheet_data.append(
                     [row[0], row[1].decode('utf8'), row[2].decode('utf8'),
                      order_type_str, create_time_str, row[5].decode('utf8'),
                      row[6]])
-            print book_name_xls
-            print sheet_data
+
             utils.write_excel_xls(
                 workbook,
                 book_name_xls,
@@ -735,7 +722,7 @@ class ExportExcelBusiness(object):
         alert_info_type = data.get('alert_info_type', None)
         car_id = data.get('car_id', None)
         task_id = data['task_id']
-        print data
+
         sql = """
         SELECT license_plate_number,worker_name_1,worker_name_2,company_name,
         people_number,people_info,alert_start_time,alert_second_time,
@@ -809,11 +796,11 @@ class MpMsgConsumer(object):
         self.business = MpMsgBusiness(self.logger)
 
     def callback(self, ch, method, properties, body):
-        print method
+
         data = json.loads(body.decode('utf-8'))
         arr = method.routing_key.split(".")
         routing_suffix = arr[-1]
-        print '===============================================123'
+
         if routing_suffix == 'parents':
             self.business.parents_mp_msg(data)
         if routing_suffix == 'staff':

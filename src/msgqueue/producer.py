@@ -192,7 +192,7 @@ def send_staff_template_message(
     data['alert_type'] = alert_type
     data['time'] = time
     data['license_plate_number'] = license_plate_number
-    print data
+
     _publish_msg('mpmsg_exchange', 'mpmsg.staff', json.dumps(data))
 
 
