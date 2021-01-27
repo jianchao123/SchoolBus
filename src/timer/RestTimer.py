@@ -101,8 +101,12 @@ class CheckAccClose(object):
                              "license_plate_number FROM alert_info " \
                              "WHERE periods='{}' LIMIT 1"
         if time_diff < 331:
-            number = int(rds_conn.hget(
-                RedisKey.DEVICE_CUR_PEOPLE_NUMBER, dev_name))
+            device_cur_person_number = rds_conn.hget(
+                RedisKey.DEVICE_CUR_PEOPLE_NUMBER, dev_name)
+            if not device_cur_person_number:
+                rds_conn.hdel(RedisKey.ACC_CLOSE, dev_name)
+                return
+            number = int(device_cur_person_number)
             if number:
 
                 # 是否已经添加报警记录
@@ -447,7 +451,7 @@ class FromOssQueryFace(object):
             intersection = list(rds_conn.sinter(
                 RedisKey.OSS_ID_CARD_SET, RedisKey.OSS_ID_CARD_SET + "CP"))
             intersection = intersection[:1000]
-            print intersection
+
             for row in intersection:
                 d = {
                     'id': stu_no_pk_map[row],
@@ -524,9 +528,6 @@ class HeartBeat30s(object):
                     devcie_key, 'run_status', 'devname')
 
                 if run_status and int(run_status) and dev_name != "newdev":
-                    print dev_name
-                    print dev_name == "newdev"
-                    print run_status, int(run_status)
                     pub_msg(rds_conn, dev_name, {"cmd": "flagfidinx"})
             rds_conn.delete('MARK_FID')
 
