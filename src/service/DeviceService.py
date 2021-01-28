@@ -122,6 +122,7 @@ class DeviceService(object):
             # 清空
             if car_id == -10:
                 device.car_id = None
+                device.license_plate_number = None
             else:
                 # 该车辆是否已经绑定设备
                 if db.session.query(Device).filter(

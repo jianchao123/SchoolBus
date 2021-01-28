@@ -291,9 +291,9 @@ class WxMPService(object):
                 d['staff'] = string
                 d['oss_url'] = conf.config['REALTIME_FACE_IMG'].format(
                     fid=order.fid, timestamp=order.cur_timestamp)
-                d[
-                    'license_plate_number'] = order.license_plate_number.encode(
-                    'utf8')
+                d['license_plate_number'] = \
+                    order.license_plate_number.encode('utf8')
                 d['gps'] = order.gps
-                d['staff'] = '驾驶员 ({} {}),照管员 ({} {})'.format(
-                    order.driver_name, order.driver_mobile, order.zgy_name, order.zgy_mobile)
+                d['staff'] = '驾驶员 ({} {})|照管员 ({} {})'.format(
+                    order.driver_name, order.driver_mobile,
+                    order.zgy_name, order.zgy_mobile)
