@@ -619,7 +619,7 @@ class AcsManager(object):
         if cur_status and int(cur_status) == 5:
             rds_conn.hset(RedisKey.DEVICE_CUR_PEOPLE_NUMBER, dev_name, cnt)
 
-    def device_rebooted_setting_open_time(self, device_name, gps):
+    def device_rebooted_setting_open_time(self, device_name, gps, ret):
         """设备重启设备开机时间"""
         rds_conn = db.rds_conn
         # 设置设备时间戳和gps
@@ -628,7 +628,8 @@ class AcsManager(object):
 
         # 长时间关机
         if device_timestamp and \
-                int(time.time()) - int(device_timestamp) > 60 * 1:
+                int(time.time()) - int(device_timestamp) > 60 * 1 and \
+                (not ret):
             producer.dev_while_list(device_name)
             pk, status, version_no, sound_volume, license_plate_number, \
                 device_type, person_limit = self._get_device_info_data(device_name)

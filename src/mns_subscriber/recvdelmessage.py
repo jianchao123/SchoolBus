@@ -55,7 +55,7 @@ class ReceiveMessage(object):
                             jdata['version'], dev_name, jdata['devtime'],
                             jdata['shd_devid'], jdata['gps'])
                         acs_manager.device_rebooted_setting_open_time(
-                            dev_name, jdata['gps'])
+                            dev_name, jdata['gps'], ret)
                         # 非0直接跳过,0表示已经初始化完成,因为低版本jdata没有cnt
                         if not ret:
                             acs_manager.device_incar_person_number(
