@@ -59,8 +59,10 @@ class WxMPService(object):
         }
         if student:
             d['parents'] = 1
-            d['mobile'] = student.mobile_1 if student.mobile_1 else student.mobile_2
-            d['mobile'] = student.mobile_2 if student.mobile_2 else student.mobile_1
+            if student.open_id_1 and student.open_id_1 == open_id:
+                d['mobile'] = student.mobile_1
+            if student.open_id_2 and student.open_id_2 == open_id:
+                d['mobile'] = student.mobile_2
         if worker and worker.duty_id == 1:
             d['driver'] = 1
             d['mobile'] = worker.mobile
