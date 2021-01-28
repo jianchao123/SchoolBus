@@ -139,6 +139,7 @@ class DeviceService(object):
 
                 device.car_id = car_id
                 device.license_plate_number = car.license_plate_number
+                device.person_limit = car.capacity
                 # 如果用户关联设备和车辆,判断状态是否为1,为1就修改到2
                 if device.status == 1:
                     device.status = 2
