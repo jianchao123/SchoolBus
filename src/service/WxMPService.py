@@ -73,14 +73,11 @@ class WxMPService(object):
     @staticmethod
     def save_mobile(mobile, open_id):
 
-        from flask_sqlalchemy import SQLAlchemy
-
-        # 获取db
-        db = SQLAlchemy()
-        db.session.execute("SET LOCAL citus.multi_shard_modify_mode TO 'sequential';")
         students = db.session.query(Student).filter(
-            or_(Student.mobile_1 == mobile, Student.mobile_2 == mobile)).all()
-        workers = db.session.query(Worker).filter(Worker.mobile == mobile).all()
+            or_(Student.mobile_1 == mobile,
+                Student.mobile_2 == mobile)).all()
+        workers = db.session.query(Worker).filter(
+            Worker.mobile == mobile).all()
         if not students and not workers:
             return -10
         print students, workers
@@ -95,8 +92,6 @@ class WxMPService(object):
         for row in workers:
             row.open_id = open_id
         try:
-            # db.session.execute("BEGIN;")
-
             db.session.commit()
             return {'open_id': open_id}
         except SQLAlchemyError:
@@ -179,12 +174,7 @@ class WxMPService(object):
     @staticmethod
     def cancel_binding(open_id):
         """解除绑定"""
-        from flask_sqlalchemy import SQLAlchemy
 
-        # 获取db
-        db = SQLAlchemy()
-        db.session.execute(
-            "SET LOCAL citus.multi_shard_modify_mode TO 'sequential';")
         student = db.session.query(Student).filter(
             or_(Student.open_id_1 == open_id,
                 Student.open_id_2 == open_id)).first()
