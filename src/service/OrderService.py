@@ -130,7 +130,7 @@ class OrderService(object):
             takebustime = int(row.cur_timestamp)
             chepai = row.license_plate_number.encode('utf8')
 
-
+            final_string += struct.pack('!i', row.id)
             final_string += struct.pack('!b', row.order_type)
             final_string += struct.pack('!b', len(stuno))
             final_string += stuno
