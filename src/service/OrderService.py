@@ -112,4 +112,43 @@ class OrderService(object):
 
     @staticmethod
     def order_data_bytes(page):
-        db.session.query()
+        """
+        乘车记录类型 身份证 学生姓名 学校 乘车时间 乘坐车辆 gps
+        :param page:
+        :return:
+        """
+        import zlib
+        import struct
+        import base64
+        offset = (int(page) - 1) * 1000
+        results = db.session.query(Order).offset(offset).limit(1000).all()
+        final_string = ""
+        for row in results:
+            stuno = row.stu_no.encode('utf8')
+            stuname = row.stu_name.encode('utf8')
+            schoolname = row.school_name.encode('utf8')
+            takebustime = int(row.cur_timestamp)
+            chepai = row.license_plate_number.encode('utf8')
+
+
+            final_string += struct.pack('!b', row.order_type)
+            final_string += struct.pack('!b', len(stuno))
+            final_string += stuno
+            final_string += struct.pack('!b', len(stuname))
+            final_string += stuname
+            final_string += struct.pack('!b', len(schoolname))
+            final_string += schoolname
+            final_string += struct.pack('!b', 4)
+            final_string += struct.pack('!i', takebustime)
+            final_string += struct.pack('!b', len(chepai))
+            final_string += chepai
+            if row.gps:
+                gps = row.gps.encode('utf8')
+                final_string += struct.pack('!b', len(gps))
+                final_string += gps
+            else:
+                final_string += struct.pack('!b', 0)
+        if final_string:
+            crc_code = zlib.crc32(final_string) & 0xffffffff
+            return base64.b64encode(struct.pack('!q', crc_code) + final_string)
+        return ""

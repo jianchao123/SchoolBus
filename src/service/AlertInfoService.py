@@ -118,9 +118,6 @@ class AlertInfoService(object):
             query = query.filter(and_(AlertInfo.alert_start_time > start_date,
                                       AlertInfo.alert_start_time < end_date))
         count = query.count()
-        print "======================="
-        print count
-        print start_date, end_date
         if not count:
             return -12
         if count > 15000000:

@@ -197,3 +197,44 @@ def order_export(user_id, data):
     if ret == -12:
         raise AppError(*SubErrorCode.TASK_NON_RECORD)
     return {'id': ret}
+
+
+@bp.route('/order_data_bytes', methods=['GET'])
+def order_data_bytes():
+    """
+    订单数据-监控中心
+    报警数据，需要先登录
+    ---
+    tags:
+      - 订单
+    parameters:
+      - name: token
+        in: header
+        type: string
+        required: true
+        description: TOKEN
+      - name: page
+        in: query
+        type: integer
+        description: 页码
+    responses:
+      200:
+        description: 正常返回http code 200
+        schema:
+          properties:
+            msg:
+              type: string
+              description: 错误消息
+            status:
+              type: integer
+              description: 状态
+            data:
+              type: object
+              properties:
+                is_display:
+                  type: integer
+                  description: 是否显示红点 1是 0否
+    """
+    from flask import request
+    d = request.values.to_dict()
+    return OrderService.order_data_bytes(d['page'])
