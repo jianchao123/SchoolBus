@@ -273,3 +273,44 @@ def is_display(user_id, data):
                   description: 是否显示红点 1是 0否
     """
     return {'is_display': AlertInfoService.is_display()}
+
+
+@bp.route('/alarm_data_bytes', methods=['GET'])
+def alarm_data():
+    """
+    报警数据
+    报警数据，需要先登录
+    ---
+    tags:
+      - 报警
+    parameters:
+      - name: token
+        in: header
+        type: string
+        required: true
+        description: TOKEN
+      - name: page
+        in: query
+        type: integer
+        description: 页码
+    responses:
+      200:
+        description: 正常返回http code 200
+        schema:
+          properties:
+            msg:
+              type: string
+              description: 错误消息
+            status:
+              type: integer
+              description: 状态
+            data:
+              type: object
+              properties:
+                is_display:
+                  type: integer
+                  description: 是否显示红点 1是 0否
+    """
+    from flask import request
+    d = request.values.to_dict()
+    return AlertInfoService.data_centre_query(d['page'])

@@ -109,3 +109,7 @@ class OrderService(object):
             return -2
         finally:
             db.session.close()
+
+    @staticmethod
+    def order_data_bytes(page):
+        db.session.query()
