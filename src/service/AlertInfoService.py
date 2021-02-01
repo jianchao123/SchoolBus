@@ -185,7 +185,8 @@ class AlertInfoService(object):
         """
         final_string = ""
         offset = (int(page) - 1) * 100
-        results = db.session.query(AlertInfo).offset(offset).limit(100).all()
+        results = db.session.query(AlertInfo).order_by(
+            AlertInfo.id.desc()).offset(offset).limit(100).all()
         for row in results:
             alarm_cnt = 1
             if row.second_alert:
