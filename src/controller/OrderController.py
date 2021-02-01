@@ -208,11 +208,6 @@ def order_data_bytes():
     tags:
       - 订单
     parameters:
-      - name: token
-        in: header
-        type: string
-        required: true
-        description: TOKEN
       - name: page
         in: query
         type: integer

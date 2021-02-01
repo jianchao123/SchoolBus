@@ -121,7 +121,8 @@ class OrderService(object):
         import struct
         import base64
         offset = (int(page) - 1) * 1000
-        results = db.session.query(Order).offset(offset).limit(1000).all()
+        results = db.session.query(Order).order_by(
+            Order.id.desc()).offset(offset).limit(1000).all()
         final_string = ""
         for row in results:
             stuno = row.stu_no.encode('utf8')
@@ -133,22 +134,23 @@ class OrderService(object):
             final_string += struct.pack('!i', row.id)
             final_string += struct.pack('!b', row.order_type)
             final_string += struct.pack('!b', len(stuno))
-            final_string += stuno.encode('utf8')
+            final_string += stuno
             final_string += struct.pack('!b', len(stuname))
-            final_string += stuname.encode('utf8')
+            final_string += stuname
             final_string += struct.pack('!b', len(schoolname))
-            final_string += schoolname.encode('utf8')
+            final_string += schoolname
             final_string += struct.pack('!b', 4)
             final_string += struct.pack('!i', takebustime)
             final_string += struct.pack('!b', len(chepai))
-            final_string += chepai.encode('utf8')
+            final_string += chepai
             if row.gps:
                 gps = row.gps.encode('utf8')
                 final_string += struct.pack('!b', len(gps))
-                final_string += gps.encode('utf8')
+                final_string += gps
             else:
                 final_string += struct.pack('!b', 0)
         if final_string:
             crc_code = zlib.crc32(final_string) & 0xffffffff
-            return base64.b64encode(struct.pack('!q', crc_code) + final_string)
+            raw_str = struct.pack('!q', crc_code) + final_string
+            return base64.b64encode(raw_str)
         return ""
