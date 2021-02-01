@@ -133,19 +133,19 @@ class OrderService(object):
             final_string += struct.pack('!i', row.id)
             final_string += struct.pack('!b', row.order_type)
             final_string += struct.pack('!b', len(stuno))
-            final_string += stuno
+            final_string += stuno.encode('utf8')
             final_string += struct.pack('!b', len(stuname))
-            final_string += stuname
+            final_string += stuname.encode('utf8')
             final_string += struct.pack('!b', len(schoolname))
-            final_string += schoolname
+            final_string += schoolname.encode('utf8')
             final_string += struct.pack('!b', 4)
             final_string += struct.pack('!i', takebustime)
             final_string += struct.pack('!b', len(chepai))
-            final_string += chepai
+            final_string += chepai.encode('utf8')
             if row.gps:
                 gps = row.gps.encode('utf8')
                 final_string += struct.pack('!b', len(gps))
-                final_string += gps
+                final_string += gps.encode('utf8')
             else:
                 final_string += struct.pack('!b', 0)
         if final_string:
