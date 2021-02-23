@@ -4,6 +4,9 @@ import base64
 import json
 import oss2
 import random
+import requests
+import hashlib
+import string
 from collections import defaultdict
 from datetime import datetime, timedelta
 from urllib2 import urlopen
@@ -78,7 +81,11 @@ class CheckAccClose(object):
             face_ids = arr[1]
             periods = arr[2]
             time_diff = cur_timestamp - acc_timestamp
-            self.acc_business(rds_conn, dev_name, time_diff, face_ids, periods)
+            if face_ids:
+                self.acc_business(rds_conn, dev_name, time_diff, face_ids, periods)
+            else:
+                # 删除acc key
+                rds_conn.hdel(RedisKey.ACC_CLOSE, dev_name)
 
     @db.transaction(is_commit=True)
     def acc_business(self, pgsql_cur, rds_conn, dev_name,
@@ -135,12 +142,12 @@ class CheckAccClose(object):
                         open_id_2 = row[3]
 
                 sql = "SELECT STU.nickname,SHL.school_name,STU.grade_id," \
-                      "STU.class_id,STU.mobile_1,STU.mobile_2 FROM " \
+                      "STU.class_id,STU.mobile_1,STU.mobile_2,STU.id FROM " \
                       "face F INNER JOIN student STU ON STU.id=F.stu_id " \
                       "INNER JOIN school SHL ON SHL.id=STU.school_id " \
                       "WHERE F.id in ({})".format(face_ids)
-
                 results = pgsql_db.query(pgsql_cur, sql)
+                stu_id_list = []
 
                 send_msg_student_info = []
                 student_info = []
@@ -154,6 +161,7 @@ class CheckAccClose(object):
                     info['mobile_2'] = row[5]
                     student_info.append(info)
                     send_msg_student_info.append(row[0])
+                    stu_id_list.append(row[6])
                 people_info_list = []
                 for info in student_info:
                     people_info_list.append('{},{},{},{},{}'.format(
@@ -177,7 +185,8 @@ class CheckAccClose(object):
                     'alert_start_time': 'NOW()',
                     'gps': rds_conn.hget(RedisKey.DEVICE_CUR_GPS, dev_name),
                     'status': 1,         # 正在报警
-                    'periods': periods
+                    'periods': periods,
+                    'stu_ids': ','.join(stu_id_list)
                 }
 
                 send_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -705,61 +714,217 @@ class EveryHoursExecute(object):
         rds_conn.set(RedisKey.STATISTICS, json.dumps(d))
 
 
-from db import logger
-class OrderSendMsg(object):
+class UploadTakeBusData(object):
+    """上传乘车数据到监控中心"""
 
-    def __init__(self):
-        self.auth = oss2.Auth(config.OSSAccessKeyId, config.OSSAccessKeySecret)
-        self.bucket = oss2.Bucket(self.auth, config.OSSEndpoint,
-                                  config.OSSBucketName)
+    url = ""
+    access_key_secret = ""
 
-        self.client = AcsClient(config.MNSAccessKeyId,
-                                config.MNSAccessKeySecret, 'cn-shanghai')
-        self.product_key = config.Productkey
-        self.request = PubRequest()
-        self.request.set_Qos(0)
-        self.request.set_accept_format('json')
+    @staticmethod
+    def _get_created():
+        import pytz
+        tz = pytz.timezone('UTC')
+        now = datetime.now(tz)
+        return now.strftime("%Y-%m-%dT%H:%M:%S.%f%z")
 
-    def order_sent_msg(self):
-        """顺序发送消息"""
-        try:
-            start = time.time()
-            rds_conn = db.rds_conn
-            device_queues = rds_conn.keys('mns_list_*')
-            for queue_name in device_queues:
-                device_name = queue_name[9:]
-                k = "cur_{}_stream_no".format(device_name)
-                # 不存在就取出一条消息发送到物联网
-                if not rds_conn.get(k):
-                    raw_msg_content = rds_conn.lpop(queue_name)
-                    if raw_msg_content:
-                        data = json.loads(raw_msg_content)
-                        stream_no = data['stream_no']
-                        rds_conn.set(k, stream_no)
-                        rds_conn.expire(k, 30)
+    @db.transaction(is_commit=True)
+    def upload_take_bus_data(self, cursor):
 
-                        # 测试,正式时注释
-                        # print data
-                        # if 'cmd' in data:
-                        #     if data['cmd'] in \
-                        #             ['heartbeat30s', 'flagfidinx', 'sendorder' ,'callnewdevn']:
-                        #         print u"删除-----------------------"
-                        #         rds_conn.delete(k)
+        rds_conn = db.rds_conn
+        sql_db = db.PgsqlDbUtil
+        lastest_id = rds_conn.get(RedisKey.CACHE_LASTEST_ORDERID)
+        if not lastest_id:
+            lastest_id = 0
+        else:
+            lastest_id = int(lastest_id)
+        sql = "SELECT license_plate_number,stu_name,stu_no,create_time," \
+              "order_type,id FROM public.order WHERE id>{} " \
+              "ORDER BY id ASC LIMIT 100"
+        results = sql_db.query(cursor, sql.format(lastest_id))
+        l = []
+        flag = 0
+        headers = {
+            'Content-Type': 'application/json;charset=UTF-8',
+            'Content-Length': 0,
+            'Content-MD5': '',
+            'Authorization': 'WSSE profile="UsernamePwd"',
+            'X-WSSE': 'UsernamePwd Username="3T4sde2HH45", '
+                      'PasswordDigest="{}",Nonce="{}",Created="{}"'
 
-                        # 发送消息
-                        topic = '/' + self.product_key + '/' \
-                                + device_name + '/user/get'
-                        self.request.set_TopicFullName(topic)
+        }
+        nonce = ''.join(random.sample(string.ascii_letters + string.digits, 16))
+        create_timestamp = int(time.time() * 1000)
+        created = UploadTakeBusData._get_created()
+        while True:
+            for row in results:
+                face_time = int(time.mktime(row[3].timetuple())) * 1000
+                state = 1 if row[4] % 2 else 2
+                l.append({'licensePlate': row[0], 'plateColor': 'yellow',
+                          'studentName': row[1], 'studentId': row[2],
+                          'faceTime': face_time, 'state': state,
+                          'flag': flag, 'sendTime': create_timestamp})
+            data = json.dumps(l)
+            length = len(data)
+            headers['Content-Length'] = length
 
-                        b64_str = base64.b64encode(json.dumps(data))
-                        self.request.set_MessageContent(b64_str)
-                        self.request.set_ProductKey(self.product_key)
+            m = hashlib.md5()
+            m.update(data.encode('utf-8'))
+            content_md5 = base64.b64encode(bin(int(m.hexdigest(), 16))[2:])
+            headers['Content-MD5'] = content_md5
 
-                        self.client.do_action_with_exception(self.request)
-            end = time.time()
-            logger.error("Order Time.={}".format(end - start))
-        except:
-            import traceback
-            err_msg = traceback.format_exc()
-            print err_msg
-            db.logger.error(err_msg)
+            password_digest = nonce + str(
+                create_timestamp) + UploadTakeBusData.access_key_secret + content_md5
+            password_digest = base64.b64encode(hashlib.sha1(password_digest.encode('utf8')))
+            headers['X-WSSE'] = headers['X-WSSE'].format(password_digest, nonce, created)
+            res = requests.post(UploadTakeBusData.url, data, headers=headers)
+            if res.status_code == 200:
+                rds_conn.set(RedisKey.CACHE_LASTEST_ORDERID, results[-1][-1])
+                break
+            flag += 1
+
+
+class UploadAlarmData(object):
+    """上传报警数据到监控中心"""
+
+    url = ""
+    access_key_secret = ""
+
+    @staticmethod
+    def _get_created():
+        import pytz
+        tz = pytz.timezone('UTC')
+        now = datetime.now(tz)
+        return now.strftime("%Y-%m-%dT%H:%M:%S.%f%z")
+
+    @db.transaction(is_commit=True)
+    def upload_alarm_data(self, cursor):
+
+        rds_conn = db.rds_conn
+        sql_db = db.PgsqlDbUtil
+        lastest_id = rds_conn.get(RedisKey.CACHE_LASTEST_ALARMID)
+        if not lastest_id:
+            lastest_id = 0
+        else:
+            lastest_id = int(lastest_id)
+
+        stu_sql = "SELECT stu_no,nickname FROM student WHERE id in ({})"
+
+        sql = "SELECT license_plate_number,alert_start_time,status," \
+              "people_number,stu_ids,cancel_worker_name,cancel_reason " \
+              "FROM alert_info WHERE id>{} ORDER BY id ASC LIMIT 10"
+        results = sql_db.query(cursor, sql.format(lastest_id))
+        l = []
+        flag = 0
+        headers = {
+            'Content-Type': 'application/json;charset=UTF-8',
+            'Content-Length': 0,
+            'Content-MD5': '',
+            'Authorization': 'WSSE profile="UsernamePwd"',
+            'X-WSSE': 'UsernamePwd Username="3T4sde2HH45", '
+                      'PasswordDigest="{}",Nonce="{}",Created="{}"'
+
+        }
+        nonce = ''.join(random.sample(string.ascii_letters + string.digits, 16))
+        create_timestamp = int(time.time() * 1000)
+        created = UploadAlarmData._get_created()
+        while True:
+            for row in results:
+                alert_start_time = int(time.mktime(row[1].timetuple())) * 1000
+                alarm_status = row[2]
+                people_number = row[3]
+                stu_ids = row[4]
+                stu_results = sql_db.query(cursor, stu_sql.format(stu_ids))
+                stu_info_list = []
+                for stu in stu_results:
+                    stu_info_list.append({'studentName': stu[1], 'studentId': stu[0]})
+
+                cancel_worker_name = row[5]
+                cancel_reason = row[6]
+
+                l.append({'licensePlate': row[0],
+                          'plateColor': 'yellow',
+                          'alarmTime': alert_start_time,
+                          'alarmType': 2,
+                          'alarmStatus': alarm_status,
+                          'studentCount': people_number,
+                          'studentInfo': json.dumps(stu_info_list),
+                          'alarmOffName': cancel_worker_name,
+                          'alarmOffReason': cancel_reason,
+                          'flag': flag, 'sendTime': create_timestamp})
+            data = json.dumps(l)
+            length = len(data)
+            headers['Content-Length'] = length
+
+            m = hashlib.md5()
+            m.update(data.encode('utf-8'))
+            content_md5 = base64.b64encode(bin(int(m.hexdigest(), 16))[2:])
+            headers['Content-MD5'] = content_md5
+
+            password_digest = nonce + str(
+                create_timestamp) + UploadTakeBusData.access_key_secret + content_md5
+            password_digest = base64.b64encode(hashlib.sha1(password_digest.encode('utf8')))
+            headers['X-WSSE'] = headers['X-WSSE'].format(password_digest, nonce, created)
+            res = requests.post(UploadTakeBusData.url, data, headers=headers)
+            if res.status_code == 200:
+                rds_conn.set(RedisKey.CACHE_LASTEST_ALARMID, results[-1][-1])
+                break
+            flag += 1
+
+# from db import logger
+# class OrderSendMsg(object):
+#
+#     def __init__(self):
+#         self.auth = oss2.Auth(config.OSSAccessKeyId, config.OSSAccessKeySecret)
+#         self.bucket = oss2.Bucket(self.auth, config.OSSEndpoint,
+#                                   config.OSSBucketName)
+#
+#         self.client = AcsClient(config.MNSAccessKeyId,
+#                                 config.MNSAccessKeySecret, 'cn-shanghai')
+#         self.product_key = config.Productkey
+#         self.request = PubRequest()
+#         self.request.set_Qos(0)
+#         self.request.set_accept_format('json')
+#
+#     def order_sent_msg(self):
+#         """顺序发送消息"""
+#         try:
+#             start = time.time()
+#             rds_conn = db.rds_conn
+#             device_queues = rds_conn.keys('mns_list_*')
+#             for queue_name in device_queues:
+#                 device_name = queue_name[9:]
+#                 k = "cur_{}_stream_no".format(device_name)
+#                 # 不存在就取出一条消息发送到物联网
+#                 if not rds_conn.get(k):
+#                     raw_msg_content = rds_conn.lpop(queue_name)
+#                     if raw_msg_content:
+#                         data = json.loads(raw_msg_content)
+#                         stream_no = data['stream_no']
+#                         rds_conn.set(k, stream_no)
+#                         rds_conn.expire(k, 30)
+#
+#                         # 测试,正式时注释
+#                         # print data
+#                         # if 'cmd' in data:
+#                         #     if data['cmd'] in \
+#                         #             ['heartbeat30s', 'flagfidinx', 'sendorder' ,'callnewdevn']:
+#                         #         print u"删除-----------------------"
+#                         #         rds_conn.delete(k)
+#
+#                         # 发送消息
+#                         topic = '/' + self.product_key + '/' \
+#                                 + device_name + '/user/get'
+#                         self.request.set_TopicFullName(topic)
+#
+#                         b64_str = base64.b64encode(json.dumps(data))
+#                         self.request.set_MessageContent(b64_str)
+#                         self.request.set_ProductKey(self.product_key)
+#
+#                         self.client.do_action_with_exception(self.request)
+#             end = time.time()
+#             logger.error("Order Time.={}".format(end - start))
+#         except:
+#             import traceback
+#             err_msg = traceback.format_exc()
+#             print err_msg
+#             db.logger.error(err_msg)

@@ -29,3 +29,4 @@ class AlertInfo(db.Model):
     cancel_reason = db.Column(db.Integer)       # cancel_type_id=1时需要此项
     gps = db.Column(db.String(32))
     periods = db.Column(db.String(48))
+    stu_ids = db.Column(db.String(32))

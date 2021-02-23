@@ -12,8 +12,9 @@ sys.path.insert(0, project_src_dir)
 from apscheduler.schedulers.gevent import BlockingScheduler
 
 from timer.RestTimer import GenerateFeature, EveryMinuteExe, \
-    FromOssQueryFace, EveryFewMinutesExe, OrderSendMsg, GenerateAAC, \
-    EveryHoursExecute, CheckAccClose, RefreshWxAccessToken
+    FromOssQueryFace, EveryFewMinutesExe, GenerateAAC, \
+    EveryHoursExecute, CheckAccClose, RefreshWxAccessToken, \
+    UploadTakeBusData, UploadAlarmData
 
 if __name__ == "__main__":
     generate_feature = GenerateFeature()
@@ -24,10 +25,18 @@ if __name__ == "__main__":
     generate_aac = GenerateAAC()
     check_acc_close = CheckAccClose()
     refresh_wx_access_token = RefreshWxAccessToken()
+    upload_take_bus_data = UploadTakeBusData()
+    upload_alarm_data = UploadAlarmData()
 
     sched = BlockingScheduler()
     # 顺序发送消息
     #sched.add_job(order_send_msg.order_sent_msg, 'interval', seconds=1)
+    # 上传数据监控中心
+    # sched.add_job(upload_take_bus_data.upload_take_bus_data,
+    #               'interval', seconds=5)
+    # sched.add_job(upload_alarm_data.upload_alarm_data,
+    #               'interval', seconds=5)
+
     # 生成特征码
     sched.add_job(generate_feature.generate_feature, 'interval', seconds=1)
     # 生成aac文件
