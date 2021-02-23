@@ -161,7 +161,7 @@ class CheckAccClose(object):
                     info['mobile_2'] = row[5]
                     student_info.append(info)
                     send_msg_student_info.append(row[0])
-                    stu_id_list.append(row[6])
+                    stu_id_list.append(str(row[6]))
                 people_info_list = []
                 for info in student_info:
                     people_info_list.append('{},{},{},{},{}'.format(
