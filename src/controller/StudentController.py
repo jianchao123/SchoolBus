@@ -242,8 +242,6 @@ def student_add(user_id, data):
     if ret == -2:
         raise AppError(*GlobalErrorCode.DB_COMMIT_ERR)
     if ret == -11:
-        raise AppError(*SubErrorCode.CAR_NOT_FOUND)
-    if ret == -12:
         raise AppError(*SubErrorCode.STUDENT_ID_CARD_ALREADY_EXISTS)
     return ret
 
