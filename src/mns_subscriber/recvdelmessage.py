@@ -91,7 +91,7 @@ class ReceiveMessage(object):
                     elif log_id == 20:
                         print u"防滞留检测开启"
                 else:
-                    print jdata
+                    logger.error(str(jdata))
                     if not jdata['type']:
                         acs_manager.add_order(jdata['fid'],
                                               jdata['gps'],
