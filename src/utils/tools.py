@@ -4,8 +4,6 @@ import json
 import decimal
 import hashlib
 from app import app
-import oss2
-from ext import conf
 
 
 def is_chinese(self, string):

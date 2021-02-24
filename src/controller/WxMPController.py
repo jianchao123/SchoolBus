@@ -1,5 +1,4 @@
 # coding:utf-8
-import json
 import hashlib
 from flask import request
 from flask.blueprints import Blueprint
