@@ -5,7 +5,6 @@ sys.setdefaultencoding('utf8')
 from werkzeug.utils import ImportStringError
 from werkzeug.utils import find_modules, import_string
 from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
 from flask_cors import *
 from flasgger import Swagger
 
