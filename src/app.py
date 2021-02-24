@@ -35,6 +35,7 @@ def create_app():
     创建flask app对象
     """
     app = Flask(__name__)
+    Swagger(app)
 
     CORS(app, supports_credentials=True)
 
@@ -51,11 +52,6 @@ def create_app():
     cache1.init_app(app)
 
     register_blueprints('controller', app)
-
-    Swagger(app)
-
-    # 初始化db
-    SQLAlchemy(app)
 
     # from controller import bp
     # app.register_blueprint(bp, url_prefix='/user')
