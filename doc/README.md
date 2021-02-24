@@ -53,6 +53,12 @@ python recvdelmessage.py
 # sudo apt-get install swig libssl-dev
 ```
 
+## MySQL-python报错
+```python
+# EnvironmentError: mysql_config not found
+# sudo apt-get install libmysqlclient-dev
+```
+
 ## -- unavailable modifier requested: 0 --
 ```python
 # apt-get install uwsgi-plugin-python
