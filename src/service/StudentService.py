@@ -1,12 +1,11 @@
 # coding:utf-8
 import time
-import json
+import xlrd
 from datetime import datetime
 from datetime import timedelta
-
 from sqlalchemy import func, or_, and_
 from sqlalchemy.exc import SQLAlchemyError
-from database.db import db
+
 from database.Student import Student
 from database.Face import Face
 from database.Car import Car
@@ -15,7 +14,7 @@ from database.School import School
 from ext import cache
 from utils.defines import grade, classes, gender, RedisKey
 from msgqueue import producer
-import xlrd
+from database.db import db
 
 
 class StudentService(object):
