@@ -91,7 +91,7 @@ def parse_post_args(request):
     try:
         req_args = request.get_json()
         return req_args
-    except:
+    except ValueError:
         raise ApiArgsError(*GlobalErrorCode.PARAMS_DESERIALIZE_ERR)
 
 
@@ -159,20 +159,19 @@ def format_exception(ex):
     exception:
         不抛出异常.
     """
-    try:
-        import traceback
-        import sys
-        from StringIO import StringIO
 
-        exc_type, exc_value, exc_trackback = sys.exc_info()
-        fp = StringIO()
-        traceback.print_exception(exc_type, exc_value, exc_trackback, file=fp)
-        stacks = fp.getvalue()
-        fp.close()
+    import traceback
+    import sys
+    from StringIO import StringIO
 
-        return '{}'.format(stacks)
-    except:
-        return '{}'.format(ex)
+    exc_type, exc_value, exc_trackback = sys.exc_info()
+    fp = StringIO()
+    traceback.print_exception(exc_type, exc_value, exc_trackback, file=fp)
+    stacks = fp.getvalue()
+    fp.close()
+
+    return '{}'.format(stacks)
+
 
 
 def post_require_check(args_name):

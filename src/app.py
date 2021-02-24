@@ -49,7 +49,8 @@ def create_app():
     cache.init_app(app)
     app.config['REDIS_DB'] = 1
     cache1.init_app(app)
-
+    from flask_sqlalchemy import SQLAlchemy
+    SQLAlchemy(app)
     register_blueprints('controller', app)
 
     # from controller import bp
