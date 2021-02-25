@@ -118,19 +118,20 @@ class StudentConsumer(object):
         self.student_business = StudentBusiness(self.logger)
 
     def student_callback(self, ch, method, properties, body):
-        data = json.loads(body.decode('utf-8'))
-        arr = method.routing_key.split(".")
-        routing_suffix = arr[-1]
-        if routing_suffix == 'batchaddstudent':
-            self.student_business.batch_add_student(data)
-        if routing_suffix == 'batchaddworker':
-            self.student_business.batch_add_worker(data)
-        if routing_suffix == 'batchaddcar':
-            self.student_business.batch_add_car(data)
-        if routing_suffix == 'batchaddschool':
-            self.student_business.batch_add_school(data)
-        # 消息确认
-        ch.basic_ack(delivery_tag=method.delivery_tag)
+        try:
+            data = json.loads(body.decode('utf-8'))
+            arr = method.routing_key.split(".")
+            routing_suffix = arr[-1]
+            if routing_suffix == 'batchaddstudent':
+                self.student_business.batch_add_student(data)
+            if routing_suffix == 'batchaddworker':
+                self.student_business.batch_add_worker(data)
+            if routing_suffix == 'batchaddcar':
+                self.student_business.batch_add_car(data)
+            if routing_suffix == 'batchaddschool':
+                self.student_business.batch_add_school(data)
+        finally:
+            ch.basic_ack(delivery_tag=method.delivery_tag)
 
 
 class StudentBusiness(object):
