@@ -345,6 +345,24 @@ class GenerateFeature(object):
             end = time.time()
 
 
+class FaceGenerateIsfinish(object):
+    """检测学生人脸特征码是否生成完成"""
+
+    @db.transaction(is_commit=True)
+    def face_generate_is_finish(self, sql_cur):
+        sql_db = db.PgsqlDbUtil
+        sql = "SELECT id FROM face WHERE feature IS NOT NULL AND " \
+              "aac_url IS NOT NULL AND status=3"
+        results = sql_db.query(sql_cur, sql)
+        for row in results:
+            pk = row[0]
+            data = {
+                'id': pk,
+                'status': 4
+            }
+            sql_db.update(sql_cur, data, table_name='face')
+
+
 class EveryMinuteExe(object):
 
     @db.transaction(is_commit=True)
