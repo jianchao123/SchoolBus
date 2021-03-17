@@ -14,7 +14,7 @@ class WorkerService(object):
 
     @staticmethod
     def worker_list(query_str, page, size):
-        #db.session.commit() # SELECT
+        db.session.commit() # SELECT
         offset = (page - 1) * size
         query = db.session.query(Worker)
         if query_str:
@@ -48,7 +48,7 @@ class WorkerService(object):
     @staticmethod
     def worker_add(emp_no, nickname, gender, mobile, remarks, company_name,
                    department_name, duty_id, car_id):
-        #db.session.commit() # SELECT
+        db.session.commit() # SELECT
         worker = db.session.query(Worker).filter(
             Worker.emp_no == emp_no).first()
         if worker:
@@ -95,7 +95,7 @@ class WorkerService(object):
     def worker_update(pk, emp_no, nickname, gender, mobile, remarks,
                       company_name, department_name, duty_id,
                       car_id):
-        #db.session.commit() # SELECT
+        db.session.commit() # SELECT
         worker = db.session.query(Worker).filter(
             Worker.id == pk).first()
         if not worker:
@@ -163,7 +163,7 @@ class WorkerService(object):
         """
         worker_ids 1,2,3
         """
-        #db.session.commit() # SELECT
+        db.session.commit() # SELECT
         worker_id_list = worker_ids.split(",")
         # 1.如果工作人员已经绑定了车辆不能删除该工作人员
         cnt = db.session.query(Worker).filter(
@@ -191,7 +191,7 @@ class WorkerService(object):
     def batch_add_worker(excel_file):
         """工号 姓名 性别 手机号 备注 公司 部门职务 车牌
         """
-        #db.session.commit() # SELECT
+        db.session.commit() # SELECT
         data = xlrd.open_workbook(file_contents=excel_file.read())
         table = data.sheet_by_index(0)
 

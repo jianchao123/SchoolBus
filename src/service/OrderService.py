@@ -14,7 +14,7 @@ class OrderService(object):
     @staticmethod
     def order_list(school_id, query_str, order_type,
                    start_date, end_date, page, size):
-        #db.session.commit() # SELECT
+        db.session.commit() # SELECT
         offset = (page - 1) * size
         query = db.session.query(Order)
         if school_id:
@@ -64,7 +64,7 @@ class OrderService(object):
         """
         订单导出
         """
-        #db.session.commit() # SELECT
+        db.session.commit() # SELECT
         from msgqueue.producer import export_order_excel_msg
 
         # 处理中的乘车记录

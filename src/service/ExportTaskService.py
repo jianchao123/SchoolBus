@@ -12,7 +12,7 @@ class ExportTaskService(object):
 
     @staticmethod
     def export_task_list(page, size):
-        #db.session.commit() # SELECT
+        db.session.commit() # SELECT
         offset = (page - 1) * size
         query = db.session.query(ExportTask).filter(ExportTask.status != 10)
         count = query.count()
@@ -34,7 +34,7 @@ class ExportTaskService(object):
     @staticmethod
     def export_task_delete(task_ids):
         """删除导出任务"""
-        #db.session.commit() # SELECT
+        db.session.commit() # SELECT
         task_id_list = [int(row) for row in task_ids.split(",")]
         results = db.session.query(ExportTask).filter(
             ExportTask.id.in_(task_id_list)).all()

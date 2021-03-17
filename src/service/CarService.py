@@ -19,7 +19,7 @@ class CarService(object):
 
     @staticmethod
     def car_name_list():
-        #db.session.commit() # SELECT
+        db.session.commit() # SELECT
 
         d = []
         results = db.session.query(Car.id, Car.license_plate_number).filter(
@@ -34,7 +34,7 @@ class CarService(object):
 
     @staticmethod
     def car_list(query_str, is_online, status, page, size):
-        #db.session.commit() # SELECT
+        db.session.commit() # SELECT
         cur_timestamp = int(time.time())
         offset = (page - 1) * size
         query = db.session.query(Car)
@@ -145,7 +145,7 @@ class CarService(object):
         车辆编码 车牌号 载客量 公司
 
         """
-        #db.session.commit() # SELECT
+        db.session.commit() # SELECT
         car = db.session.query(Car).filter(
             Car.license_plate_number == license_plate_number,
             Car.status == 1).first()
@@ -181,7 +181,7 @@ class CarService(object):
 
     @staticmethod
     def car_update(pk, license_plate_number, capacity, company_name):
-        #db.session.commit() # SELECT
+        db.session.commit() # SELECT
         car = db.session.query(Car).filter(
             Car.id == pk).first()
         if not car:
@@ -239,7 +239,7 @@ class CarService(object):
         """
         car_ids 1,2,3
         """
-        #db.session.commit() # SELECT
+        db.session.commit() # SELECT
         db.session.execute("SET LOCAL citus.multi_shard_modify_mode "
                            "TO 'sequential';")
         car_id_list = car_ids.split(",")
@@ -279,7 +279,7 @@ class CarService(object):
         """
         车牌 载客量 公司
         """
-        #db.session.commit() # SELECT
+        db.session.commit() # SELECT
         data = xlrd.open_workbook(file_contents=excel_file.read())
         table = data.sheet_by_index(0)
 

@@ -14,7 +14,7 @@ class SchoolService(object):
     def school_list(school_name, page, size):
         """
         """
-        #db.session.commit() # SELECT
+        db.session.commit() # SELECT
         offset = (page - 1) * size
         query = db.session.query(School)
         if school_name:
@@ -34,7 +34,7 @@ class SchoolService(object):
 
     @staticmethod
     def school_add(school_name):
-        #db.session.commit() # SELECT
+        db.session.commit() # SELECT
         cnt = db.session.query(School).filter(
             School.school_name == school_name).count()
         if cnt:
@@ -60,7 +60,7 @@ class SchoolService(object):
     def school_update(pk, school_name):
         """
         """
-        #db.session.commit() # SELECT
+        db.session.commit() # SELECT
         school = db.session.query(School).filter(
             School.id == pk).first()
         if not school:
@@ -86,7 +86,7 @@ class SchoolService(object):
     def batch_add_school(excel_file):
         """
         """
-        #db.session.commit() # SELECT
+        db.session.commit() # SELECT
         data = xlrd.open_workbook(file_contents=excel_file.read())
         table = data.sheet_by_index(0)
 
