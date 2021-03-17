@@ -25,7 +25,7 @@ class DeviceService(object):
         """
         设备id  车牌号 设备状态
         """
-        db.session.commit()
+        #db.session.commit() # SELECT
         offset = (page - 1) * size
         query = db.session.query(Device)
         if device_iid:
@@ -95,7 +95,7 @@ class DeviceService(object):
         设备ID 关联车辆  设备音量
         license_plate_number 似乎没有使用
         """
-        db.session.commit()
+        #db.session.commit() # SELECT
         device = db.session.query(Device).filter(
             Device.id == pk).first()
         if not device:
@@ -161,7 +161,7 @@ class DeviceService(object):
     @staticmethod
     def get_device_person_data(pk):
         """获取设备上的人员信息"""
-        db.session.commit()
+        #db.session.commit() # SELECT
         try:
             device = db.session.query(Device).filter(
                 Device.id == pk).one()

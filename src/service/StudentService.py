@@ -39,7 +39,7 @@ class StudentService(object):
         """
         学生姓名/身份证号
         """
-        db.session.commit()
+        #db.session.commit() # SELECT
 
         offset = (page - 1) * size
         query = db.session.query(Student, Face).join(
@@ -113,7 +113,7 @@ class StudentService(object):
                     mobile_2, address, remarks, school_id, grade_id, class_id,
                     end_time, car_id, oss_url):
         """增加学生"""
-        db.session.commit()
+        #db.session.commit() # SELECT
         car = db.session.query(Car).filter(
             Car.id == car_id).first()
         if not car:
@@ -178,7 +178,7 @@ class StudentService(object):
         """更新学生
         stu_no 身份证号不能修改
         """
-        db.session.commit()
+        #db.session.commit() # SELECT
         student = db.session.query(Student).filter(
             Student.id == pk).first()
         if not student:
@@ -259,7 +259,7 @@ class StudentService(object):
 
     @staticmethod
     def batch_add_student(excel_file):
-        db.session.commit()
+        #db.session.commit() # SELECT
         data = xlrd.open_workbook(file_contents=excel_file.read())
         table = data.sheet_by_index(0)
 
