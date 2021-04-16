@@ -423,7 +423,7 @@ class AcsManager(object):
         """
         print '=============mac==============='
         print mac
-        from msgqueue import config
+        from mns_subscriber import config
         config.logger.info('--------{}---------------'.format(mac))
         rds_conn = db.rds_conn
         pgsql_db = db.PgsqlDbUtil
