@@ -420,6 +420,8 @@ class AcsManager(object):
         """
         创建设备
         """
+        print '=============mac==============='
+        print mac
         rds_conn = db.rds_conn
         pgsql_db = db.PgsqlDbUtil
         # 创建设备只能顺序执行,无需使用自旋锁
