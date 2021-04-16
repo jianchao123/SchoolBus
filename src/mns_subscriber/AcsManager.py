@@ -533,6 +533,8 @@ class AcsManager(object):
 
     def check_version(self, device_name, cur_version, dev_time):
         """检查版本号"""
+        from mns_subscriber import config
+        config.logger.info('----current version{}----'.format(cur_version))
         if cur_version < RedisKey.APPOINT_VERSION_NO:
             self._upgrade_version(device_name)
 
