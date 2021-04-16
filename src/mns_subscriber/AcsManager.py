@@ -27,6 +27,7 @@ from msgqueue import producer
 import utils
 
 
+
 class AcsManager(object):
     """注册设备"""
 
@@ -422,6 +423,8 @@ class AcsManager(object):
         """
         print '=============mac==============='
         print mac
+        from msgqueue import config
+        config.logger.info('--------{}---------------'.format(mac))
         rds_conn = db.rds_conn
         pgsql_db = db.PgsqlDbUtil
         # 创建设备只能顺序执行,无需使用自旋锁
