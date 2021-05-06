@@ -17,6 +17,7 @@ class SchoolService(object):
         db.session.commit() # SELECT
         offset = (page - 1) * size
         query = db.session.query(School)
+        query = query.filter(School.status != 10)
         if school_name:
             query_str = '%{keyword}%'.format(keyword=school_name)
             query = query.filter(School.school_name.like(query_str))
