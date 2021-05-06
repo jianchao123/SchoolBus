@@ -42,8 +42,9 @@ class StudentService(object):
         db.session.commit() # SELECT
 
         offset = (page - 1) * size
-        query = db.session.query(Student, Face).join(
+        query = db.session.query(Student, Face).outerjoin(
             Face, Face.stu_id == Student.id)
+        query = query.filter(Student.status != 10)
         if face_status:
             query = query.filter(Face.status == face_status)
         if school_id:
@@ -71,9 +72,8 @@ class StudentService(object):
             car_id_list = [row.id for row in car_results]
             query = query.filter(Student.car_id.in_(car_id_list))
             print car_id_list
-        query = query.filter(Student.status != 10)
-        count = query.count()
-        #count = query.with_entities(func.count(Student.id)).scalar()
+
+        count = query.with_entities(func.count(Student.id)).scalar()
         results = query.order_by(
             Student.id.desc()).offset(offset).limit(size).all()
 
