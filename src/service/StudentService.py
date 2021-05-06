@@ -44,7 +44,7 @@ class StudentService(object):
         offset = (page - 1) * size
         query = db.session.query(Student, Face).join(
             Face, Face.stu_id == Student.id)
-        query = query.filter(Student.status != 10)
+        query = query.filter(Student.status == 1)
         if face_status:
             query = query.filter(Face.status == face_status)
         if school_id:
