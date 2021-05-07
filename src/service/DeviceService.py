@@ -147,7 +147,8 @@ class DeviceService(object):
                 # 修改设备关联的车辆需要删除缓存
                 cache.hdel(defines.RedisKey.CACHE_CAR_DATA,
                            device.device_name)
-
+        if not device.device_type:
+            device.device_type = 1
         try:
             d = {'id': device.id}
             db.session.commit()
