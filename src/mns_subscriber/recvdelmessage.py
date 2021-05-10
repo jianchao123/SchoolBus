@@ -81,7 +81,7 @@ class ReceiveMessage(object):
                 pass
             elif cmd == 'record':
                 if jdata['fid'] == -1:
-                    print "{}".format(str(jdata))
+                    logger.error("{}".format(str(jdata)))
                     log_id = int(jdata['gps'].split('|')[0])
                     # acc关闭
                     if log_id == 3:
