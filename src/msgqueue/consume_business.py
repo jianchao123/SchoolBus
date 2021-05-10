@@ -458,7 +458,7 @@ class DeviceBusiness(object):
             "natstatus": 0,
             "timezone": 8,
             "temperature": 0,
-            "noreg": 1,
+            "noreg": 0,
             "light_type": 0,
             'person_limit': person_limit
         }
