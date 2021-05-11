@@ -223,7 +223,8 @@ class AcsManager(object):
 
         now = datetime.now()
         cur_hour = now.hour
-        print "------------cnt----------------{}".format(cnt)
+        from mns_subscriber import config
+        config.logger.error("------------cnt----------------{}".format(cnt))
         odd_even = cnt % 2
         # 是上车就入集合
         k = RedisKey.STUDENT_SET.format(dev_name)
