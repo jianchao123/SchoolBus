@@ -152,7 +152,7 @@ class StudentBusiness(object):
         from msgqueue import utils
         oss_key = 'audio/' + stu_no + '.aac'
         utils.aip_word_to_audio(nickname, oss_key)
-        url = config.OSSDomain.replace('https', 'http') + '/' + oss_key
+        url = 'http://' + config.OSSDomain + '/' + oss_key
         data = {
             'id': face_id,
             'aac_url': url
