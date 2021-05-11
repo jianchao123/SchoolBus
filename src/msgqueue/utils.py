@@ -109,3 +109,41 @@ def oss_file_exists(oss_key):
     auth = oss2.Auth(config.OSSAccessKeyId, config.OSSAccessKeySecret)
     bucket = oss2.Bucket(auth, config.OSSEndpoint, config.OSSBucketName)
     return bucket.object_exists(oss_key)
+
+
+project_dir = os.path.dirname(os.path.dirname(
+    os.path.dirname(os.path.realpath(__file__))))
+
+
+def aip_word_to_audio(text, oss_key):
+    """文字转语音"""
+
+    import os
+    import time
+    from aip import AipSpeech
+    auth = oss2.Auth(config.OSSAccessKeyId, config.OSSAccessKeySecret)
+    bucket = oss2.Bucket(auth, config.OSSEndpoint, config.OSSBucketName)
+    aip_client = AipSpeech(config.BAIDU_APP_ID, config.BAIDU_API_KEY,
+                           config.BAIDU_SECRET_KEY)
+
+    result = aip_client.synthesis(text, 'zh', 1, {
+        'vol': 5,
+    })
+    temp_dir = project_dir + '/src/msgqueue/temp/'
+
+    aac_path = temp_dir + '{}.aac'.format(int(time.time()))
+    if not isinstance(result, dict):
+        mp3_path = temp_dir + str(int(time.time())) + '.mp3'
+
+        with open(mp3_path, 'wb') as f:
+            f.write(result)
+        os.system('ffmpeg -i {} -codec:a aac -b:a 32k {}'
+                  ''.format(mp3_path, aac_path))
+        with open(aac_path, 'rb') as f:
+            bucket.put_object(oss_key, f)
+        os.remove(mp3_path)
+        os.remove(aac_path)
+        return True
+    else:
+        print result
+    return False

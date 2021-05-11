@@ -261,6 +261,10 @@ def student_update(user_id, data, pk):
         type: string
         required: true
         description: TOKEN
+      - name: pk
+        in: path
+        type: integer
+        description: 主键
       - name: body
         in: body
         required: true

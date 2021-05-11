@@ -202,6 +202,12 @@ def clear_device_person_count(device_name):
     _publish_msg('device_exchange', 'device.clearcnt', json.dumps(data))
 
 
+def create_video(face_id, stu_no, nickname):
+    """创建语音"""
+    data = {'face_id': face_id, 'stu_no': stu_no, 'nickname': nickname}
+    _publish_msg('student_exchange', 'student.updatenickname', json.dumps(data))
+
+
 # 测试用户创建
 if __name__ == "__main__":
     # generate_create_student_msg(12)

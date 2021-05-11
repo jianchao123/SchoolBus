@@ -118,6 +118,7 @@ class StudentConsumer(object):
         self.student_business = StudentBusiness(self.logger)
 
     def student_callback(self, ch, method, properties, body):
+        print "-----------------12321312"
         try:
             data = json.loads(body.decode('utf-8'))
             arr = method.routing_key.split(".")
@@ -130,6 +131,8 @@ class StudentConsumer(object):
                 self.student_business.batch_add_car(data)
             if routing_suffix == 'batchaddschool':
                 self.student_business.batch_add_school(data)
+            if routing_suffix == 'updatenickname':
+                self.student_business.create_video(data)
         finally:
             ch.basic_ack(delivery_tag=method.delivery_tag)
 
@@ -138,6 +141,24 @@ class StudentBusiness(object):
 
     def __init__(self, logger):
         self.logger = logger
+
+    @transaction(is_commit=True)
+    def create_video(self, pgsql_cur, data):
+        """更新学生的名字并创建语音"""
+        pgsql_db = PgsqlDbUtil
+        face_id = data['face_id']
+        stu_no = data['stu_no']
+        nickname = data['nickname']
+        from msgqueue import utils
+        oss_key = 'audio/' + stu_no + '.aac'
+        utils.aip_word_to_audio(nickname, oss_key)
+        url = config.OSSDomain.replace('https', 'http') + '/' + oss_key
+        data = {
+            'id': face_id,
+            'aac_url': url
+        }
+        pgsql_db.update(pgsql_cur, data, table_name='face')
+        print "============================="
 
     @transaction(is_commit=True)
     def batch_add_student(self, pgsql_cur, data):

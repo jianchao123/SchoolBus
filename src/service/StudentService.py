@@ -197,6 +197,9 @@ class StudentService(object):
         if nickname:
             student.nickname = nickname
             face.nickname = nickname
+            # 更新语音
+            print '1232132321312321{}'.format(face.id)
+            producer.create_video(face.id, student.stu_no, student.nickname)
 
         if gender:
             student.gender = gender
