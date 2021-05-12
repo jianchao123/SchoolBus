@@ -14,7 +14,8 @@ from apscheduler.schedulers.gevent import BlockingScheduler
 from timer.RestTimer import GenerateFeature, EveryMinuteExe, \
     FromOssQueryFace, EveryFewMinutesExe, GenerateAAC, \
     EveryHoursExecute, CheckAccClose, RefreshWxAccessToken, \
-    UploadTakeBusData, UploadAlarmData, FaceGenerateIsfinish
+    UploadTakeBusData, UploadAlarmData, FaceGenerateIsfinish, \
+    EveryDayOneClock
 
 if __name__ == "__main__":
     generate_feature = GenerateFeature()
@@ -28,6 +29,7 @@ if __name__ == "__main__":
     upload_take_bus_data = UploadTakeBusData()
     upload_alarm_data = UploadAlarmData()
     face_generate_is_finish = FaceGenerateIsfinish()
+    every_day_one_clock = EveryDayOneClock()
 
     sched = BlockingScheduler()
     # 顺序发送消息
@@ -67,6 +69,9 @@ if __name__ == "__main__":
     # 每小时执行
     sched.add_job(func=every_hours_exe.every_hours_execute,
                   trigger='cron', day="*", hour="*")
+    # 凌晨任务
+    sched.add_job(func=every_day_one_clock.everyday_one_clock,
+                  trigger='cron', day="*", hour=1, minute=1, second=1)
     sched.add_job(every_hours_exe.every_hours_execute, 'interval', seconds=13)
     sched.start()
 

@@ -946,3 +946,14 @@ class UploadAlarmData(object):
 #             err_msg = traceback.format_exc()
 #             print err_msg
 #             db.logger.error(err_msg)
+
+
+class EveryDayOneClock(object):
+
+    def everyday_one_clock(self):
+        """
+        每日一点执行
+        """
+        print "-=-=-=================="
+        rds_conn = db.rds_conn
+        rds_conn.delete(RedisKey.REMOVE_DUP_ORDER_SET)
