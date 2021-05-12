@@ -218,7 +218,13 @@ class AcsManager(object):
         添加订单
         报警刷脸不需要,影响逻辑
         """
+
         redis_db = db.rds_conn
+        # 去重key
+        dup_key = str(fid) + str(add_time)
+        if redis_db.sismember(RedisKey.REMOVE_DUP_ORDER_SET, dup_key):
+            return
+        redis_db.sadd(RedisKey.REMOVE_DUP_ORDER_SET, dup_key)
         pgsql_db = db.PgsqlDbUtil
 
         now = datetime.now()
