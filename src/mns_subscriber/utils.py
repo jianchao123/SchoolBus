@@ -111,3 +111,9 @@ def gcj02towgs84(lng, lat):
     mglat = lat + dlat
     mglng = lng + dlng
     return [lng * 2 - mglng, lat * 2 - mglat]
+
+
+if __name__ == "__main__":
+    s = "10405.05987,3035.80962"
+    arr = s.split(",")
+    print gcj_02_to_gorde_gpd(arr[0], arr[1])

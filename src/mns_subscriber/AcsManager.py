@@ -665,8 +665,18 @@ class AcsManager(object):
         rds_conn.hset(RedisKey.DEVICE_CUR_TIMESTAMP, device_name,
                       int(time.time()))
         if gps == ",":
-            gps = "104.055701,30.586817"
-        rds_conn.hset(RedisKey.DEVICE_CUR_GPS, device_name, gps)
+            gps_str = "116.290435,40.032377"
+        else:
+            arr = gps.split(",")
+            if arr[0] and arr[1]:
+                longitude = AcsManager._jwd_swap(float(arr[0]))
+                latitude = AcsManager._jwd_swap(float(arr[1]))
+                longitude, latitude = utils.wgs84togcj02(
+                    float(longitude), float(latitude))
+                gps_str = '{},{}'.format(longitude, latitude)
+            else:
+                gps_str = '116.290435,40.032377'
+        rds_conn.hset(RedisKey.DEVICE_CUR_GPS, device_name, gps_str)
 
     @db.transaction(is_commit=True)
     def save_imei(self, pgsql_cur, device_name, imei):
