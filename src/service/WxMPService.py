@@ -305,7 +305,15 @@ class WxMPService(object):
                     fid=order.fid, timestamp=order.cur_timestamp)
                 d['license_plate_number'] = \
                     order.license_plate_number.encode('utf8')
-                d['gps'] = order.gps
+
+                # 根据工作人员绑定的车辆找出设备
+                device = db.session.query(Device).join(
+                    Car, Car.id == Device.car_id).filter(
+                    Car.id == order.car_id).first()
+                # 获取设备gps
+                device_gps = cache.hget(
+                    defines.RedisKey.DEVICE_CUR_GPS, device.device_name)
+                d['gps'] = device_gps
                 d['staff'] = '驾驶员 ({} {})|照管员 ({} {})'.format(
                     order.driver_name, order.driver_mobile,
                     order.zgy_name, order.zgy_mobile)
