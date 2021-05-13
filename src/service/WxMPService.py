@@ -280,7 +280,7 @@ class WxMPService(object):
         student = db.session.query(Student).filter(
             or_(Student.open_id_1 == open_id,
                 Student.open_id_2 == open_id)).order_by(
-            Order.id.desc()).first()
+            Student.id.desc()).first()
         if student:
             # 最近一条数据
             order = db.session.query(Order).filter(
