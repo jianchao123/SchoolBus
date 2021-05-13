@@ -74,6 +74,9 @@ class WxMPService(object):
 
     @staticmethod
     def save_mobile(mobile, open_id):
+        """
+        1.将openid绑定到学生或者工作人员
+        """
 
         students = db.session.query(Student).filter(
             or_(Student.mobile_1 == mobile,
@@ -175,7 +178,9 @@ class WxMPService(object):
 
     @staticmethod
     def cancel_binding(open_id):
-        """解除绑定"""
+        """
+        解除openid和手机号的绑定
+        """
 
         student = db.session.query(Student).filter(
             or_(Student.open_id_1 == open_id,
@@ -223,13 +228,14 @@ class WxMPService(object):
             'oss_url': None
         }
         print is_staff, is_parents
+        # 是家长又是工作人员
         if is_parents and is_staff:
             d['d'] = 0
             WxMPService.parents_data(d, open_id)
-        elif is_parents:
+        elif is_parents:    # 家长
             d['d'] = 0
             WxMPService.parents_data(d, open_id)
-        elif is_staff:
+        elif is_staff:      # 工作人员
             d['d'] = 0
             WxMPService.staff_data(d, open_id)
         print d
@@ -237,31 +243,44 @@ class WxMPService(object):
 
     @staticmethod
     def staff_data(d, open_id):
+        """
+        工作人员数据
+        逻辑
+        1.找出所有Openid对应的工作人员(openid=>mobile=>worker)
+        """
         worker = db.session.query(Worker).filter(
             Worker.open_id == open_id).first()
         if worker:
+            # 根据工作人员绑定的车辆找出设备
             device = db.session.query(Device).join(
                 Car, Car.id == Device.car_id).filter(
                 Car.id == worker.car_id).first()
+            # 获取设备gps
             device_gps = cache.hget(
                 defines.RedisKey.DEVICE_CUR_GPS, device.device_name)
 
+            # 通过确定的工作人员carid找出这台车所有的工作人员
             results = db.session.query(Worker).filter(
                 Worker.car_id == worker.car_id).all()
             string = ''
             for row in results:
-                string += '{} ({} {})|'.format(row.nickname,
-                                                duty[row.duty_id],
-                                                row.mobile)
+                string += '{} ({} {})|'.format(
+                    row.nickname, duty[row.duty_id], row.mobile)
 
             d['gps'] = device_gps
             d['staff'] = string
 
     @staticmethod
     def parents_data(d, open_id):
+        """
+        家长数据
+        逻辑
+        1.找出所有Openid对应的学生(openid=>mobile=>student)
+        """
         student = db.session.query(Student).filter(
             or_(Student.open_id_1 == open_id,
-                Student.open_id_2 == open_id)).first()
+                Student.open_id_2 == open_id)).order_by(
+            Order.id.desc()).first()
         if student:
             # 最近一条数据
             order = db.session.query(Order).filter(
@@ -274,13 +293,14 @@ class WxMPService(object):
                 d['create_time'] = order.create_time.strftime(
                     '%Y-%m-%d %H:%M:%S')
 
-                results = db.session.query(Worker).filter(
-                    Worker.car_id == student.car_id).all()
-                string = ''
-                for row in results:
-                    string += '{} ({} {})|'.format(
-                        row.nickname, duty[row.duty_id], row.mobile)
-                d['staff'] = string
+                # 根据学生绑定的车辆获取到工作人员信息
+                # results = db.session.query(Worker).filter(
+                #     Worker.car_id == student.car_id).all()
+                # staff_info_str = ''
+                # for row in results:
+                #     staff_info_str += '{} ({} {})|'.format(
+                #         row.nickname, duty[row.duty_id], row.mobile)
+                # d['staff'] = staff_info_str
                 d['oss_url'] = conf.config['REALTIME_FACE_IMG'].format(
                     fid=order.fid, timestamp=order.cur_timestamp)
                 d['license_plate_number'] = \

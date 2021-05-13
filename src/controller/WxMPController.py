@@ -116,8 +116,8 @@ def get_open_id(args):
 @post_require_check(['open_id'])
 def cancel_binding(args):
     """
-    解除绑定
-    解除绑定，需要先登录
+    解除openid和手机号的绑定
+    解除openid和手机号的绑定，需要先登录
     ---
     tags:
       - 公众号
@@ -159,8 +159,8 @@ def cancel_binding(args):
 @post_require_check(['mobile', 'open_id'])
 def save_mobile(args):
     """
-    保存手机号
-    保存手机号，需要先登录
+    将openid绑定到学生或者工作人员
+    将openid绑定到学生或者工作人员，需要先登录
     ---
     tags:
       - 公众号
