@@ -189,16 +189,18 @@ class WxMPService(object):
         解除openid和手机号的绑定
         """
         db.session.commit()  # SELECT
-        student = db.session.query(Student).filter(
+        students = db.session.query(Student).filter(
             or_(Student.open_id_1 == open_id,
-                Student.open_id_2 == open_id)).first()
-        worker = db.session.query(Worker).filter(
-            Worker.open_id == open_id).first()
-        if student:
-            student.open_id_1 = None
-            student.open_id_2 = None
-        if worker:
-            worker.open_id = None
+                Student.open_id_2 == open_id)).all()
+        workers = db.session.query(Worker).filter(
+            Worker.open_id == open_id).all()
+        if students:
+            for row in students:
+                row.open_id_1 = None
+                row.open_id_2 = None
+        if workers:
+            for row in students:
+                row.open_id = None
         try:
             db.session.commit()
             return {'id': 0}
