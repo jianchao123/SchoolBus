@@ -23,6 +23,45 @@ bp = Blueprint('WxMPController', __name__)
 url_prefix = '/wxmp'
 
 
+@bp.route('/get_children_data', methods=['GET'])
+@get_require_check(['openid'])
+def children_data(args):
+    """
+    根据openid获取绑定的学生信息
+    ---
+    tags:
+      - 公众号
+    parameters:
+      - name: openid
+        in: query
+        type: string
+        description: OPENID
+
+    responses:
+      200:
+        description: 正常返回http code 200
+        schema:
+          properties:
+            msg:
+              type: string
+              description: 错误消息
+            status:
+              type: integer
+              description: 状态
+            data:
+              type: object
+              properties:
+                id:
+                  type: integer
+                  description: ID
+                nickname:
+                  type: string
+                  description: 昵称
+    """
+    openid = args['openid']
+    return WxMPService.children_data(openid)
+
+
 @bp.route('/authorize_str', methods=['GET'])
 @get_require_check(['menu_name'])
 def authorize_str(args):
@@ -206,7 +245,10 @@ def save_mobile(args):
 @get_require_check(['open_id'])
 def get_role(args):
     """
-    获取角色
+    根据openid获取角色
+    1.如果该openid只绑定了家长就只返回家长mobile
+    2.如果该openid只绑定了工作人员就只返回工作人员mobile
+    3.如果该openid同时绑定了家长和工作人员就只返回工作人员mobile
     获取角色，需要先登录
     ---
     tags:

@@ -46,6 +46,12 @@ class WxMPService(object):
 
     @staticmethod
     def get_role(open_id):
+        """
+        根据openid获取角色
+        1.如果该openid只绑定了家长就只返回家长mobile
+        2.如果该openid只绑定了工作人员就只返回工作人员mobile
+        3.如果该openid同时绑定了家长和工作人员就只返回工作人员mobile
+        """
         db.session.commit() # SELECT
         student = db.session.query(Student).filter(
             or_(Student.open_id_1 == open_id,
@@ -53,9 +59,9 @@ class WxMPService(object):
         worker = db.session.query(Worker).filter(
             Worker.open_id == open_id).first()
         d = {
-            'parents': 0,
-            'driver': 0,
-            'zgy': 0
+            'parents': 0,   # 家长
+            'driver': 0,    # 驾驶员
+            'zgy': 0        # 照管员
         }
         if student:
             d['parents'] = 1
@@ -83,6 +89,7 @@ class WxMPService(object):
                 Student.mobile_2 == mobile)).all()
         workers = db.session.query(Worker).filter(
             Worker.mobile == mobile).all()
+        # 不是家长和工作人员
         if not students and not workers:
             return -10
         print students, workers
@@ -181,7 +188,7 @@ class WxMPService(object):
         """
         解除openid和手机号的绑定
         """
-
+        db.session.commit()  # SELECT
         student = db.session.query(Student).filter(
             or_(Student.open_id_1 == open_id,
                 Student.open_id_2 == open_id)).first()
@@ -317,3 +324,19 @@ class WxMPService(object):
                 d['staff'] = '驾驶员 ({} {})|照管员 ({} {})'.format(
                     order.driver_name, order.driver_mobile,
                     order.zgy_name, order.zgy_mobile)
+
+    @staticmethod
+    def children_data(openid):
+        """
+        孩子数据
+        """
+        student = db.session.query(Student).filter(
+            Student.open_id_1 == openid).filter(
+            Student.open_id_2 == openid).all()
+        data = []
+        for row in student:
+            data.append({
+                'id': row.id,
+                'nickname': row.nickname
+            })
+        return data
