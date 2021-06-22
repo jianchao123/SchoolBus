@@ -199,7 +199,7 @@ class WxMPService(object):
                 row.open_id_1 = None
                 row.open_id_2 = None
         if workers:
-            for row in students:
+            for row in workers:
                 row.open_id = None
         try:
             db.session.commit()
