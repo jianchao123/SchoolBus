@@ -290,7 +290,7 @@ def get_role(args):
 
 
 @bp.route('/bus_where', methods=['GET'])
-@get_require_check(['open_id'])
+@get_require_check(['open_id', 'stuid'])
 def bus_where(args):
     """
     校车在哪儿
@@ -337,7 +337,8 @@ def bus_where(args):
                   description: 创建时间
     """
     open_id = args['open_id']
-    return WxMPService.bus_where(open_id)
+    stuid = args['stuid']
+    return WxMPService.bus_where(open_id, stuid)
 
 
 @bp.route('/order/retrieve', methods=['GET'])

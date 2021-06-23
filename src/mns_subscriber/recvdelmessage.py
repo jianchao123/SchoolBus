@@ -40,6 +40,7 @@ class ReceiveMessage(object):
         dev_name = body['topic'].split('/')[2]
         jdata = json.loads(base64.b64decode(body["payload"]))
         acs_manager.check_cur_stream_no(dev_name, jdata)
+        print jdata
         if 'cmd' in jdata:
             cmd = jdata['cmd']
             if cmd == 'syndata':

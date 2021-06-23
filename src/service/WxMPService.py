@@ -213,16 +213,15 @@ class WxMPService(object):
             db.session.close()
 
     @staticmethod
-    def bus_where(open_id):
+    def bus_where(open_id, stuid):
         """
         校车在那儿
         """
         db.session.commit() # SELECT
         # 判断身份
-        print open_id
         is_parents = db.session.query(Student).filter(
             or_(Student.open_id_1 == open_id,
-                Student.open_id_2 == open_id)).first()
+                Student.open_id_2 == open_id), Student.id == stuid).first()
         is_staff = db.session.query(Worker).filter(
             Worker.open_id == open_id).first()
 
