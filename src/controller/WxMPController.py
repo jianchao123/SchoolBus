@@ -303,6 +303,10 @@ def bus_where(args):
         in: query
         type: string
         description: OPENID
+      - name: stuid
+        in: query
+        type: string
+        description: 学生Id
     responses:
       200:
         description: 正常返回http code 200
@@ -337,7 +341,7 @@ def bus_where(args):
                   description: 创建时间
     """
     open_id = args['open_id']
-    stuid = args['stuid']
+    stuid = args.get('stuid', None)
     return WxMPService.bus_where(open_id, stuid)
 
 

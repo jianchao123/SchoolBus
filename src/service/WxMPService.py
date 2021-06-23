@@ -218,10 +218,14 @@ class WxMPService(object):
         校车在那儿
         """
         db.session.commit() # SELECT
+
         # 判断身份
         is_parents = db.session.query(Student).filter(
             or_(Student.open_id_1 == open_id,
-                Student.open_id_2 == open_id), Student.id == stuid).first()
+                Student.open_id_2 == open_id))
+        if stuid:
+            is_parents = is_parents.filter(Student.id == stuid)
+        is_parents = is_parents.first()
         is_staff = db.session.query(Worker).filter(
             Worker.open_id == open_id).first()
 
