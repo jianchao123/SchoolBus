@@ -290,7 +290,7 @@ def get_role(args):
 
 
 @bp.route('/bus_where', methods=['GET'])
-@get_require_check(['open_id', 'stuid'])
+@get_require_check(['open_id'])
 def bus_where(args):
     """
     校车在哪儿
