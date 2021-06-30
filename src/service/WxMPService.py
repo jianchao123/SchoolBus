@@ -224,8 +224,10 @@ class WxMPService(object):
             or_(Student.open_id_1 == open_id,
                 Student.open_id_2 == open_id))
         if stuid:
-            is_parents = is_parents.filter(Student.id == stuid)
+            print stuid
+            is_parents = is_parents.filter(Student.id == int(stuid))
         is_parents = is_parents.first()
+        print is_parents
         is_staff = db.session.query(Worker).filter(
             Worker.open_id == open_id).first()
 
@@ -239,14 +241,13 @@ class WxMPService(object):
             'staff': None,
             'oss_url': None
         }
-        print is_staff, is_parents
         # 是家长又是工作人员
         if is_parents and is_staff:
             d['d'] = 0
-            WxMPService.parents_data(d, open_id)
+            WxMPService.parents_data(d, open_id, stuid)
         elif is_parents:    # 家长
             d['d'] = 0
-            WxMPService.parents_data(d, open_id)
+            WxMPService.parents_data(d, open_id, stuid)
         elif is_staff:      # 工作人员
             d['d'] = 0
             WxMPService.staff_data(d, open_id)
@@ -283,7 +284,7 @@ class WxMPService(object):
             d['staff'] = string
 
     @staticmethod
-    def parents_data(d, open_id):
+    def parents_data(d, open_id, stuid):
         """
         家长数据
         逻辑
@@ -291,7 +292,7 @@ class WxMPService(object):
         """
         student = db.session.query(Student).filter(
             or_(Student.open_id_1 == open_id,
-                Student.open_id_2 == open_id)).order_by(
+                Student.open_id_2 == open_id), Student.id == stuid).order_by(
             Student.id.desc()).first()
         if student:
             # 最近一条数据
@@ -336,12 +337,13 @@ class WxMPService(object):
         孩子数据
         """
         student = db.session.query(Student).filter(
-            Student.open_id_1 == openid).filter(
-            Student.open_id_2 == openid).all()
+            or_(Student.open_id_1 == openid, Student.open_id_2 == openid)).all()
         data = []
         for row in student:
             data.append({
                 'id': row.id,
                 'nickname': row.nickname
             })
+        print "---------------------"
+        print data
         return data

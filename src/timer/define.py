@@ -7,7 +7,7 @@ class RedisKey(object):
     DEVICE_USED = "DEVICE_USED_HASH"
 
     # 设备版本相关
-    APPOINT_VERSION_NO = 232
+    APPOINT_VERSION_NO = 264
     UPGRADE_JSON = {'url': 'https://img.pinganxiaoche.com/apps/1600666302.yaffs2', 'crc': -282402801, 'cmd': 'update', 'version': 232, 'size': 4756736}
 
     # 当前设备返回的人员信息是在做什么操作(1更新 2查询设备上人员)

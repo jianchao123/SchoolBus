@@ -6,13 +6,11 @@ class RedisKey(object):
     DEVICE_USED = "DEVICE_USED_HASH"
 
     # 设备版本相关
-    APPOINT_VERSION_NO = 260
+    APPOINT_VERSION_NO = 264
     # UPGRADE_JSON = {"url": "https://img.pinganxiaoche.com/apps/1608795066.yaffs2",
     #                 "crc": -2090701703, "cmd": "update",
     #                 "version": 250, "size": 4843776}
-    UPGRADE_JSON = {"url": "https://img.pinganxiaoche.com/apps/1618450149.yaffs2",
-                 "crc": 408738039, "cmd": "update", "version": 260,
-                 "size": 4867712}
+    UPGRADE_JSON = {"url": "https://img.pinganxiaoche.com/apps/1624332193.yaffs2", "crc": 981940787, "cmd": "update", "version": 264, "size": 4893824}
 
     # 当前设备返回的人员信息是在做什么操作(1更新 2查询设备上人员)
     QUERY_DEVICE_PEOPLE = "QUERY_DEVICE_PEOPLE"

@@ -18,7 +18,8 @@ except ImportError:
     client_name = 'httplib'
 
 # """蓝图对象"""
-bp = Blueprint('WxMPController', __name__)
+bp = Blueprint('WxMPController', __name__, static_url_path='/static',
+               static_folder='/static')
 """蓝图url前缀"""
 url_prefix = '/wxmp'
 
@@ -102,6 +103,7 @@ def authorize_str(args):
         "&redirect_uri={}&response_type=code&scope=snsapi_base&state={}" \
         "#wechat_redirect".format(conf.config['MP_APP_ID'],
                                   quote(conf.config['MP_AUTH_URI']), menu_name)
+    print s
     return {'url': s}
 
 
@@ -305,7 +307,7 @@ def bus_where(args):
         description: OPENID
       - name: stuid
         in: query
-        type: string
+        type: integer
         description: 学生Id
     responses:
       200:
@@ -559,6 +561,14 @@ def wx_callback_list():
     except:
         import traceback
         print traceback.format_exc()
+
+
+from flask import Flask, render_template
+
+
+@bp.route('/index.html', methods=['GET'])
+def indexhtml():
+    return render_template('index.html')
 
 #
 # bp.add_url_rule('/callback', view_func=msg.view_func)

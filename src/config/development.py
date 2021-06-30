@@ -31,7 +31,7 @@ class DevelopmentConfig(Config):
     MP_APP_SECRET = 'bf3e50ed4b549fc007d5ad39634cdc4d'
     MP_TOKEN = 'gK9gY3cV2bM6pH9gF7vJ5uC8vN9cI0cL'
     MP_ENCODING_AES_KEY = 'CAmGrrm1rJ0HqgcbIBQbhKAHLUKGGbv3RJTTFnixTaC'
-    MP_AUTH_URI = 'http://cdmpdev.wgxing.com/static/getOpenid.html' # wechat redirect_uri,可用于本地测试,微信的bug
+    MP_AUTH_URI = 'http://192.168.200.15:8080/getopenid' #'http://cdmpdev.wgxing.com/static/getOpenid.html' # wechat redirect_uri,可用于本地测试,微信的bug
     #MP_AUTH_URI = 'http://cdmp.wgxing.com/static/getOpenid.html'  # wechat redirect_uri,可用于本地测试,微信的bug
 
     # 实时刷脸图片 format
