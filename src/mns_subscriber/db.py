@@ -92,6 +92,7 @@ class PgsqlDbUtil(object):
         values = values[:-1]
 
         sql = "INSERT INTO {}({}) VALUES({})".format(table_name, keys, values)
+        logger.error(sql)
         pgsql_cur.execute(sql)
 
     @staticmethod
