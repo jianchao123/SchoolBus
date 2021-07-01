@@ -224,10 +224,8 @@ class WxMPService(object):
             or_(Student.open_id_1 == open_id,
                 Student.open_id_2 == open_id))
         if stuid:
-            print stuid
             is_parents = is_parents.filter(Student.id == int(stuid))
         is_parents = is_parents.first()
-        print is_parents
         is_staff = db.session.query(Worker).filter(
             Worker.open_id == open_id).first()
 
@@ -251,7 +249,7 @@ class WxMPService(object):
         elif is_staff:      # 工作人员
             d['d'] = 0
             WxMPService.staff_data(d, open_id)
-        print d
+
         return d
 
     @staticmethod
@@ -292,7 +290,10 @@ class WxMPService(object):
         """
         student = db.session.query(Student).filter(
             or_(Student.open_id_1 == open_id,
-                Student.open_id_2 == open_id), Student.id == stuid).order_by(
+                Student.open_id_2 == open_id))
+        if stuid:
+            student = student.filter(Student.id == stuid)
+        student = student.order_by(
             Student.id.desc()).first()
         if student:
             # 最近一条数据
