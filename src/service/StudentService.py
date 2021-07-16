@@ -10,6 +10,9 @@ from database.Student import Student
 from database.Face import Face
 from database.Car import Car
 from database.School import School
+from database.Feature import Feature
+from database.Audio import Audio
+from database.Manufacturer import Manufacturer
 
 from ext import cache
 from utils.defines import grade, classes, gender, RedisKey
@@ -110,6 +113,25 @@ class StudentService(object):
         return {'results': data, 'count': count}
 
     @staticmethod
+    def _feature_create(new_face_id, status, oss_url=None):
+        """
+        :param new_face_id:
+        :param status: feature表状态
+        :param oss_url:
+        :return:
+        """
+        # feature
+        mfr_set = db.session.query(Manufacturer).all()
+        for mfr_row in mfr_set:
+            feature = Feature()
+            if oss_url:
+                feature.oss_url = oss_url
+            feature.face_id = new_face_id
+            feature.status = status
+            feature.mfr_id = mfr_row.id
+            db.session.add(feature)
+
+    @staticmethod
     def student_add(stu_no, nickname, gender, parents_1, mobile_1, parents_2,
                     mobile_2, address, remarks, school_id, grade_id, class_id,
                     end_time, car_id, oss_url):
@@ -148,21 +170,40 @@ class StudentService(object):
         try:
             db.session.add(student)
             db.session.flush()
-            new_id = student.id
+            new_stu_id = student.id
+
+            # face
             face = Face()
             face.nickname = nickname
             face.oss_url = oss_url
             if face.oss_url:
-                face.status = 2
+                face.status = 2     # 等待处理
             else:
-                face.status = 1
-            face.stu_id = new_id
+                face.status = 1     # 未绑定人脸
+            face.stu_id = new_stu_id
             face.stu_no = stu_no
             face.end_timestamp = time.mktime(end_time.timetuple())
             face.school_id = school_id
             db.session.add(face)
+            db.session.flush()
+            new_face_id = face.id
+
+            # 等待处理
+            if face.status == 2:
+                StudentService._feature_create(new_face_id, 1, oss_url)
+            elif face.status == 1:
+                StudentService._feature_create(new_face_id, -1)
+
+            # audio
+            audio = Audio()
+            audio.nickname = nickname
+            audio.face_id = new_face_id
+            audio.stu_no = stu_no
+            audio.status = 1    # 等待生成
+            db.session.add(audio)
+
             db.session.commit()
-            return {'id': new_id}
+            return {'id': new_stu_id}
         except SQLAlchemyError:
             import traceback
             print traceback.format_exc()
@@ -198,8 +239,11 @@ class StudentService(object):
             student.nickname = nickname
             face.nickname = nickname
             # 更新语音
-            print '1232132321312321{}'.format(face.id)
-            producer.create_video(face.id, student.stu_no, student.nickname)
+            #producer.create_video(face.id, student.stu_no, student.nickname)
+            audio = db.session.query(Audio).filter(
+                Audio.face_id == face.id).first()
+            audio.nickname = nickname
+            audio.status = 1    # 等待生成
 
         if gender:
             student.gender = gender
@@ -241,10 +285,12 @@ class StudentService(object):
                 student.car_id = car.id
                 student.license_plate_number = car.license_plate_number
         if oss_url:
-            face.oss_url = oss_url
-            face.status = 2     # 未处理
-            print oss_url
-            print "====================="
+            feature_set = db.session.query(Feature).filter(
+                Feature.face_id == face.id).all()
+            for feature_row in feature_set:
+                feature_row.oss_url = oss_url
+                feature_row.status = 1  # 等待生成
+            face.status = 2     # 等待处理
 
         if end_time:
             student.end_time = end_time

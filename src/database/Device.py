@@ -20,3 +20,4 @@ class Device(db.Model):
     sound_volume = db.Column(db.Integer)
     device_type = db.Column(db.Integer)  # 1刷脸 2生成特征值 (设备的模式：0车载模式 3注册模式)
     person_limit = db.Column(db.Integer)
+    mfr_id = db.Column(db.Integer)

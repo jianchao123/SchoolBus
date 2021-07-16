@@ -65,6 +65,9 @@ class RedisKey(object):
     CACHE_LASTEST_ORDERID = "CACHE_LASTEST_ORDERID"
     CACHE_LASTEST_ALARMID = "CACHE_LASTEST_ALARMID"
 
+    # 厂商设备
+    MFR_DEVICE_HASH = "MFR_DEVICE_HASH"
+
 
 grade = [u"TBD", u'小班', u'中班', u'大班', u'学前班', u'一年级', u'二年级', u'三年级',
          u'四年级', u'五年级', u'六年级']

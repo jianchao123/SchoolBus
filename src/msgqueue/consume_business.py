@@ -169,6 +169,11 @@ class StudentBusiness(object):
 
         stu_sql = "SELECT id,mobile_1,mobile_2 FROM student " \
                   "WHERE stu_no='{}' LIMIT 1"
+        # 查询所有厂商的sql
+        mfr_sql = "SELECT id FROM manufacturer WHERE status=1"  # 启用中的
+        # 根据stu_id和school_id查询face_id
+        query_facepk_sql = "SELECT id FROM face WHERE stu_id={} AND " \
+                           "school_id={} LIMIT 1"
         for row in data:
             stu_no = row[0]
             nickname = row[1]
@@ -222,6 +227,7 @@ class StudentBusiness(object):
                 d['status'] = 1
                 pgsql_db.insert(pgsql_cur, d, 'student')
                 stu = pgsql_db.get(pgsql_cur, stu_sql.format(stu_no))
+                student_pk = stu[0]
                 face_d = {
                     'status': 1,  # 没有人脸
                     'nickname': nickname,
@@ -229,10 +235,33 @@ class StudentBusiness(object):
                     'update_time': 'now()',
                     'end_timestamp': int(time.mktime(
                         datetime.strptime(end_time, '%Y-%m-%d').timetuple())),
-                    'stu_id': stu[0],
+                    'stu_id': student_pk,
                     'school_id': school_id
                 }
                 pgsql_db.insert(pgsql_cur, face_d, 'face')
+                current_face_pk = pgsql_db.get(
+                    pgsql_cur, query_facepk_sql.format(student_pk, school_id))[0]
+
+                # 音频记录
+                audio_d = {
+                    'stu_no': stu_no,
+                    'status': 1,
+                    'face_id': current_face_pk,
+                    'nickname': nickname
+                }
+                pgsql_db.insert(pgsql_cur, audio_d, table_name='audio')
+
+                # 查询所有厂商
+                mfrset = pgsql_db.query(pgsql_cur, mfr_sql)
+                for mfr_row in mfrset:
+                    mfr_pk = mfr_row[0]
+                    feature_d = {
+                        'mfr_id': mfr_pk,
+                        'face_id': current_face_pk,
+                        'status': -1    # 未绑定人脸
+                    }
+                    pgsql_db.insert(pgsql_cur, feature_d, table_name='feature')
+
         rds_conn.delete('batch_add_student')
 
     @transaction(is_commit=True)
@@ -562,24 +591,34 @@ class DeviceBusiness(object):
 
         # del list
         if len(del_list) < 60:
+            print 'del_list', del_list
             for fid in del_list:
                 self._publish_del_people_msg(device_name, fid)
 
-        sql = "SELECT feature,nickname,aac_url " \
-              "FROM face WHERE id in ({}) "
+        mfr_sql = "SELECT mfr_id FROM device WHERE device_name = '{}' LIMIT 1"
+        mfr_pk = pgsql_db.get(pgsql_cur, mfr_sql.format(device_name))[0]
+
+        feature_sql = "SELECT f.feature,au.nickname,au.aac_url FROM " \
+                      "(SELECT feature FROM feature WHERE face_id={} AND " \
+                      "mfr_id={}) AS f ,(SELECT nickname,aac_url FROM audio " \
+                      "WHERE face_id={}) AS au"
         # update list
         if len(update_list) < 60:
             for fid in update_list:
-                obj = pgsql_db.get(pgsql_cur, sql.format(int(fid)))
+                obj = pgsql_db.get(
+                    pgsql_cur, feature_sql.format(int(fid), mfr_pk, int(fid)))
                 if obj:
+                    print obj
                     self._publish_update_people_msg(
                         device_name, fid, obj[1], obj[0], obj[2])
 
         # add list
         if len(add_list) < 60:
             for fid in add_list:
-                obj = pgsql_db.get(pgsql_cur, sql.format(fid))
+                obj = pgsql_db.get(
+                    pgsql_cur, feature_sql.format(fid, mfr_pk, fid))
                 if obj:
+                    print obj
                     self._publish_add_people_msg(
                         device_name, fid, obj[0], obj[1], obj[2])
 

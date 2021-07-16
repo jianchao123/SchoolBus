@@ -15,7 +15,7 @@ from timer.RestTimer import GenerateFeature, EveryMinuteExe, \
     FromOssQueryFace, EveryFewMinutesExe, GenerateAAC, \
     EveryHoursExecute, CheckAccClose, RefreshWxAccessToken, \
     UploadTakeBusData, UploadAlarmData, FaceGenerateIsfinish, \
-    EveryDayOneClock
+    EveryDayOneClock, DeviceMfrList
 
 if __name__ == "__main__":
     generate_feature = GenerateFeature()
@@ -30,6 +30,7 @@ if __name__ == "__main__":
     upload_alarm_data = UploadAlarmData()
     face_generate_is_finish = FaceGenerateIsfinish()
     every_day_one_clock = EveryDayOneClock()
+    device_mfr_list = DeviceMfrList()
 
     sched = BlockingScheduler()
     # 顺序发送消息
@@ -43,7 +44,7 @@ if __name__ == "__main__":
                   'interval', seconds=20)
 
     # 生成特征码
-    sched.add_job(generate_feature.generate_feature, 'interval', seconds=1)
+    sched.add_job(generate_feature.generate_feature, 'interval', seconds=2)
     # 生成aac文件
     sched.add_job(generate_aac.generate_audio, 'interval', seconds=10)
     # 检查acc熄火key
@@ -53,6 +54,8 @@ if __name__ == "__main__":
     # 刷新微信access token
     sched.add_job(refresh_wx_access_token.refresh_wechat_token,
                   'interval', seconds=30)
+    sched.add_job(device_mfr_list.device_mfr_list,
+                  'interval', seconds=35)
     # sched.add_job(heart_beat_30s.heartbeat,
     #               'interval', seconds=29)
     # sched.add_job(heart_beat_30s.send_order,

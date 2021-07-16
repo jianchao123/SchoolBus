@@ -69,6 +69,7 @@ class ReceiveMessage(object):
 
             elif cmd == 'addface':
                 # 生成特征值返回的信息
+                print jdata
                 if 'feature_type' in jdata:
                     acs_manager.save_feature(
                         dev_name, jdata['fid'], jdata['feature'])

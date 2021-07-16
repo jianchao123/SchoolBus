@@ -43,26 +43,29 @@ class GenerateAAC(object):
         """大概0.3秒一个"""
         pgsql_db = db.PgsqlDbUtil
         begin = time.time()
-        sql = "SELECT id,nickname,stu_no,feature FROM face " \
-              "WHERE aac_url IS NULL LIMIT 27"
+
+        # 等待生成中
+        sql = "SELECT id,stu_no,nickname " \
+              "FROM audio WHERE status=1 LIMIT 27"
         results = pgsql_db.query(pgsql_cur, sql)
         for row in results:
-            feature = row[3]
 
-            oss_key = 'audio/' + row[2] + '.aac'
+            oss_key = 'audio/' + row[1] + '.aac'
             try:
-                aip_word_to_audio(row[1], oss_key)
-
+                aip_word_to_audio(row[2], oss_key)
+                aac_url_str = config.OSSDomain.replace('https', 'http') + '/' + oss_key
                 d = {
                     'id': row[0],
-                    'aac_url': config.OSSDomain.replace('https', 'http') + '/' + oss_key
+                    'aac_url': aac_url_str,
+                    'status': 3     # 生成成功
                 }
-                # feature不为空则修改状态
-                if feature:
-                    d['status'] = 4
-                pgsql_db.update(pgsql_cur, d, 'face')
+                pgsql_db.update(pgsql_cur, d, table_name='audio')
             except:
-                print u"生成aac失败"
+                d = {
+                    'id': row[0],
+                    'status': 4  # 生成失败
+                }
+                pgsql_db.update(pgsql_cur, d, table_name='audio')
         end = time.time()
         print u"{}个aac总共用时{}s".format(len(results), end - begin)
 
@@ -268,6 +271,31 @@ class RefreshWxAccessToken(object):
         return
 
 
+class DeviceMfrList(object):
+    """将设备按照厂商分开存储到redis"""
+
+    @db.transaction(is_commit=True)
+    def device_mfr_list(self, pgsql_cur):
+        pgsql_db = db.PgsqlDbUtil
+        rds_conn = db.rds_conn
+        sql = "SELECT id,mfr_id,device_name FROM device " \
+              "WHERE device_type = 2 AND status != 10"
+        results = pgsql_db.query(pgsql_cur, sql)
+        d = {}
+        for row in results:
+            device_name = row[2]
+            mfr_id = row[1]
+            if str(mfr_id) in d:
+                device_name_list = d[str(mfr_id)]
+                if device_name not in device_name_list:
+                    device_name_list.append(device_name)
+            else:
+                d[str(mfr_id)] = [device_name]
+
+        for k, v in d.items():
+            rds_conn.hset(RedisKey.MFR_DEVICE_HASH, k, ','.join(v))
+
+
 class GenerateFeature(object):
     """生成feature 1秒执行一次"""
 
@@ -322,45 +350,74 @@ class GenerateFeature(object):
             "fid": 0,
             "faceurl": ""
         }
+        print unused_devices
+        # 将未使用的设备按照厂商分开
+        for mfr_id, v in rds_conn.hgetall(RedisKey.MFR_DEVICE_HASH).items():
+            device_name_list = v.split(",")
+            invalid_devices = list(set(device_name_list) & set(unused_devices))
+            unused_devices = list(set(unused_devices) - set(invalid_devices))
 
-        start = time.time()
-        sql = "SELECT id,oss_url FROM face " \
-              "WHERE status = 2 LIMIT {}".format(len(unused_devices))
-        results = pgsql_db.query(pgsql_cur, sql)
-        for row in results:
-            face_id = row[0]
-            oss_url = row[1]
-            jdata["fid"] = face_id
-            jdata['faceurl'] = oss_url
-            device_name = unused_devices.pop()
-            pub_msg(rds_conn, device_name, jdata)
-            # 将设备置为使用中
-            rds_conn.hset(RedisKey.DEVICE_USED, device_name, int(time.time()))
-            # 更新face状态
-            d = {
-                'id': face_id,
-                'status': 3
-            }
-            pgsql_db.update(pgsql_cur, d, table_name='face')
-            end = time.time()
+            # 等待生成状态中
+            sql = "SELECT face_id,oss_url FROM feature " \
+                  "WHERE status = 1 AND mfr_id={} LIMIT {}" \
+                  "".format(int(mfr_id), len(invalid_devices))
+            results = pgsql_db.query(pgsql_cur, sql)
+            for row in results:
+                face_id = row[0]
+                oss_url = row[1]
+                jdata["fid"] = face_id
+                jdata['faceurl'] = oss_url
+                device_name = invalid_devices.pop()
+                pub_msg(rds_conn, device_name, jdata)
+                # 将设备置为使用中
+                rds_conn.hset(RedisKey.DEVICE_USED, device_name, int(time.time()))
+                # 更新feature状态
+                d = {
+                    'id': face_id,
+                    'status': 2     # 生成中
+                }
+                pgsql_db.update(pgsql_cur, d, table_name='feature')
 
 
 class FaceGenerateIsfinish(object):
-    """检测学生人脸特征码是否生成完成"""
+    """检测学生人脸特征码和语音是否生成完成
+    1.根据feature和audio状态决定face状态
+    2.将feature feature_crc aac_url放到face表
+
+    """
 
     @db.transaction(is_commit=True)
     def face_generate_is_finish(self, sql_cur):
         sql_db = db.PgsqlDbUtil
-        sql = "SELECT id FROM face WHERE feature IS NOT NULL AND " \
-              "aac_url IS NOT NULL AND status=3"
-        results = sql_db.query(sql_cur, sql)
+
+        # face处理中的状态
+        face_sql = "SELECT id FROM face WHERE status in (2,3) LIMIT 50"
+        feature_sql = "SELECT status FROM feature WHERE face_id={}"
+        audio_sql = "SELECT status,aac_url FROM audio WHERE face_id={} LIMIT 1"
+        results = sql_db.query(sql_cur, face_sql)
         for row in results:
             pk = row[0]
-            data = {
-                'id': pk,
-                'status': 4
-            }
-            sql_db.update(sql_cur, data, table_name='face')
+            # 查询feature audio表
+            feature_set = sql_db.query(sql_cur, feature_sql.format(pk))
+            audio_row = sql_db.get(sql_cur, audio_sql.format(pk))
+            flag = True
+            # 是否生成成功
+            for feature_row in feature_set:
+                # 所有feature都是成功状态
+                if feature_row[0] != 3:
+                    flag = False
+            if flag and audio_row[0] == 3:
+                data = {
+                    'id': pk,
+                    'status': 4    # 处理完成
+                }
+                sql_db.update(sql_cur, data, table_name='face')
+            # else:
+            #     data = {
+            #         'id': pk,
+            #         'status': 5  # 预期数据准备失败
+            #     }
+            #     sql_db.update(sql_cur, data, table_name='face')
 
 
 class EveryMinuteExe(object):
@@ -461,6 +518,8 @@ class FromOssQueryFace(object):
         if upload_timestamp and (start - int(upload_timestamp) > 600):
             return
 
+        feature_sql = "SELECT id FROM feature WHERE face_id={}"
+
         sql = "SELECT F.id,F.stu_no FROM face AS F \
     INNER JOIN student AS STU ON STU.id=F.stu_id WHERE " \
               "F.status=1 AND STU.status=1"
@@ -480,12 +539,26 @@ class FromOssQueryFace(object):
             intersection = intersection[:1000]
 
             for row in intersection:
+                oss_url_str = config.OSSDomain + "/person/face/" + row + ".png"
                 d = {
                     'id': stu_no_pk_map[row],
-                    'oss_url': config.OSSDomain + "/person/face/" + row + ".png",
+                    'oss_url': oss_url_str,
                     'status': 2  # 未处理
                 }
                 mysql_db.update(pgsql_cur, d, table_name='face')
+
+                # 将oss_url放到feature
+                feature_set = mysql_db.query(
+                    pgsql_cur, feature_sql.format(stu_no_pk_map[0]))
+                for feature_row in feature_set:
+                    feature_pk = feature_row[0]
+                    feature_d = {
+                        'id': feature_pk,
+                        'oss_url': oss_url_str,
+                        'status': 1
+                    }
+                    mysql_db.update(pgsql_cur, feature_d, table_name='feature')
+
             rds_conn.delete(RedisKey.OSS_ID_CARD_SET + "CP")
         end = time.time()
         print u"从oss获取人脸函数总共用时{}s".format(end - start)

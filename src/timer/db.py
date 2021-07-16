@@ -39,7 +39,8 @@ def transaction(is_commit=False):
             try:
                 pgsql_conn = pgsql_pool.connection()
                 pgsql_cur = pgsql_conn.cursor()
-                pgsql_cur.execute('BEGIN')
+                if is_commit:
+                    pgsql_cur.execute('BEGIN')
                 result = func(self, pgsql_cur, *args, **kwargs)
                 if is_commit:
                     pgsql_conn.commit()

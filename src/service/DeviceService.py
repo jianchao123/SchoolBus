@@ -90,7 +90,7 @@ class DeviceService(object):
 
     @staticmethod
     def device_update(pk, license_plate_number, car_id,
-                      sound_volume, device_type):
+                      sound_volume, device_type, mfr_id):
         """
         设备ID 关联车辆  设备音量
         license_plate_number 似乎没有使用
@@ -111,6 +111,7 @@ class DeviceService(object):
                 # 如果设备是生成特征值
                 if device.device_type == 2:
                     device.status = 2   # 直接修改为2
+                    car_id = -10
                     # 将设备名字存入缓存
                     cache.sadd(defines.RedisKey.GENERATE_DEVICE_NAMES,
                                device.device_name)
@@ -147,6 +148,7 @@ class DeviceService(object):
                 # 修改设备关联的车辆需要删除缓存
                 cache.hdel(defines.RedisKey.CACHE_CAR_DATA,
                            device.device_name)
+        device.mfr_id = mfr_id
         if not device.device_type:
             device.device_type = 1
         try:

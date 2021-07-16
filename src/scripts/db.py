@@ -10,7 +10,7 @@ import config as conf
 import utils
 
 # logger
-logger = utils.get_logger(conf.log_path)
+logger = None
 
 # pgsql
 pgsql_pool = PooledDB(
@@ -49,7 +49,8 @@ def transaction(is_commit=False):
                 if pgsql_conn:
                     pgsql_conn.rollback()
                 # 记录日志
-                logger.error(traceback.format_exc())
+                #logger.error(traceback.format_exc())
+                print traceback.format_exc()
             finally:
                 if pgsql_cur:
                     pgsql_cur.close()
@@ -93,6 +94,7 @@ class PgsqlDbUtil(object):
         values = values[:-1]
 
         sql = "INSERT INTO {}({}) VALUES({})".format(table_name, keys, values)
+        print sql
         pgsql_cur.execute(sql)
 
     @staticmethod
@@ -127,8 +129,3 @@ class PgsqlDbUtil(object):
     @staticmethod
     def execute_sql(pgsql_cur, sql):
         return pgsql_cur.execute(sql)
-
-
-from weixin import WeixinMP
-wx_mp = WeixinMP(conf.MP_APP_ID, conf.MP_APP_SECRET,
-                 ac_path=conf.project_dir + "/ac_path")
