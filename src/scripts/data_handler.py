@@ -10,7 +10,7 @@ from aliyunsdkcore.client import AcsClient
 from aliyunsdkiot.request.v20180120.RegisterDeviceRequest import \
     RegisterDeviceRequest
 from aliyunsdkiot.request.v20180120.PubRequest import PubRequest
-from scripts import db
+import db
 import config
 
 
