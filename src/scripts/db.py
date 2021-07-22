@@ -7,7 +7,6 @@ import psycopg2.extras
 from DBUtils.PooledDB import PooledDB
 from redis import ConnectionPool
 import config as conf
-import utils
 
 # logger
 logger = None
