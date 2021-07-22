@@ -21,7 +21,7 @@ class AlertInfo(db.Model):
     alert_start_time = db.Column(db.DateTime, default=datetime.now) # 报警开始时间
     alert_second_time = db.Column(db.DateTime, default=datetime.now)
     alert_location = db.Column(db.String(16))   # 报警定位
-    status = db.Column(db.Integer)              # 1 正在报警 2已解除
+    status = db.Column(db.Integer)              # 1 正在报警 2已解除 10删除
     cancel_worker_id = db.Column(db.Integer)    # 取消的工作人员id
     cancel_worker_name = db.Column(db.String(16))   # 工作人员名字
     cancel_type_id = db.Column(db.Integer)      # 取消类型 1其他 2无学生遗漏 3有学生遗漏
