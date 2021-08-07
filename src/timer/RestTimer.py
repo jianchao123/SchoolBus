@@ -439,6 +439,14 @@ class EveryMinuteExe(object):
         #     for row in student_set_key:
         #         # 删除车内人员
         #         rds_conn.delete(row)
+        # 超过70分钟清除student_set
+        print "------------------------"
+        timestatmp_d = rds_conn.hgetall(RedisKey.DEVICE_CUR_TIMESTAMP)
+        for dev_name, dev_timestamp in timestatmp_d.items():
+            if int(time.time()) > (int(dev_timestamp) + 60*70):
+                print "clear student set"
+                rds_conn.delete(RedisKey.STUDENT_SET.format(dev_name))
+        print "------------------------------clear student set"
 
         # 过期人脸更新状态
         expire_sql = """SELECT F.id FROM student AS STU 
