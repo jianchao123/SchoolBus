@@ -38,8 +38,8 @@ if __name__ == "__main__":
     # 上传数据监控中心
     # sched.add_job(upload_take_bus_data.upload_take_bus_data,
     #               'interval', seconds=5)
-    # sched.add_job(upload_alarm_data.upload_alarm_data,
-    #               'interval', seconds=5)
+    sched.add_job(upload_alarm_data.upload_alarm_data,
+                  'interval', seconds=5)
     sched.add_job(face_generate_is_finish.face_generate_is_finish,
                   'interval', seconds=20)
 

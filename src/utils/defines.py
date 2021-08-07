@@ -68,6 +68,8 @@ class SubErrorCode(object):
     ALARM_RECORD_EXPORTING = (200081, u"报警记录导出中")
     ALARM_RECORD_NUMBER_TOO_MANY_LARGE = (200082, U"报警记录条数太大")
 
+    IOT_MAC_NOT_FOUND = (200101, u"设备mac找不到")
+
 
 class RedisKey(object):
 

@@ -27,7 +27,6 @@ from msgqueue import producer
 import utils
 
 
-
 class AcsManager(object):
     """注册设备"""
 
@@ -220,7 +219,7 @@ class AcsManager(object):
         """
 
         redis_db = db.rds_conn
-        # 去重key
+        # 因为消息队列的机制,数据可能重复,需要去重
         dup_key = str(fid) + str(add_time)
         if redis_db.sismember(RedisKey.REMOVE_DUP_ORDER_SET, dup_key):
             return
@@ -583,19 +582,22 @@ class AcsManager(object):
             if device_status and int(device_status) == 5:
                 return 0
             pk, status, version_no, sound_volume, license_plate_number, \
-                device_type, person_limit = self._get_device_info_data(device_name)
-            if status == 1:
+                device_type, person_limit = \
+                self._get_device_info_data(device_name)
+
+            # '已创建虚拟设备'状态
+            if status in [1, 2, 3, 4, 5]:
                 d['device_iid'] = shd_devid
 
             # 设备为生成特征值设备
             if device_type == 2:
                 license_plate_number = u'生成特征值专用'
-                workmode = 3
-            else: #device_type == 1:
-                workmode = 0
-            # 已关联车辆
+                workmode = 3    # 注册模式
+            else:   # device_type == 1:
+                workmode = 0    # 车载模式
+            # '已关联车辆'状态
             if status == 2:
-                d['status'] = 3   # 设置工作模式
+                d['status'] = 3   # 已设置工作模式
                 print u"设置工作模式"
                 person_limit = int(person_limit) if person_limit else 40
                 self._set_device_work_mode(
@@ -628,7 +630,7 @@ class AcsManager(object):
         return result[0], result[1], result[2]
 
     def device_incar_person_number(self, dev_name, cnt):
-        """设备重启后参数设置"""
+        """车内人员数"""
         rds_conn = db.rds_conn
         cur_status = rds_conn.hget(RedisKey.DEVICE_CUR_STATUS, dev_name)
         if cur_status and int(cur_status) == 5:

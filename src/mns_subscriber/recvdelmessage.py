@@ -37,14 +37,23 @@ class ReceiveMessage(object):
     def msg_handler(self, acs_manager, logger):
         recv_msg = self.my_queue.receive_message(self.wait_seconds)
         body = json.loads(recv_msg.message_body)
+
         dev_name = body['topic'].split('/')[2]
-        jdata = json.loads(base64.b64decode(body["payload"]))
+
+        try:
+            jdata = json.loads(base64.b64decode(body["payload"]))
+        except:
+            print "-------------------------------"
+            self.my_queue.delete_message(recv_msg.receipt_handle)
+            return
+
         acs_manager.check_cur_stream_no(dev_name, jdata)
         print jdata
         if 'cmd' in jdata:
             cmd = jdata['cmd']
             if cmd == 'syndata':
                 dev_name = jdata['devid']
+                print "devid dev_name=={}".format(dev_name)
                 if dev_name == 'newdev':
                     acs_manager.create_device(jdata['mac'])
 
@@ -95,6 +104,7 @@ class ReceiveMessage(object):
                 else:
                     logger.error("{}".format(str(jdata)))
                     if not jdata['type']:
+                        # fid=77 为特殊命令,不需要
                         if int(jdata['fid']) != 77:
                             acs_manager.add_order(jdata['fid'],
                                                   jdata['gps'],

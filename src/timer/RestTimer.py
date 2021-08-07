@@ -87,7 +87,7 @@ class CheckAccClose(object):
             if face_ids:
                 self.acc_business(rds_conn, dev_name, time_diff, face_ids, periods)
             else:
-                # 删除acc key
+                # 若没有人滞留,删除acc key
                 rds_conn.hdel(RedisKey.ACC_CLOSE, dev_name)
 
     @db.transaction(is_commit=True)
@@ -350,6 +350,7 @@ class GenerateFeature(object):
             "fid": 0,
             "faceurl": ""
         }
+        print "------------unused_devices-----------------"
         print unused_devices
         # 将未使用的设备按照厂商分开
         for mfr_id, v in rds_conn.hgetall(RedisKey.MFR_DEVICE_HASH).items():
@@ -432,12 +433,12 @@ class EveryMinuteExe(object):
 
         cur_date = datetime.now().strftime('%Y-%m-%d')
 
-        # 定时删除车内人员
-        if datetime.now().hour in (12, 23):
-            student_set_key = rds_conn.keys(RedisKey.STUDENT_SET.format('*'))
-            for row in student_set_key:
-                # 删除车内人员
-                rds_conn.delete(row)
+        # # 定时删除车内人员
+        # if datetime.now().hour in (12, 23):
+        #     student_set_key = rds_conn.keys(RedisKey.STUDENT_SET.format('*'))
+        #     for row in student_set_key:
+        #         # 删除车内人员
+        #         rds_conn.delete(row)
 
         # 过期人脸更新状态
         expire_sql = """SELECT F.id FROM student AS STU 
@@ -808,70 +809,115 @@ class EveryHoursExecute(object):
 class UploadTakeBusData(object):
     """上传乘车数据到监控中心"""
 
-    url = ""
-    access_key_secret = ""
+    url = "http://182.148.114.194:65414/school/bus/report"
+    access_key_id = "hnxccs8865"
+    access_key_secret = "3422af52-9905-4965-b678-18c0a99fc106"
+    """
+    accessKeyId:hnxccs8865  
+accessKeySecret:3422af52-9905-4965-b678-18c0a99fc106
+    """
 
     @staticmethod
     def _get_created():
         import pytz
         tz = pytz.timezone('UTC')
         now = datetime.now(tz)
-        return now.strftime("%Y-%m-%dT%H:%M:%S.%f%z")
+        return now.strftime("%Y-%m-%dT%H:%M:%S+08:00")
 
     @db.transaction(is_commit=True)
     def upload_take_bus_data(self, cursor):
 
         rds_conn = db.rds_conn
         sql_db = db.PgsqlDbUtil
-        lastest_id = rds_conn.get(RedisKey.CACHE_LASTEST_ORDERID)
-        if not lastest_id:
-            lastest_id = 0
-        else:
-            lastest_id = int(lastest_id)
-        sql = "SELECT license_plate_number,stu_name,stu_no,create_time," \
-              "order_type,id FROM public.order WHERE id>{} " \
-              "ORDER BY id ASC LIMIT 100"
-        results = sql_db.query(cursor, sql.format(lastest_id))
-        l = []
-        flag = 0
-        headers = {
-            'Content-Type': 'application/json;charset=UTF-8',
-            'Content-Length': 0,
-            'Content-MD5': '',
-            'Authorization': 'WSSE profile="UsernamePwd"',
-            'X-WSSE': 'UsernamePwd Username="3T4sde2HH45", '
-                      'PasswordDigest="{}",Nonce="{}",Created="{}"'
 
-        }
-        nonce = ''.join(random.sample(string.ascii_letters + string.digits, 16))
-        create_timestamp = int(time.time() * 1000)
-        created = UploadTakeBusData._get_created()
-        while True:
+        # 当前页数
+        page = rds_conn.get(RedisKey.SC_ORDER_PAGE_NUMBER)
+        if not page:
+            page = 1
+        else:
+            page = int(page) + 1
+
+        # 如果当前页大于1,就需要去判断当前页的前一页已经上传成功
+        pre_page = \
+            rds_conn.hget(RedisKey.CURRENT_PAGE_IS_UPLOAD_HASH, str(page-1))
+        if page > 1 and not pre_page:
+            return
+
+        offset = (page - 1) * 50
+
+        sql = "SELECT license_plate_number,stu_name,stu_no,create_time," \
+              "order_type,id FROM public.order " \
+              "ORDER BY id ASC LIMIT 50 OFFSET {}"
+        results = sql_db.query(cursor, sql.format(offset))
+
+        if results and len(results) == 50:
+
+            headers = {
+                'Content-Type': 'application/json;charset=UTF-8',
+                'Content-Length': 0,
+                'Content-MD5': '',
+                'Authorization': 'WSSE profile="UsernamePwd"',
+                'X-WSSE': 'UsernamePwd Username="3T4sde2HH45", '
+                          'PasswordDigest="{}",Nonce="{}",Created="{}"'
+
+            }
+            nonce = ''.join(
+                random.sample(string.ascii_letters + string.digits, 16))
+            create_timestamp = int(time.time() * 1000)
+            created = UploadTakeBusData._get_created()
+
+            print "---------------wsse---------------------"
+            if not rds_conn.hget(
+                    RedisKey.CURRENT_PAGE_IS_UPLOAD_HASH, str(page)):
+                is_upload = 0
+            else:
+                is_upload = 1
+
+            order_list = []
             for row in results:
-                face_time = int(time.mktime(row[3].timetuple())) * 1000
                 state = 1 if row[4] % 2 else 2
-                l.append({'licensePlate': row[0], 'plateColor': 'yellow',
-                          'studentName': row[1], 'studentId': row[2],
-                          'faceTime': face_time, 'state': state,
-                          'flag': flag, 'sendTime': create_timestamp})
-            data = json.dumps(l)
+                face_time = int(time.mktime(row[3].timetuple())) * 1000
+
+                order_list.append({'licensePlate': row[0],
+                                   'plateColor': 'yellow',
+                                   'studentName': row[1],
+                                   'studentId': row[2],
+                                   'faceTime': face_time,
+                                   'state': state,
+                                   'flag': is_upload,
+                                   'sendTime': create_timestamp})
+
+            data = json.dumps({"version": "1.0", "dataType": 2,
+                               "data": order_list}, ensure_ascii=False)
             length = len(data)
-            headers['Content-Length'] = length
+            headers['Content-Length'] = str(length)
 
             m = hashlib.md5()
             m.update(data.encode('utf-8'))
             content_md5 = base64.b64encode(bin(int(m.hexdigest(), 16))[2:])
             headers['Content-MD5'] = content_md5
 
-            password_digest = nonce + str(
-                create_timestamp) + UploadTakeBusData.access_key_secret + content_md5
-            password_digest = base64.b64encode(hashlib.sha1(password_digest.encode('utf8')))
-            headers['X-WSSE'] = headers['X-WSSE'].format(password_digest, nonce, created)
-            res = requests.post(UploadTakeBusData.url, data, headers=headers)
-            if res.status_code == 200:
-                rds_conn.set(RedisKey.CACHE_LASTEST_ORDERID, results[-1][-1])
-                break
-            flag += 1
+            password_digest = \
+                nonce + str(create_timestamp) + \
+                UploadTakeBusData.access_key_secret + content_md5
+            password_digest = \
+                base64.b64encode(
+                    hashlib.sha1(password_digest.encode('utf8')).hexdigest())
+            headers['X-WSSE'] = \
+                headers['X-WSSE'].format(password_digest, nonce, created)
+            print headers
+            print data
+            print "-----------上传成功------------"
+            # res = requests.post(UploadTakeBusData.url, data, headers=headers)
+            # if res.status_code == 200:
+            #     print "-------------upload_take_bus_data------------"
+            #     res_data = res.content
+            #     print res_data
+            #     if not res_data['code']:
+            # 上传成功修改redis  key
+            rds_conn.hget(
+                RedisKey.CURRENT_PAGE_IS_UPLOAD_HASH, str(page), 1)
+            rds_conn.incr(RedisKey.SC_ORDER_PAGE_NUMBER)
 
 
 class UploadAlarmData(object):
