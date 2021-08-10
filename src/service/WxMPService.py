@@ -55,9 +55,10 @@ class WxMPService(object):
         db.session.commit() # SELECT
         student = db.session.query(Student).filter(
             or_(Student.open_id_1 == open_id,
-                Student.open_id_2 == open_id)).first()
+                Student.open_id_2 == open_id)).filter(
+            Student.status != 10).first()
         worker = db.session.query(Worker).filter(
-            Worker.open_id == open_id).first()
+            Worker.open_id == open_id).filter(Worker.status != 10).first()
         d = {
             'parents': 0,   # 家长
             'driver': 0,    # 驾驶员
