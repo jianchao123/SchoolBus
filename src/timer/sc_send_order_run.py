@@ -76,17 +76,15 @@ def send_order():
     while True:
         rds_conn = db.rds_conn
         raw_data = rds_conn.blpop(RedisKey.SC_ORDER_LIST, 100)
-        print raw_data
         if raw_data:
             raw_data = raw_data[1]
             try:
                 raw_data = raw_data.encode('utf8')
                 res = requests.post(url, raw_data, headers=get_header(raw_data))
-                print res.content
+                db.logger.error(res.content)
                 if res.status_code == 200:
-                    print "-------------upload order data------------"
                     res_data = json.loads(res.content)
-                    print json.dumps(res_data, ensure_ascii=False)
+                    db.logger.error(json.dumps(res_data, ensure_ascii=False))
             except:
                 import traceback
                 print traceback.format_exc()
