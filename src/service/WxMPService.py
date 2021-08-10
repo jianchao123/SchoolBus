@@ -339,7 +339,8 @@ class WxMPService(object):
         孩子数据
         """
         student = db.session.query(Student).filter(
-            or_(Student.open_id_1 == openid, Student.open_id_2 == openid)).all()
+            or_(Student.open_id_1 == openid, Student.open_id_2 == openid)
+        ).filter(Student.status != 10).all()
         data = []
         for row in student:
             data.append({
