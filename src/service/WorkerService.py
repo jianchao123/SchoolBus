@@ -63,6 +63,10 @@ class WorkerService(object):
             Worker.duty_id == duty_id).count()
         if cnt:
             return -12  # 该车辆已有该职务工作人员
+        # 号码已经存在
+        if db.session.query(Worker).filter(
+                Worker.mobile == mobile).first():
+            return -13
 
         worker = Worker()
         worker.emp_no = emp_no
@@ -116,6 +120,10 @@ class WorkerService(object):
         if gender:
             worker.gender = gender
         if mobile:
+            # 号码已经存在
+            if db.session.query(Worker).filter(
+                    Worker.mobile == mobile).first():
+                return -14
             worker.mobile = mobile
         if remarks:
             worker.remarks = remarks

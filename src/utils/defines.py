@@ -42,6 +42,7 @@ class SubErrorCode(object):
     WORKER_ALREADY_EXISTS_DUTY = (200041, u"该车辆已经存在该职务的工作人员")
     WORKER_NO_CHANGE_DUTY = (200042, u"该车辆已有该职位绑定，请先对其解绑")
     WORKER_ALREADY_BOUNDING_CAR = (200043, u"工作人员已绑定车辆,不能删除,需先解绑")
+    WORKER_PHONE_NUMBER_EXIST = (200044, u"号码已经存在")
 
     CAR_NOT_FOUND = (200050, u"车辆未找到")
     CAR_CHEPAI_ALREADY_EXISTS = (200051, u"车牌已经存在")

@@ -96,6 +96,7 @@ class ReceiveMessage(object):
                     log_id = int(jdata['gps'].split('|')[0])
                     # acc关闭
                     if log_id == 3:
+                        print "-------------------------acc close-------------------------------"
                         acs_manager.acc_close(dev_name, jdata['addtime'])
                     elif log_id == 4:
                         acs_manager.acc_open(dev_name)

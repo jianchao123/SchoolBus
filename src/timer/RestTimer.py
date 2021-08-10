@@ -813,17 +813,131 @@ class EveryHoursExecute(object):
         }
         rds_conn.set(RedisKey.STATISTICS, json.dumps(d))
 
+#
+# class UploadTakeBusData(object):
+#     """上传乘车数据到监控中心"""
+#     url = "http://182.148.114.194:65415/school/bus/report"
+#     access_key_id = "hnxccs8865"
+#     access_key_secret = "3422af52-9905-4965-b678-18c0a99fc106"
+#
+#     @staticmethod
+#     def _get_created():
+#         import pytz
+#         tz = pytz.timezone('UTC')
+#         now = datetime.now(tz)
+#         return now.strftime("%Y-%m-%dT%H:%M:%S+08:00")
+#
+#     @db.transaction(is_commit=True)
+#     def upload_take_bus_data(self, cursor):
+#
+#         rds_conn = db.rds_conn
+#         sql_db = db.PgsqlDbUtil
+#
+#         # 当前页数
+#         page = rds_conn.get(RedisKey.SC_ORDER_PAGE_NUMBER)
+#         if not page:
+#             page = 1
+#         else:
+#             page = int(page) + 1
+#
+#         # 如果当前页大于1,就需要去判断当前页的前一页已经上传成功
+#         pre_page = \
+#             rds_conn.hget(RedisKey.CURRENT_PAGE_IS_UPLOAD_HASH, str(page-1))
+#         if page > 1 and not pre_page:
+#             return
+#
+#         offset = (page - 1) * 50
+#
+#         sc_order_last_id = rds_conn.get(RedisKey.SC_ORDER_LAST_ID)
+#         if not sc_order_last_id:
+#             sc_order_last_id = 0
+#         else:
+#             sc_order_last_id = int(sc_order_last_id)
+#
+#         sql = "SELECT license_plate_number,stu_name,stu_no,create_time," \
+#               "order_type,id,gps FROM public.order " \
+#               "WHERE id > {} ORDER BY id ASC LIMIT 50"
+#         results = sql_db.query(cursor, sql.format(sc_order_last_id))
+#
+#         if results:
+#
+#             headers = {
+#                 'Content-Type': 'application/json;charset=UTF-8',
+#                 'Content-Length': 0,
+#                 'Content-MD5': '',
+#                 'Authorization': 'WSSE profile="UsernamePwd"',
+#                 'X-WSSE': 'UsernamePwd Username="{}", '
+#                           'PasswordDigest="{}",Nonce="{}",Created="{}"'
+#
+#             }
+#             nonce = ''.join(
+#                 random.sample(string.ascii_letters + string.digits, 16))
+#             send_time = int(time.time() * 1000)
+#             created = UploadTakeBusData._get_created()
+#
+#             order_list = []
+#             for row in results:
+#                 # 默认的
+#                 if row[6] == "116.290435,40.032377":
+#                     longitude = 0
+#                     latitude = 0
+#                 else:
+#                     gps_arr = row[6].split(",")
+#                     longitude = gps_arr[0]
+#                     latitude = gps_arr[1]
+#
+#                 state = 1 if row[4] % 2 else 2
+#                 face_time = int(time.mktime(row[3].timetuple())) * 1000
+#
+#                 order_list.append({'licensePlate': row[0],
+#                                    'plateColor': 'yellow',
+#                                    'studentName': row[1],
+#                                    'studentId': row[2],
+#                                    'faceTime': face_time,
+#                                    'state': state,
+#                                    'flag': 0,
+#                                    'sendTime': send_time,
+#                                    'longitude': longitude,
+#                                    'latitude': latitude})
+#
+#             data = json.dumps({"version": "1.0", "dataType": 2,
+#                                "data": order_list}, ensure_ascii=False)
+#             length = len(data)
+#             headers['Content-Length'] = str(length)
+#
+#             m = hashlib.md5()
+#             m.update(data.encode('utf-8'))
+#             content_md5 = base64.b64encode(bin(int(m.hexdigest(), 16))[2:])
+#             headers['Content-MD5'] = content_md5
+#
+#             print "nonce={},created={}".format(nonce, created)
+#             password_digest = \
+#                 nonce + created + \
+#                 UploadTakeBusData.access_key_secret + content_md5
+#             password_digest = \
+#                 base64.b64encode(
+#                     hashlib.sha1(password_digest.encode('utf8')).hexdigest())
+#             headers['X-WSSE'] = \
+#                 headers['X-WSSE'].format(UploadTakeBusData.access_key_id, password_digest, nonce, created)
+#             print headers
+#             print data
+#             print "-----------上传成功------------"
+#             res = requests.post(UploadTakeBusData.url, data, headers=headers)
+#             if res.status_code == 200:
+#                 print "-------------upload_take_bus_data------------"
+#                 res_data = json.loads(res.content)
+#                 print json.dumps(res_data, ensure_ascii=False)
+#                 if not res_data['code']:
+#                     # 上传成功修改redis  key
+#                     rds_conn.set(RedisKey.SC_ORDER_LAST_ID, results[-1][5])
 
-class UploadTakeBusData(object):
-    """上传乘车数据到监控中心"""
 
-    url = "http://182.148.114.194:65414/school/bus/report"
+class UploadAlarmData(object):
+    """上传报警数据到监控中心"""
+
     access_key_id = "hnxccs8865"
     access_key_secret = "3422af52-9905-4965-b678-18c0a99fc106"
-    """
-    accessKeyId:hnxccs8865  
-accessKeySecret:3422af52-9905-4965-b678-18c0a99fc106
-    """
+    url = "http://182.148.114.194:65415/school/bus/report"
 
     @staticmethod
     def _get_created():
@@ -833,187 +947,113 @@ accessKeySecret:3422af52-9905-4965-b678-18c0a99fc106
         return now.strftime("%Y-%m-%dT%H:%M:%S+08:00")
 
     @db.transaction(is_commit=True)
-    def upload_take_bus_data(self, cursor):
-
-        rds_conn = db.rds_conn
-        sql_db = db.PgsqlDbUtil
-
-        # 当前页数
-        page = rds_conn.get(RedisKey.SC_ORDER_PAGE_NUMBER)
-        if not page:
-            page = 1
-        else:
-            page = int(page) + 1
-
-        # 如果当前页大于1,就需要去判断当前页的前一页已经上传成功
-        pre_page = \
-            rds_conn.hget(RedisKey.CURRENT_PAGE_IS_UPLOAD_HASH, str(page-1))
-        if page > 1 and not pre_page:
-            return
-
-        offset = (page - 1) * 50
-
-        sql = "SELECT license_plate_number,stu_name,stu_no,create_time," \
-              "order_type,id FROM public.order " \
-              "ORDER BY id ASC LIMIT 50 OFFSET {}"
-        results = sql_db.query(cursor, sql.format(offset))
-
-        if results and len(results) == 50:
-
-            headers = {
-                'Content-Type': 'application/json;charset=UTF-8',
-                'Content-Length': 0,
-                'Content-MD5': '',
-                'Authorization': 'WSSE profile="UsernamePwd"',
-                'X-WSSE': 'UsernamePwd Username="3T4sde2HH45", '
-                          'PasswordDigest="{}",Nonce="{}",Created="{}"'
-
-            }
-            nonce = ''.join(
-                random.sample(string.ascii_letters + string.digits, 16))
-            create_timestamp = int(time.time() * 1000)
-            created = UploadTakeBusData._get_created()
-
-            print "---------------wsse---------------------"
-            if not rds_conn.hget(
-                    RedisKey.CURRENT_PAGE_IS_UPLOAD_HASH, str(page)):
-                is_upload = 0
-            else:
-                is_upload = 1
-
-            order_list = []
-            for row in results:
-                state = 1 if row[4] % 2 else 2
-                face_time = int(time.mktime(row[3].timetuple())) * 1000
-
-                order_list.append({'licensePlate': row[0],
-                                   'plateColor': 'yellow',
-                                   'studentName': row[1],
-                                   'studentId': row[2],
-                                   'faceTime': face_time,
-                                   'state': state,
-                                   'flag': is_upload,
-                                   'sendTime': create_timestamp})
-
-            data = json.dumps({"version": "1.0", "dataType": 2,
-                               "data": order_list}, ensure_ascii=False)
-            length = len(data)
-            headers['Content-Length'] = str(length)
-
-            m = hashlib.md5()
-            m.update(data.encode('utf-8'))
-            content_md5 = base64.b64encode(bin(int(m.hexdigest(), 16))[2:])
-            headers['Content-MD5'] = content_md5
-
-            password_digest = \
-                nonce + str(create_timestamp) + \
-                UploadTakeBusData.access_key_secret + content_md5
-            password_digest = \
-                base64.b64encode(
-                    hashlib.sha1(password_digest.encode('utf8')).hexdigest())
-            headers['X-WSSE'] = \
-                headers['X-WSSE'].format(password_digest, nonce, created)
-            print headers
-            print data
-            print "-----------上传成功------------"
-            # res = requests.post(UploadTakeBusData.url, data, headers=headers)
-            # if res.status_code == 200:
-            #     print "-------------upload_take_bus_data------------"
-            #     res_data = res.content
-            #     print res_data
-            #     if not res_data['code']:
-            # 上传成功修改redis  key
-            rds_conn.hget(
-                RedisKey.CURRENT_PAGE_IS_UPLOAD_HASH, str(page), 1)
-            rds_conn.incr(RedisKey.SC_ORDER_PAGE_NUMBER)
-
-
-class UploadAlarmData(object):
-    """上传报警数据到监控中心"""
-
-    url = ""
-    access_key_secret = ""
-
-    @staticmethod
-    def _get_created():
-        import pytz
-        tz = pytz.timezone('UTC')
-        now = datetime.now(tz)
-        return now.strftime("%Y-%m-%dT%H:%M:%S.%f%z")
-
-    @db.transaction(is_commit=True)
     def upload_alarm_data(self, cursor):
 
         rds_conn = db.rds_conn
         sql_db = db.PgsqlDbUtil
-        lastest_id = rds_conn.get(RedisKey.CACHE_LASTEST_ALARMID)
-        if not lastest_id:
-            lastest_id = 0
+
+        sc_alarm_last_id = rds_conn.get(RedisKey.SC_ALARM_LAST_ID)
+        if not sc_alarm_last_id:
+            sc_alarm_last_id = 0
         else:
-            lastest_id = int(lastest_id)
+            sc_alarm_last_id = int(sc_alarm_last_id)
 
         stu_sql = "SELECT stu_no,nickname FROM student WHERE id in ({})"
 
         sql = "SELECT license_plate_number,alert_start_time,status," \
-              "people_number,stu_ids,cancel_worker_name,cancel_reason " \
-              "FROM alert_info WHERE id>{} ORDER BY id ASC LIMIT 10"
-        results = sql_db.query(cursor, sql.format(lastest_id))
-        l = []
-        flag = 0
+              "people_number,stu_ids,cancel_worker_name,cancel_reason,id,gps " \
+              "FROM alert_info WHERE id > {} AND " \
+              "alert_start_time::timestamp(0) + '10 min' < now()" \
+              " ORDER BY id ASC LIMIT 1"
+        results = sql_db.query(cursor, sql.format(sc_alarm_last_id))
         headers = {
             'Content-Type': 'application/json;charset=UTF-8',
             'Content-Length': 0,
             'Content-MD5': '',
             'Authorization': 'WSSE profile="UsernamePwd"',
-            'X-WSSE': 'UsernamePwd Username="3T4sde2HH45", '
+            'X-WSSE': 'UsernamePwd Username="{}", '
                       'PasswordDigest="{}",Nonce="{}",Created="{}"'
 
         }
         nonce = ''.join(random.sample(string.ascii_letters + string.digits, 16))
-        create_timestamp = int(time.time() * 1000)
+        send_time = int(time.time() * 1000)
+        create_timestamp = UploadAlarmData._get_created()
         created = UploadAlarmData._get_created()
-        while True:
+
+        print "----------------sc alarm---------------"
+        print results
+
+        alarm_list = []
+        if results:
             for row in results:
-                alert_start_time = int(time.mktime(row[1].timetuple())) * 1000
-                alarm_status = row[2]
+                license_plate_number = row[0]
+                alert_start_time = row[1]
+                status = row[2]
                 people_number = row[3]
                 stu_ids = row[4]
+                cancel_worker_name = row[5]
+                cancel_reason = row[6]
+                pk = row[7]
+                gps_str = row[8]
+
+                # 默认的
+                if gps_str == "116.290435,40.032377":
+                    longitude = 0
+                    latitude = 0
+                else:
+                    gps_arr = gps_str.split(",")
+                    longitude = int(float(gps_arr[0]) * (10 ** 6))
+                    latitude = int(float(gps_arr[1]) * (10 ** 6))
+
+                alert_start_time = int(time.mktime(alert_start_time.timetuple())) * 1000
+                alarm_status = 1 if status == 1 else 0
                 stu_results = sql_db.query(cursor, stu_sql.format(stu_ids))
                 stu_info_list = []
                 for stu in stu_results:
-                    stu_info_list.append({'studentName': stu[1], 'studentId': stu[0]})
+                    stu_info_list.append(
+                        {'studentName': stu[1], 'studentId': stu[0]})
 
-                cancel_worker_name = row[5]
-                cancel_reason = row[6]
-
-                l.append({'licensePlate': row[0],
-                          'plateColor': 'yellow',
-                          'alarmTime': alert_start_time,
-                          'alarmType': 2,
-                          'alarmStatus': alarm_status,
-                          'studentCount': people_number,
-                          'studentInfo': json.dumps(stu_info_list),
-                          'alarmOffName': cancel_worker_name,
-                          'alarmOffReason': cancel_reason,
-                          'flag': flag, 'sendTime': create_timestamp})
-            data = json.dumps(l)
-            length = len(data)
-            headers['Content-Length'] = length
-
+                alarm_list.append({'licensePlate': license_plate_number,
+                                   'plateColor': '黄',
+                                   'alarmTime': alert_start_time,
+                                   'alarmType': 2,
+                                   'alarmStatus': alarm_status,
+                                   'studentCount': people_number,
+                                   'studentInfo': stu_info_list,
+                                   'alarmOffName': cancel_worker_name,
+                                   'alarmOffReason': cancel_reason,
+                                   'flag': 0,
+                                   'sendTime': send_time,
+                                   'longitude': longitude,
+                                   'latitude': latitude})
+            data_dict = {"version": "1.0", "dataType": 1, "data": alarm_list}
+            data = json.dumps(data_dict, ensure_ascii=False)
+            db.logger.error(data) # 用print 打印会少一个studentInfo
+            headers['Content-Length'] = str(len(data))
             m = hashlib.md5()
-            m.update(data.encode('utf-8'))
+            m.update(data)
             content_md5 = base64.b64encode(bin(int(m.hexdigest(), 16))[2:])
             headers['Content-MD5'] = content_md5
 
-            password_digest = nonce + str(
-                create_timestamp) + UploadTakeBusData.access_key_secret + content_md5
-            password_digest = base64.b64encode(hashlib.sha1(password_digest.encode('utf8')))
-            headers['X-WSSE'] = headers['X-WSSE'].format(password_digest, nonce, created)
-            res = requests.post(UploadTakeBusData.url, data, headers=headers)
+            password_digest = \
+                nonce + str(create_timestamp) + \
+                UploadAlarmData.access_key_secret + content_md5
+            password_digest = \
+                base64.b64encode(
+                    hashlib.sha1(password_digest.encode('utf8')).hexdigest())
+            headers['X-WSSE'] = \
+                headers['X-WSSE'].format(
+                    UploadAlarmData.access_key_id, password_digest, nonce, created)
+
+            res = requests.post(UploadAlarmData.url, data, headers=headers)
+            print res.content
             if res.status_code == 200:
-                rds_conn.set(RedisKey.CACHE_LASTEST_ALARMID, results[-1][-1])
-                break
-            flag += 1
+                # 上传成功修改redis  key
+                print "----------------------xwsse-------------------------"
+                print headers
+                print res.content
+                rds_conn.set(RedisKey.SC_ALARM_LAST_ID, results[-1][7])
+
 
 # from db import logger
 # class OrderSendMsg(object):

@@ -131,6 +131,8 @@ class AcsManager(object):
     def check_cur_stream_no(device_name, jdata):
         """检查当前stream_no"""
         if "stream_no" in jdata:
+            from mns_subscriber import config
+            config.logger.error("------------stream_no----------------{}".format(str(jdata)))
             rds_conn = db.rds_conn
             stream_no = jdata["stream_no"]
             k = "cur_{}_stream_no".format(device_name)
@@ -335,6 +337,42 @@ class AcsManager(object):
             producer.send_parents_template_message(
                 open_id_2, d['id'], stu_nickname,
                 order_type_name, up_time_str, license_plate_number)
+        # 监控中心队列
+        try:
+            # 默认的
+            if gps_str == "116.290435,40.032377":
+                longitude = 0
+                latitude = 0
+            else:
+                gps_arr = gps_str.split(",")
+                longitude = int(float(gps_arr[0]) * (10**6))
+                latitude = int(float(gps_arr[1]) * (10**6))
+
+            state = 1 if order_type % 2 else 2
+            face_time = int(add_time) * 1000
+
+            d = {'version': '1.0', 'dataType': 2,
+                 'data': [{'licensePlate': license_plate_number,
+                           'plateColor': 'yellow',
+                           'faceTime': face_time,
+                           'state': state,
+                           'flag': 0,
+                           'sendTime': int(time.time() * 1000),
+                           'longitude': longitude,
+                           'latitude': latitude,
+                           'studentName': stu_nickname,
+                           'studentId': stu_no}]}
+            redis_db.rpush(
+                RedisKey.SC_ORDER_LIST, json.dumps(d, ensure_ascii=False))
+        except:
+            pass
+
+    @staticmethod
+    def _get_created():
+        import pytz
+        tz = pytz.timezone('UTC')
+        now = datetime.now(tz)
+        return now.strftime("%Y-%m-%dT%H:%M:%S+08:00")
 
     def add_redis_queue(self, device_name, data, pkt_cnt):
         """

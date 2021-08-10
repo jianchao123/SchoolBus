@@ -14,7 +14,7 @@ from apscheduler.schedulers.gevent import BlockingScheduler
 from timer.RestTimer import GenerateFeature, EveryMinuteExe, \
     FromOssQueryFace, EveryFewMinutesExe, GenerateAAC, \
     EveryHoursExecute, CheckAccClose, RefreshWxAccessToken, \
-    UploadTakeBusData, UploadAlarmData, FaceGenerateIsfinish, \
+    UploadAlarmData, FaceGenerateIsfinish, \
     EveryDayOneClock, DeviceMfrList
 
 if __name__ == "__main__":
@@ -26,20 +26,15 @@ if __name__ == "__main__":
     generate_aac = GenerateAAC()
     check_acc_close = CheckAccClose()
     refresh_wx_access_token = RefreshWxAccessToken()
-    upload_take_bus_data = UploadTakeBusData()
     upload_alarm_data = UploadAlarmData()
     face_generate_is_finish = FaceGenerateIsfinish()
     every_day_one_clock = EveryDayOneClock()
     device_mfr_list = DeviceMfrList()
 
     sched = BlockingScheduler()
-    # 顺序发送消息
-    #sched.add_job(order_send_msg.order_sent_msg, 'interval', seconds=1)
-    # 上传数据监控中心
-    # sched.add_job(upload_take_bus_data.upload_take_bus_data,
-    #               'interval', seconds=5)
-    # sched.add_job(upload_alarm_data.upload_alarm_data,
-    #               'interval', seconds=5)
+
+    sched.add_job(upload_alarm_data.upload_alarm_data,
+                  'interval', seconds=5)
     sched.add_job(face_generate_is_finish.face_generate_is_finish,
                   'interval', seconds=20)
 

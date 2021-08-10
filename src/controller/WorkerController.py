@@ -182,6 +182,8 @@ def worker_add(user_id, data):
         raise AppError(*SubErrorCode.CAR_NOT_FOUND)
     if ret == -12:
         raise AppError(*SubErrorCode.WORKER_ALREADY_EXISTS_DUTY)
+    if ret == -13:
+        raise AppError(*SubErrorCode.WORKER_PHONE_NUMBER_EXIST)
     return ret
 
 
@@ -276,6 +278,8 @@ def worker_update(user_id, data, pk):
         raise AppError(*SubErrorCode.WORKER_NO_CHANGE_DUTY)
     if ret == -13:
         raise AppError(*SubErrorCode.CAR_ALREADY_BOUNDING_WORKER)
+    if ret == -14:
+        raise AppError(*SubErrorCode.WORKER_PHONE_NUMBER_EXIST)
     return ret
 
 

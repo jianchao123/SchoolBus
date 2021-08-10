@@ -1,4 +1,7 @@
 # coding:utf-8
+"""
+发设备顺序发送消息
+"""
 import os
 import sys
 reload(sys)
