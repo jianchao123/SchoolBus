@@ -116,7 +116,8 @@ class CheckAccClose(object):
             if not device_cur_person_number:
                 rds_conn.hdel(RedisKey.ACC_CLOSE, dev_name)
                 return
-            number = int(device_cur_person_number)
+            #number = int(device_cur_person_number)
+            number = len(face_ids.split(","))
             if number:
 
                 # 是否已经添加报警记录
