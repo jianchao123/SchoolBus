@@ -745,19 +745,21 @@ class AcsManager(object):
         pgsql_db = db.PgsqlDbUtil
         rds_conn = db.rds_conn
         d = defaultdict()
+        mfr_id = pgsql_db.get(
+            pgsql_cur, "SELECT mfr_id FROM device WHERE "
+                       "device_name='{}' LIMIT 1".format(device_name))[0]
+        sql = "SELECT id FROM feature " \
+              "WHERE mfr_id={} AND face_id={} LIMIT 1"
+        print sql.format(mfr_id, fid)
+        feature_id = pgsql_db.get(pgsql_cur, sql.format(mfr_id, fid))[0]
         if feature:
-            mfr_id = pgsql_db.get(
-                pgsql_cur, "SELECT mfr_id FROM device WHERE "
-                           "device_name='{}' LIMIT 1".format(device_name))[0]
-            sql = "SELECT id FROM feature " \
-                  "WHERE mfr_id={} AND face_id={} LIMIT 1"
-            print sql.format(mfr_id, fid)
-            feature_id = pgsql_db.get(pgsql_cur, sql.format(mfr_id, fid))[0]
+
             d['id'] = feature_id
             d['feature'] = feature
             d['feature_crc'] = zlib.crc32(base64.b64decode(feature))
             d['status'] = 3     # 生成成功
         else:
+            d['id'] = feature_id
             d['status'] = 4     # 生成失败
         pgsql_db.update(pgsql_cur, d, table_name='feature')
         # 将设备从使用中删除
