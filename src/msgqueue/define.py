@@ -59,7 +59,7 @@ class RedisKey(object):
     CACHE_SCHOOL_NAME_DATA = "CACHE_SCHOOL_NAME_DATA_HASH"
 
     # 厂商设备
-    MFR_DEVICE_HASH = "MFR_DEVICE_HASH"
+    MFR_GENERATE_DEVICE_HASH = "MFR_GENERATE_DEVICE_HASH"
 
 
 grade = [u"TBD", u'小班', u'中班', u'大班', u'学前班', u'一年级', u'二年级', u'三年级',

@@ -284,7 +284,7 @@ class DeviceMfrList(object):
         for row in results:
             device_name = row[2]
             mfr_id = row[1]
-            rds_conn.hset(RedisKey.MFR_DEVICE_HASH, device_name, str(mfr_id))
+            rds_conn.hset(RedisKey.MFR_GENERATE_DEVICE_HASH, device_name, str(mfr_id))
         #     if str(mfr_id) in d:
         #         device_name_list = d[str(mfr_id)]
         #         if device_name not in device_name_list:
@@ -293,7 +293,7 @@ class DeviceMfrList(object):
         #         d[str(mfr_id)] = [device_name]
         #
         # for k, v in d.items():
-        #     rds_conn.hset(RedisKey.MFR_DEVICE_HASH, k, ','.join(v))
+        #     rds_conn.hset(RedisKey.MFR_GENERATE_DEVICE_HASH, k, ','.join(v))
 
 
 class GenerateFeature(object):
@@ -354,7 +354,7 @@ class GenerateFeature(object):
         print unused_devices
 
         mfr_dict = {}
-        for dev_name, mfr_id in rds_conn.hgetall(RedisKey.MFR_DEVICE_HASH).items():
+        for dev_name, mfr_id in rds_conn.hgetall(RedisKey.MFR_GENERATE_DEVICE_HASH).items():
             mfr_pk = str(mfr_id)
             if mfr_pk in mfr_dict:
                 mfr_dict[mfr_pk].append(dev_name)

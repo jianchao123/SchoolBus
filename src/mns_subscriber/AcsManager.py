@@ -535,10 +535,10 @@ class AcsManager(object):
                     pgsql_cur, machine_sql.format(mac))
                 if obj:
                     # 2是SHENZHEN
-                    rds_conn.hset(RedisKey.MFR_DEVICE_HASH, dev_name, str(2))
+                    rds_conn.hset(RedisKey.MFR_GENERATE_DEVICE_HASH, dev_name, str(2))
                 else:
                     # 1是WUHAN
-                    rds_conn.hset(RedisKey.MFR_DEVICE_HASH, dev_name, str(1))
+                    rds_conn.hset(RedisKey.MFR_GENERATE_DEVICE_HASH, dev_name, str(1))
             finally:
                 rds_conn.delete('create_device')
         return None
