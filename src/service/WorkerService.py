@@ -120,10 +120,11 @@ class WorkerService(object):
         if gender:
             worker.gender = gender
         if mobile:
-            # 号码已经存在
-            if db.session.query(Worker).filter(
-                    Worker.mobile == mobile, Worker.status == 1).first():
-                return -14
+            if mobile != worker.mobile:
+                # 号码已经存在
+                if db.session.query(Worker).filter(
+                        Worker.mobile == mobile, Worker.status == 1).first():
+                    return -14
             worker.mobile = mobile
         if remarks:
             worker.remarks = remarks
