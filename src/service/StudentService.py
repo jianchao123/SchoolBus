@@ -86,16 +86,18 @@ class StudentService(object):
             face = row[1]
             feature_obj = db.session.query(Feature).filter(
                 Feature.face_id == face.id).first()
-            if feature_obj.status == -1:
-                feature_status_str = u"未绑定人脸"
-            elif feature_obj.status == 1:
-                feature_status_str = u"等待生成"
-            elif feature_obj.status == 2:
-                feature_status_str = u"生成中"
-            elif feature_obj.status == 3:
-                feature_status_str = u"生成成功"
-            else:
-                feature_status_str = u"生成失败"
+            audio_obj = db.session.query(Audio).filter(
+                Audio.face_id == face.id).first()
+            # if feature_obj.status == -1:
+            #     feature_status_str = u"未绑定人脸"
+            # elif feature_obj.status == 1:
+            #     feature_status_str = u"等待生成"
+            # elif feature_obj.status == 2:
+            #     feature_status_str = u"生成中"
+            # elif feature_obj.status == 3:
+            #     feature_status_str = u"生成成功"
+            # else:
+            #     feature_status_str = u"生成失败"
 
             data.append({
                 'id': student.id,
@@ -116,7 +118,8 @@ class StudentService(object):
                 'car_id': student.car_id,
                 'license_plate_number': student.license_plate_number,
                 'status': student.status,
-                'face_status': feature_status_str,
+                'face_status': feature_obj.status,
+                'audio_status': audio_obj.status,
                 'school_name': StudentService._get_school_cache(student.school_id),
                 'grade_name': grade[student.grade_id],
                 'class_name': classes[student.class_id],

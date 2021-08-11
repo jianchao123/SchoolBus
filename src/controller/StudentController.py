@@ -102,7 +102,10 @@ def student_list(user_id, data):
                     description: 车牌号
                   face_status:
                     type: integer
-                    description: 人脸状态 1没有人脸 2未处理 3处理中 4有效(处理完成) 5生成feature失败 6过期
+                    description: 人脸状态 -1未绑定人脸 1等待生成 2生成中 3生成成功 4生成失败
+                  audio_status:
+                    type: integer
+                    description: 音频状态 1等待生成 2生成中 3生成成功 4生成失败
     """
     query_str = data.get('query_str', None)
     school_id = data.get('school_id', None)
