@@ -208,7 +208,11 @@ class WorkerService(object):
             return {"c": 1, "msg": u"excel数据最大10000条"}
 
         emp_no_list = []
+
+        # 要绑定的车辆是否已经绑定了职员
         car_duty_d = {}
+        # 职员手机号是否已被使用
+        stuff_mobile_list = []
         results = db.session.query(Worker, Car).join(
             Car, Car.id == Worker.car_id).filter(Worker.status == 1).all()
         for row in results:
@@ -220,6 +224,11 @@ class WorkerService(object):
                 duty_id_list.append(worker.duty_id)
             else:
                 car_duty_d[car.license_plate_number] = [worker.duty_id]
+
+        #
+        worker_set = db.session.query(Worker).filter(Worker.status == 1).all()
+        for row in worker_set:
+            stuff_mobile_list.append(row.mobile)
 
         # 查询所有车辆
         car_dict = {}
@@ -293,6 +302,13 @@ class WorkerService(object):
                     duty_id_list.append(duty_id)
             else:
                 car_duty_d[lpn] = [duty_id]
+
+            # 手机号
+            if mobile in stuff_mobile_list:
+                err_str += u"手机号{}重复".format(mobile)
+                is_err = 1
+            else:
+                stuff_mobile_list.append(mobile)
 
             # 检查重复
             if emp_no in emp_no_list:

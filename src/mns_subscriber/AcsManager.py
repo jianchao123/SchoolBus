@@ -42,6 +42,7 @@ class AcsManager(object):
 
     def _upgrade_version(self, device_name):
         """升级版本"""
+        # 是否是深圳的设备
         self._send_device_msg(device_name, RedisKey.UPGRADE_JSON)
 
     def _set_oss_info(self, device_name):
@@ -476,7 +477,7 @@ class AcsManager(object):
         setnx_key = rds_conn.setnx('create_device', 1)
         if setnx_key:
             try:
-
+                machine_sql = "SELECT id FROM machine WHERE mac='{}' LIMIT 1"
                 dev_sql = "SELECT id FROM device WHERE mac='{}' LIMIT 1"
 
                 obj = pgsql_db.get(pgsql_cur, dev_sql.format(mac))
@@ -529,6 +530,15 @@ class AcsManager(object):
                 self._send_device_msg('newdev', msg)
                 rds_conn.hset(RedisKey.DEVICE_CUR_STATUS, dev_name, 1)
                 rds_conn.rpush('DEVICE_NAME_QUEUE', dev_name)
+                # 存在是SHENZHEN 不存在是WUHAN
+                obj = pgsql_db.get(
+                    pgsql_cur, machine_sql.format(mac))
+                if obj:
+                    # 2是SHENZHEN
+                    rds_conn.hset(RedisKey.MFR_DEVICE_HASH, dev_name, str(2))
+                else:
+                    # 1是WUHAN
+                    rds_conn.hset(RedisKey.MFR_DEVICE_HASH, dev_name, str(1))
             finally:
                 rds_conn.delete('create_device')
         return None
