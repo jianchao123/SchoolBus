@@ -65,7 +65,7 @@ class WorkerService(object):
             return -12  # 该车辆已有该职务工作人员
         # 号码已经存在
         if db.session.query(Worker).filter(
-                Worker.mobile == mobile).first():
+                Worker.mobile == mobile, Worker.status == 1).first():
             return -13
 
         worker = Worker()
@@ -122,7 +122,7 @@ class WorkerService(object):
         if mobile:
             # 号码已经存在
             if db.session.query(Worker).filter(
-                    Worker.mobile == mobile).first():
+                    Worker.mobile == mobile, Worker.status == 1).first():
                 return -14
             worker.mobile = mobile
         if remarks:
