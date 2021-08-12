@@ -33,9 +33,7 @@ access_token = "76D1B5030005F6474A3230013A7B9884"
 
 
 def _get_created():
-    import pytz
-    tz = pytz.timezone('UTC')
-    now = datetime.now(tz)
+    now = datetime.now()
     return now.strftime("%Y-%m-%dT%H:%M:%S+08:00")
 
 

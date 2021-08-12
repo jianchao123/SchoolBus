@@ -967,8 +967,7 @@ class UploadAlarmData(object):
     @staticmethod
     def _get_created():
         import pytz
-        tz = pytz.timezone('UTC')
-        now = datetime.now(tz)
+        now = datetime.now()
         return now.strftime("%Y-%m-%dT%H:%M:%S+08:00")
 
     @db.transaction(is_commit=True)
