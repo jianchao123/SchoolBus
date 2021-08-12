@@ -705,10 +705,10 @@ class EveryFewMinutesExe(object):
                 device_name = row[0]
                 mfr_id = row[1]
                 if mfr_id == 1:
-                    rds_conn.hget(
+                    rds_conn.hset(
                         RedisKey.MFR_DEVICE_HASH, device_name, 'WUHAN')
                 elif mfr_id == 2:
-                    rds_conn.hget(
+                    rds_conn.hset(
                         RedisKey.MFR_DEVICE_HASH, device_name, 'SHENZHEN')
 
             for obj in oss2.ObjectIterator(self.bucket, prefix='person/face/'):
