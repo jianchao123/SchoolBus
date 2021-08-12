@@ -26,7 +26,7 @@ sys.path.insert(0, project_src_dir)
 from timer import db
 from timer.define import RedisKey
 
-url = "http://182.148.114.194:65415/school/bus/report"
+url = "https://car.vcolco.com/api/paas-trans-school-bus/school/bus/report"
 access_key_id = "hnxccs8865"
 access_key_secret = "3422af52-9905-4965-b678-18c0a99fc106"
 access_token = "76D1B5030005F6474A3230013A7B9884"
