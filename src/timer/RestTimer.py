@@ -699,7 +699,8 @@ class EveryFewMinutesExe(object):
         rds_conn = db.rds_conn
         try:
             # 厂商设备分类
-            results = pgsql_db.query('SELECT device_name,mfr_id FROM device WHERE status!=10')
+            sql = 'SELECT device_name,mfr_id FROM device WHERE status!=10'
+            results = pgsql_db.query(pgsql_cur, sql)
             for row in results:
                 device_name = row[0]
                 mfr_id = row[1]
