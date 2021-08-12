@@ -689,13 +689,26 @@ class EveryFewMinutesExe(object):
                                 config.MNSAccessKeySecret, 'cn-shanghai')
         self.product_key = config.Productkey
 
-    def every_few_minutes_execute(self):
+    @db.transaction(is_commit=True)
+    def every_few_minutes_execute(self, pgsql_cur):
         """
         每五分钟执行一次 删除不规则人脸
         :return:
         """
+        pgsql_db = db.PgsqlDbUtil
         rds_conn = db.rds_conn
         try:
+            # 厂商设备分类
+            results = pgsql_db.query('SELECT device_name,mfr_id FROM device WHERE status!=10')
+            for row in results:
+                device_name = row[0]
+                mfr_id = row[1]
+                if mfr_id == 1:
+                    rds_conn.hget(
+                        RedisKey.MFR_DEVICE_HASH, device_name, 'WUHAN')
+                elif mfr_id == 2:
+                    rds_conn.hget(
+                        RedisKey.MFR_DEVICE_HASH, device_name, 'SHENZHEN')
 
             for obj in oss2.ObjectIterator(self.bucket, prefix='person/face/'):
                 slash_arr = obj.key.split("/")

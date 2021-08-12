@@ -69,6 +69,9 @@ class RedisKey(object):
     # 各厂商生成特征码的设备
     MFR_GENERATE_DEVICE_HASH = "MFR_GENERATE_DEVICE_HASH"
 
+    # 厂商设备分类
+    MFR_DEVICE_HASH = "MFR_DEVICE_HASH"
+
 
 grade = [u"TBD", u'小班', u'中班', u'大班', u'学前班', u'一年级', u'二年级', u'三年级',
          u'四年级', u'五年级', u'六年级']

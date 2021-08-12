@@ -10,7 +10,12 @@ class RedisKey(object):
     # UPGRADE_JSON = {"url": "https://img.pinganxiaoche.com/apps/1608795066.yaffs2",
     #                 "crc": -2090701703, "cmd": "update",
     #                 "version": 250, "size": 4843776}
-    UPGRADE_JSON = {"url": "https://img.pinganxiaoche.com/apps/1624332193.yaffs2", "crc": 981940787, "cmd": "update", "version": 264, "size": 4893824}
+    WUHAN_UPGRADE_JSON = {
+        "url": "https://img.pinganxiaoche.com/apps/1624332193.yaffs2",
+        "crc": 981940787, "cmd": "update", "version": 264, "size": 4893824}
+    SHENZHEN_UPGRADE_JSON = {
+        "url": "WWW.baidu.com",
+        "crc": 981940787, "cmd": "update", "version": 264, "size": 4893824}
 
     # 当前设备返回的人员信息是在做什么操作(1更新 2查询设备上人员)
     QUERY_DEVICE_PEOPLE = "QUERY_DEVICE_PEOPLE"
@@ -66,8 +71,11 @@ class RedisKey(object):
     # 去重key
     REMOVE_DUP_ORDER_SET = "REMOVE_DUP_ORDER_KEY"
 
-    # 厂商设备
+    # 厂商生成二维码的设备
     MFR_GENERATE_DEVICE_HASH = "MFR_GENERATE_DEVICE_HASH"
+
+    # 厂商设备分类
+    MFR_DEVICE_HASH = "MFR_DEVICE_HASH"
 
     # 监控中心key
     SC_ORDER_LIST = "SC_ORDER_LIST"

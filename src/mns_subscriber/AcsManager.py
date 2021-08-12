@@ -40,10 +40,13 @@ class AcsManager(object):
         self.oss_access_key_id = oss_access_key_id
         self.oss_key_secret = oss_key_secret
 
-    def _upgrade_version(self, device_name):
+    def _upgrade_version(self, device_name, mfr_name):
         """升级版本"""
         # 是否是深圳的设备
-        self._send_device_msg(device_name, RedisKey.UPGRADE_JSON)
+        if mfr_name == 'WUHAN':
+            self._send_device_msg(device_name, RedisKey.WUHAN_UPGRADE_JSON)
+        elif mfr_name == 'SHENZHEN':
+            self._send_device_msg(device_name, RedisKey.SHENZHEN_UPGRADE_JSON)
 
     def _set_oss_info(self, device_name):
         """设置oss信息"""
@@ -535,10 +538,10 @@ class AcsManager(object):
                     pgsql_cur, machine_sql.format(mac))
                 if obj:
                     # 2是SHENZHEN
-                    rds_conn.hset(RedisKey.MFR_GENERATE_DEVICE_HASH, dev_name, str(2))
+                    rds_conn.hset(RedisKey.MFR_DEVICE_HASH, dev_name, 'SHENZHEN')
                 else:
                     # 1是WUHAN
-                    rds_conn.hset(RedisKey.MFR_GENERATE_DEVICE_HASH, dev_name, str(1))
+                    rds_conn.hset(RedisKey.MFR_DEVICE_HASH, dev_name, 'WUHAN')
             finally:
                 rds_conn.delete('create_device')
         return None
@@ -591,7 +594,10 @@ class AcsManager(object):
         from mns_subscriber import config
         config.logger.info('----current version{}----'.format(cur_version))
         if cur_version < RedisKey.APPOINT_VERSION_NO:
-            self._upgrade_version(device_name)
+            rds_conn = db.rds_conn
+            obj = rds_conn.hget(RedisKey.MFR_DEVICE_HASH, device_name)
+            if obj:
+                self._upgrade_version(device_name, obj)
 
     @db.transaction(is_commit=True)
     def _update_device(self, pgsql_cur, data):
