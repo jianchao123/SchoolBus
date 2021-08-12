@@ -29,6 +29,7 @@ from timer.define import RedisKey
 url = "http://182.148.114.194:65415/school/bus/report"
 access_key_id = "hnxccs8865"
 access_key_secret = "3422af52-9905-4965-b678-18c0a99fc106"
+access_token = "76D1B5030005F6474A3230013A7B9884"
 
 
 def _get_created():
@@ -67,6 +68,7 @@ def get_header(data):
             hashlib.sha1(password_digest.encode('utf8')).hexdigest())
     headers['X-WSSE'] = \
         headers['X-WSSE'].format(access_key_id, password_digest, nonce, created)
+    headers['ACCESS_TOKEN'] = access_token
     return headers
 
 

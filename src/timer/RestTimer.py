@@ -962,6 +962,7 @@ class UploadAlarmData(object):
     access_key_id = "hnxccs8865"
     access_key_secret = "3422af52-9905-4965-b678-18c0a99fc106"
     url = "http://182.148.114.194:65415/school/bus/report"
+    access_token = "76D1B5030005F6474A3230013A7B9884"
 
     @staticmethod
     def _get_created():
@@ -1068,6 +1069,7 @@ class UploadAlarmData(object):
             headers['X-WSSE'] = \
                 headers['X-WSSE'].format(
                     UploadAlarmData.access_key_id, password_digest, nonce, created)
+            headers['ACCESS_TOKEN'] = UploadAlarmData.access_token
 
             res = requests.post(UploadAlarmData.url, data, headers=headers)
             print res.content
