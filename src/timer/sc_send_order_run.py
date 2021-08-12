@@ -89,7 +89,7 @@ def send_order():
                     db.logger.error(json.dumps(res_data, ensure_ascii=False))
             except:
                 import traceback
-                print traceback.format_exc()
+                db.logger.error(traceback.format_exc())
                 print "ConnectionError"
 #
 # def send_alarm():
