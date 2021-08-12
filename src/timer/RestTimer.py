@@ -689,7 +689,7 @@ class EveryFewMinutesExe(object):
                                 config.MNSAccessKeySecret, 'cn-shanghai')
         self.product_key = config.Productkey
 
-    @db.transaction(is_commit=True)
+    @db.transaction(is_commit=False)
     def every_few_minutes_execute(self, pgsql_cur):
         """
         每五分钟执行一次 删除不规则人脸
