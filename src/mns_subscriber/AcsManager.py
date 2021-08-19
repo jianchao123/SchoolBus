@@ -509,6 +509,7 @@ class AcsManager(object):
                 response = self.client.do_action_with_exception(request)
                 response = json.loads(response)
                 if not response['Success']:
+                    config.logger.info('api create fail {}'.format(mac))
                     return None
                 # 添加记录
                 d = {
