@@ -475,6 +475,7 @@ class AcsManager(object):
         from mns_subscriber import config
         rds_conn = db.rds_conn
         pgsql_db = db.PgsqlDbUtil
+        config.logger.info('create device {}'.format(mac))
         # 创建设备只能顺序执行,无需使用自旋锁
         setnx_key = rds_conn.setnx('create_device', 1)
         if setnx_key:
