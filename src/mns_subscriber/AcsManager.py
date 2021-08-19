@@ -425,7 +425,8 @@ class AcsManager(object):
                 feature_crc = ret_all[2]
                 fid_dict[str(fid)] = feature_crc
                 offset += 16
-
+        print "--------------fid_dict--------------------"
+        print fid_dict
         sql = """
         SELECT f.id, f.feature_crc FROM face AS F
         INNER JOIN student AS stu ON stu.id=F.stu_id 
@@ -464,6 +465,7 @@ class AcsManager(object):
                 # 更新设备上的人员
                 producer.device_people_update_msg(
                     add_list, del_list, update_list, device_name)
+            print add_list, del_list, update_list
 
     @db.transaction(is_commit=True)
     def create_device(self, pgsql_cur, mac):
@@ -507,6 +509,7 @@ class AcsManager(object):
                 response = self.client.do_action_with_exception(request)
                 response = json.loads(response)
                 if not response['Success']:
+                    config.logger.info('API create fail')
                     return None
                 # 添加记录
                 d = {
