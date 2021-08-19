@@ -56,7 +56,7 @@ class ReceiveMessage(object):
                     acs_manager.create_device(jdata['mac'])
 
                 else:
-                    config.logger.error("heartbeat-------------{}".format(jdata['shd_devid']))
+                    config.logger.error("heartbeat-------{}------{}".format(dev_name, jdata['shd_devid']))
                     acs_manager.check_version(
                         dev_name, jdata['version'], jdata['devtime'])
                     if jdata['version'] == RedisKey.APPOINT_VERSION_NO:
