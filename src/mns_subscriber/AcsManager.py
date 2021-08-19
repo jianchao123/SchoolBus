@@ -531,7 +531,8 @@ class AcsManager(object):
                     "time": int(time.time()),
                     'dev_mac': mac
                 }
-                self._send_device_msg('newdev', msg)
+                retd = self._send_device_msg('newdev', msg)
+                config.logger.error(retd)
                 rds_conn.hset(RedisKey.DEVICE_CUR_STATUS, dev_name, 1)
                 rds_conn.rpush('DEVICE_NAME_QUEUE', dev_name)
 
