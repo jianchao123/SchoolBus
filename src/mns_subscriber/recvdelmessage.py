@@ -54,7 +54,7 @@ class ReceiveMessage(object):
                 dev_name = jdata['devid']
                 if dev_name == 'newdev':
                     config.logger.error(jdata)
-                    acs_manager.create_device(jdata['mac'])
+                    acs_manager.create_device(jdata['mac'], jdata['shd_devid'])
 
                 else:
                     config.logger.error("heartbeat-------{}------{}".format(dev_name, jdata['shd_devid']))

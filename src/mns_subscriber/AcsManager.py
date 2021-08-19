@@ -468,14 +468,14 @@ class AcsManager(object):
             print add_list, del_list, update_list
 
     @db.transaction(is_commit=True)
-    def create_device(self, pgsql_cur, mac):
+    def create_device(self, pgsql_cur, mac, shd_devid):
         """
         创建设备
         """
         from mns_subscriber import config
         rds_conn = db.rds_conn
         pgsql_db = db.PgsqlDbUtil
-        config.logger.info('create device {}'.format(mac))
+        config.logger.info('create device {} {}'.format(shd_devid, mac))
         # 创建设备只能顺序执行,无需使用自旋锁
         setnx_key = rds_conn.setnx('create_device', 1)
         if setnx_key:
