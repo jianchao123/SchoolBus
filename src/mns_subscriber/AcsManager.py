@@ -472,17 +472,14 @@ class AcsManager(object):
         """
         创建设备
         """
-        print '=============mac==============='
-        print mac
         from mns_subscriber import config
-        config.logger.info('--------{}---------------'.format(mac))
         rds_conn = db.rds_conn
         pgsql_db = db.PgsqlDbUtil
         # 创建设备只能顺序执行,无需使用自旋锁
         setnx_key = rds_conn.setnx('create_device', 1)
         if setnx_key:
             try:
-
+                machine_sql = "SELECT id FROM machine WHERE mac='{}' LIMIT 1"
                 dev_sql = "SELECT id FROM device WHERE mac='{}' LIMIT 1"
 
                 obj = pgsql_db.get(pgsql_cur, dev_sql.format(mac))
@@ -536,6 +533,18 @@ class AcsManager(object):
                 self._send_device_msg('newdev', msg)
                 rds_conn.hset(RedisKey.DEVICE_CUR_STATUS, dev_name, 1)
                 rds_conn.rpush('DEVICE_NAME_QUEUE', dev_name)
+
+                # 存在是SHENZHEN 不存在是WUHAN
+                obj = pgsql_db.get(
+                    pgsql_cur, machine_sql.format(mac))
+                if obj:
+                    # 2是SHENZHEN
+                    rds_conn.hset(RedisKey.MFR_DEVICE_HASH, dev_name,
+                                  'SHENZHEN')
+                else:
+                    # 1是WUHAN
+                    rds_conn.hset(RedisKey.MFR_DEVICE_HASH, dev_name, 'WUHAN')
+
             finally:
                 rds_conn.delete('create_device')
         return None
