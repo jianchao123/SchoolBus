@@ -48,12 +48,10 @@ class ReceiveMessage(object):
             return
 
         acs_manager.check_cur_stream_no(dev_name, jdata)
-        print jdata
         if 'cmd' in jdata:
             cmd = jdata['cmd']
             if cmd == 'syndata':
                 dev_name = jdata['devid']
-                print "devid dev_name=={}".format(dev_name)
                 if dev_name == 'newdev':
                     acs_manager.create_device(jdata['mac'])
 
@@ -92,7 +90,6 @@ class ReceiveMessage(object):
                 pass
             elif cmd == 'record':
                 if jdata['fid'] == -1:
-                    logger.error("{}".format(str(jdata)))
                     log_id = int(jdata['gps'].split('|')[0])
                     # acc关闭
                     if log_id == 3:
