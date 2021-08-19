@@ -53,6 +53,7 @@ class ReceiveMessage(object):
             if cmd == 'syndata':
                 dev_name = jdata['devid']
                 if dev_name == 'newdev':
+                    config.logger.error(jdata)
                     acs_manager.create_device(jdata['mac'])
 
                 else:
