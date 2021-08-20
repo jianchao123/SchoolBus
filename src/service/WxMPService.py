@@ -159,10 +159,11 @@ class WxMPService(object):
         if not worker:
             return -10  # 跳转到绑定手机号页面
 
-        if worker.status != 1:
-            return -11
         alert_info = db.session.query(AlertInfo).filter(
             AlertInfo.periods == periods).first()
+        if alert_info.status != 1:
+            return -11
+
         if cancel_type_id == 1:
             alert_info.cancel_reason = cancel_reason
         elif cancel_type_id == 2:
