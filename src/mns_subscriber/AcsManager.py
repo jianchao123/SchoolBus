@@ -427,10 +427,14 @@ class AcsManager(object):
                 offset += 16
         print "--------------fid_dict--------------------"
         print fid_dict
+        mfr_sql = "SELECT mfr_id FROM device WHERE device_name = '{}' LIMIT 1"
+        mfr_pk = pgsql_db.get(pgsql_cur, mfr_sql.format(device_name))[0]
+
         sql = """
-        SELECT f.id, f.feature_crc FROM face AS F
-        INNER JOIN student AS stu ON stu.id=F.stu_id 
-         WHERE F.status=4 AND stu.status=1 AND stu.car_id={} 
+        SELECT f.id, ft.feature_crc,F.nickname FROM face AS F 
+INNER JOIN feature AS ft ON ft.face_id=F.id 
+INNER JOIN student AS stu ON stu.id=F.stu_id 
+WHERE F.status=4 AND stu.status=1 AND stu.car_id={} AND ft.mfr_id={} 
         """
         device_sql = "SELECT car_id FROM device " \
                      "WHERE device_name = '{}' LIMIT 1"
@@ -438,7 +442,7 @@ class AcsManager(object):
 
         if dev_car_id:
             device_fid_set = set(fid_dict.keys())
-            results = pgsql_db.query(pgsql_cur, sql.format(dev_car_id))
+            results = pgsql_db.query(pgsql_cur, sql.format(dev_car_id, mfr_pk))
             face_ids = [str(row[0]) for row in results]
 
             add_list = list(set(face_ids) - set(device_fid_set))

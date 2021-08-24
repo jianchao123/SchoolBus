@@ -23,7 +23,7 @@ import config
 
 
 def pub_msg(rds_conn, devname, jdata):
-    print u"-----------加入顺序发送消息的队列--------"
+    #print u"-----------加入顺序发送消息的队列--------"
     k = rds_conn.get("stream_no_incr")
     if k:
         stream_no = rds_conn.incr("stream_no_incr")
@@ -67,7 +67,7 @@ class GenerateAAC(object):
                 }
                 pgsql_db.update(pgsql_cur, d, table_name='audio')
         end = time.time()
-        print u"{}个aac总共用时{}s".format(len(results), end - begin)
+        #print u"{}个aac总共用时{}s".format(len(results), end - begin)
 
 
 class CheckAccClose(object):
@@ -195,7 +195,6 @@ class CheckAccClose(object):
 
                 send_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 pgsql_db.insert(pgsql_cur, d, 'alert_info')
-                print license_plate_number, send_msg_student_info
                 send_msg_student_info = ','.join(send_msg_student_info)
                 if open_id_1:
                     producer.send_staff_template_message(
@@ -326,7 +325,6 @@ class GenerateFeature(object):
                 used_devices.append(k)
             unused_devices = list(set(online_generate_devices)
                                   - set(used_devices))
-            print unused_devices
             if used_devices:
                 for row in used_devices:
                     use_timestamp = rds_conn.hget(RedisKey.DEVICE_USED, row)
@@ -374,7 +372,6 @@ class GenerateFeature(object):
                   "WHERE status = 1 AND mfr_id={} LIMIT {}" \
                   "".format(int(mfr_id), len(invalid_devices))
             results = pgsql_db.query(pgsql_cur, sql)
-            print results
             for row in results:
                 face_id = row[0]
                 oss_url = row[1]
@@ -439,8 +436,6 @@ class EveryMinuteExe(object):
     @db.transaction(is_commit=True)
     def every_minute_execute(self, pgsql_cur):
         """每分钟执行一次"""
-        print u"==================每分钟执行一次====================={}".\
-            format(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         mysql_db = db.PgsqlDbUtil
         rds_conn = db.rds_conn
 
@@ -453,13 +448,12 @@ class EveryMinuteExe(object):
         #         # 删除车内人员
         #         rds_conn.delete(row)
         # 超过70分钟清除student_set
-        print "------------------------"
         timestatmp_d = rds_conn.hgetall(RedisKey.DEVICE_CUR_TIMESTAMP)
         for dev_name, dev_timestamp in timestatmp_d.items():
             if int(time.time()) > (int(dev_timestamp) + 60*70):
                 print "clear student set"
                 rds_conn.delete(RedisKey.STUDENT_SET.format(dev_name))
-        print "------------------------------clear student set"
+        #print "------------------------------clear student set"
 
         # 过期人脸更新状态
         expire_sql = """SELECT F.id FROM student AS STU 
@@ -529,7 +523,7 @@ class FromOssQueryFace(object):
     @db.transaction(is_commit=True)
     def from_oss_get_face(self, pgsql_cur):
         """从oss获取人脸"""
-        print u"==================从oss获取人脸====================="
+        #print u"==================从oss获取人脸====================="
         start = time.time()
         # 获取未绑定的人脸
         mysql_db = db.PgsqlDbUtil
@@ -583,7 +577,7 @@ class FromOssQueryFace(object):
 
             rds_conn.delete(RedisKey.OSS_ID_CARD_SET + "CP")
         end = time.time()
-        print u"从oss获取人脸函数总共用时{}s".format(end - start)
+        #print u"从oss获取人脸函数总共用时{}s".format(end - start)
 
 
 class HeartBeat30s(object):
@@ -626,7 +620,7 @@ class HeartBeat30s(object):
 
         #gevent.joinall(func_list)
         end = time.time()
-        print "Time. ={}".format(end - start)
+        #print "Time. ={}".format(end - start)
 
     def heartbeat_func(self, dev_name):
 
@@ -1007,8 +1001,8 @@ class UploadAlarmData(object):
         create_timestamp = UploadAlarmData._get_created()
         created = UploadAlarmData._get_created()
 
-        print "----------------sc alarm---------------"
-        print results
+        #print "----------------sc alarm---------------"
+        #print results
 
         alarm_list = []
         if results:
@@ -1074,12 +1068,12 @@ class UploadAlarmData(object):
             headers['ACCESS_TOKEN'] = UploadAlarmData.access_token
 
             res = requests.post(UploadAlarmData.url, data, headers=headers)
-            print res.content
+            #print res.content
             if res.status_code == 200:
                 # 上传成功修改redis  key
-                print "----------------------xwsse-------------------------"
-                print headers
-                print res.content
+                #print "----------------------xwsse-------------------------"
+                #print headers
+                #print res.content
                 rds_conn.set(RedisKey.SC_ALARM_LAST_ID, results[-1][7])
 
 
@@ -1149,6 +1143,5 @@ class EveryDayOneClock(object):
         """
         每日一点执行
         """
-        print "-=-=-=================="
         rds_conn = db.rds_conn
         rds_conn.delete(RedisKey.REMOVE_DUP_ORDER_SET)

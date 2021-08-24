@@ -607,6 +607,7 @@ class DeviceBusiness(object):
             for fid in update_list:
                 obj = pgsql_db.get(
                     pgsql_cur, feature_sql.format(int(fid), mfr_pk, int(fid)))
+                print obj
                 if obj:
                     print obj
                     self._publish_update_people_msg(
