@@ -90,7 +90,7 @@ class DeviceService(object):
 
     @staticmethod
     def device_update(pk, license_plate_number, car_id,
-                      sound_volume, device_type, mfr_id):
+                      sound_volume, device_type):
         """
         设备ID 关联车辆  设备音量
         license_plate_number 似乎没有使用
@@ -148,7 +148,14 @@ class DeviceService(object):
                 # 修改设备关联的车辆需要删除缓存
                 cache.hdel(defines.RedisKey.CACHE_CAR_DATA,
                            device.device_name)
-        device.mfr_id = mfr_id
+        # 查看设备是否在machine表
+        from database.Machine import Machine
+        machine = db.session.query(Machine).filter(
+            Machine.mac == device.mac).first()
+        if machine:
+            device.mfr_id = 2   # SHENZHEN
+        else:
+            device.mfr_id = 1   # WUHAN
         if not device.device_type:
             device.device_type = 1
         try:

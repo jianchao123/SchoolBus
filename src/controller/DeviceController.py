@@ -169,13 +169,13 @@ def device_update(user_id, data, pk):
     car_id = data.get('car_id', None)
     license_plate_number = data.get('license_plate_number', None)
     device_type = data.get('device_type', None)
-    mfr_id = data.get('mfr_id', 1)
+    #mfr_id = data.get('mfr_id', 1)
 
     if device_type and int(device_type) not in [1, 2]:
         raise AppError(*GlobalErrorCode.PARAM_ERROR)
 
     ret = DeviceService.device_update(
-        pk, license_plate_number, car_id, sound_volume, device_type, mfr_id)
+        pk, license_plate_number, car_id, sound_volume, device_type)
     if ret == -1:
         raise AppError(*GlobalErrorCode.OBJ_NOT_FOUND_ERROR)
     if ret == -2:

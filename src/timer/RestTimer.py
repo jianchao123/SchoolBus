@@ -326,6 +326,7 @@ class GenerateFeature(object):
                 used_devices.append(k)
             unused_devices = list(set(online_generate_devices)
                                   - set(used_devices))
+            print unused_devices
             if used_devices:
                 for row in used_devices:
                     use_timestamp = rds_conn.hget(RedisKey.DEVICE_USED, row)
@@ -369,13 +370,15 @@ class GenerateFeature(object):
             unused_devices = list(set(unused_devices) - set(invalid_devices))
 
             # 等待生成状态中
-            sql = "SELECT face_id,oss_url FROM feature " \
+            sql = "SELECT face_id,oss_url,id FROM feature " \
                   "WHERE status = 1 AND mfr_id={} LIMIT {}" \
                   "".format(int(mfr_id), len(invalid_devices))
             results = pgsql_db.query(pgsql_cur, sql)
+            print results
             for row in results:
                 face_id = row[0]
                 oss_url = row[1]
+                pk = row[2]
                 jdata["fid"] = face_id
                 jdata['faceurl'] = oss_url
                 device_name = invalid_devices.pop()
@@ -384,7 +387,7 @@ class GenerateFeature(object):
                 rds_conn.hset(RedisKey.DEVICE_USED, device_name, int(time.time()))
                 # 更新feature状态
                 d = {
-                    'id': face_id,
+                    'id': pk,
                     'status': 2     # 生成中
                 }
                 pgsql_db.update(pgsql_cur, d, table_name='feature')
