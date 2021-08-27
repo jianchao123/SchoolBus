@@ -123,7 +123,7 @@ def school_add(user_id, data):
     """
     school_name = data['school_name']
 
-    ret = SchoolService.school_add(school_name)
+    ret = SchoolService.school_add(school_name, user_id)
     if ret == -2:
         raise AppError(*GlobalErrorCode.DB_COMMIT_ERR)
     if ret == -10:
@@ -175,7 +175,7 @@ def school_update(user_id, data, pk):
     """
     school_name = data.get('school_name', None)
 
-    ret = SchoolService.school_update(pk, school_name)
+    ret = SchoolService.school_update(pk, school_name, user_id)
     if ret == -1:
         raise AppError(*GlobalErrorCode.OBJ_NOT_FOUND_ERROR)
     if ret == -2:

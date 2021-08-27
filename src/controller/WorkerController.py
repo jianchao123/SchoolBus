@@ -173,7 +173,7 @@ def worker_add(user_id, data):
 
     ret = WorkerService.worker_add(
         emp_no, nickname, gender, mobile, remarks, company_name, 
-        department_name, duty_id, car_id)
+        department_name, duty_id, car_id, user_id)
     if ret == -2:
         raise AppError(*GlobalErrorCode.DB_COMMIT_ERR)
     if ret == -10:
@@ -265,7 +265,7 @@ def worker_update(user_id, data, pk):
 
     ret = WorkerService.worker_update(
         pk, emp_no, nickname, gender, mobile, remarks, company_name, 
-        department_name, duty_id, car_id)
+        department_name, duty_id, car_id, user_id)
     if ret == -1:
         raise AppError(*GlobalErrorCode.OBJ_NOT_FOUND_ERROR)
     if ret == -2:
@@ -325,7 +325,7 @@ def worker_delete(user_id, data):
                   description: 新Id
     """
     worker_ids = data['worker_ids']
-    ret = WorkerService.delete_workers(worker_ids)
+    ret = WorkerService.delete_workers(worker_ids, user_id)
     if ret == -2:
         raise AppError(*GlobalErrorCode.DB_COMMIT_ERR)
     if ret == -10:

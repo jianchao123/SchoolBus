@@ -1,5 +1,8 @@
 # coding:utf-8
 import xlrd
+import sys
+import json
+import inspect
 from sqlalchemy import func, or_
 from sqlalchemy.exc import SQLAlchemyError
 from database.db import db
@@ -8,6 +11,7 @@ from database.Car import Car
 from utils import defines
 from msgqueue import producer
 from ext import cache
+from utils.tools import get_frame_name_param
 
 
 class WorkerService(object):
@@ -47,7 +51,7 @@ class WorkerService(object):
 
     @staticmethod
     def worker_add(emp_no, nickname, gender, mobile, remarks, company_name,
-                   department_name, duty_id, car_id):
+                   department_name, duty_id, car_id, user_id):
         db.session.commit() # SELECT
         worker = db.session.query(Worker).filter(
             Worker.emp_no == emp_no).first()
@@ -88,6 +92,9 @@ class WorkerService(object):
 
             db.session.commit()
 
+            # 日志
+            func_name, func_param = get_frame_name_param(inspect.currentframe())
+            producer.operation_log(func_name, func_param, user_id)
             return {'id': new_id}
         except SQLAlchemyError:
             db.session.rollback()
@@ -98,7 +105,7 @@ class WorkerService(object):
     @staticmethod
     def worker_update(pk, emp_no, nickname, gender, mobile, remarks,
                       company_name, department_name, duty_id,
-                      car_id):
+                      car_id, user_id):
         db.session.commit() # SELECT
         worker = db.session.query(Worker).filter(
             Worker.id == pk).first()
@@ -160,6 +167,10 @@ class WorkerService(object):
         try:
             d = {'id': worker.id}
             db.session.commit()
+
+            # 日志
+            func_name, func_param = get_frame_name_param(inspect.currentframe())
+            producer.operation_log(func_name, func_param, user_id)
             return d
         except SQLAlchemyError:
             db.session.rollback()
@@ -168,7 +179,7 @@ class WorkerService(object):
             db.session.close()
 
     @staticmethod
-    def delete_workers(worker_ids):
+    def delete_workers(worker_ids, user_id):
         """
         worker_ids 1,2,3
         """
@@ -189,6 +200,10 @@ class WorkerService(object):
                 row.status = 10
 
             db.session.commit()
+
+            # 日志
+            func_name, func_param = get_frame_name_param(inspect.currentframe())
+            producer.operation_log(func_name, func_param, user_id)
             return {'id': 1}
         except SQLAlchemyError:
             db.session.rollback()

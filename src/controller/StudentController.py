@@ -239,7 +239,7 @@ def student_add(user_id, data):
     ret = StudentService.student_add(
         stu_no, nickname, gender, parents_1, mobile_1, parents_2,
         mobile_2, address, remarks, school_id, grade_id, class_id,
-        end_time, car_id, oss_url)
+        end_time, car_id, oss_url, user_id)
     if ret == -1:
         raise AppError(*GlobalErrorCode.OBJ_NOT_FOUND_ERROR)
     if ret == -2:
@@ -363,7 +363,7 @@ def student_update(user_id, data, pk):
     ret = StudentService.student_update(
         pk, stu_no, nickname, gender, parents_1, mobile_1, parents_2,
         mobile_2, address, remarks, school_id, grade_id, class_id,
-        end_time, car_id, oss_url)
+        end_time, car_id, oss_url, user_id)
     if ret == -2:
         raise AppError(*GlobalErrorCode.DB_COMMIT_ERR)
     if ret == -10:

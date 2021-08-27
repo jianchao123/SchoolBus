@@ -1,11 +1,12 @@
 # coding:utf-8
-import xlrd
-import time
-from datetime import datetime
+import sys
+import json
+import inspect
 from sqlalchemy.exc import SQLAlchemyError
 from database.db import db
-from database.Car import Car
 from database.ExportTask import ExportTask
+from msgqueue import producer
+from utils.tools import get_frame_name_param
 
 
 class ExportTaskService(object):
@@ -32,7 +33,7 @@ class ExportTaskService(object):
         return {'count': count, 'results': data}
 
     @staticmethod
-    def export_task_delete(task_ids):
+    def export_task_delete(task_ids, user_id):
         """删除导出任务"""
         db.session.commit() # SELECT
         task_id_list = [int(row) for row in task_ids.split(",")]
@@ -47,6 +48,10 @@ class ExportTaskService(object):
 
         try:
             db.session.commit()
+
+            # 日志
+            func_name, func_param = get_frame_name_param(inspect.currentframe())
+            producer.operation_log(func_name, func_param, user_id)
             return {'id': 0}
         except SQLAlchemyError:
             db.session.rollback()

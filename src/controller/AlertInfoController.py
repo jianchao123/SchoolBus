@@ -229,7 +229,7 @@ def alert_info_export(user_id, data):
         raise AppError(*GlobalErrorCode.PARAM_ERROR)
 
     ret = AlertInfoService.alert_info_export(status, start_date, end_date,
-                                             alert_info_type, car_id)
+                                             alert_info_type, car_id, user_id)
     if ret == -11:
         raise AppError(*SubErrorCode.ALARM_RECORD_NUMBER_TOO_MANY_LARGE)
     if ret == -10:

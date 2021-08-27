@@ -1,4 +1,5 @@
 # coding:utf-8
+import inspect
 import re
 import json
 import decimal
@@ -61,3 +62,18 @@ def longitude_format(longitude):
 def latitude_format(latitude):
     pattern = re.compile(r"\d{2}\.\d{6,}")
     return pattern.match(latitude)
+
+
+def get_frame_name_param(frame, is_file=False):
+    args, _, _, values = inspect.getargvalues(frame)
+
+    func_name = inspect.getframeinfo(frame)[2]
+    if is_file:
+        return func_name, 'bulk add'
+    else:
+
+        func_param_list = []
+
+        for i in args:
+            func_param_list.append("%s=%s" % (i, values[i]))
+        return func_name, ",".join(func_param_list)

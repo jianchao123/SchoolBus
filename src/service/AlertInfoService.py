@@ -1,7 +1,10 @@
 # coding:utf-8
+import sys
+import json
 import time
 import struct
 import zlib
+import inspect
 import base64
 from datetime import timedelta
 from sqlalchemy import func, or_, and_
@@ -10,6 +13,8 @@ from database.db import db
 from database.AlertInfo import AlertInfo
 from database.ExportTask import ExportTask
 from ext import cache
+from msgqueue import producer
+from utils.tools import get_frame_name_param
 
 
 class AlertInfoService(object):
@@ -82,11 +87,12 @@ class AlertInfoService(object):
             })
         cnt = db.session.query(AlertInfo).count()
         cache.hset('QUERY_CNT_ALARM', 'cnt', cnt)
+
         return {'results': data, 'count': count}
 
     @staticmethod
     def alert_info_export(status, start_date, end_date,
-                          alert_info_type, car_id):
+                          alert_info_type, car_id, user_id):
         """
         导出报警记录
         alert_info_type 1一次报警 2二次报警
@@ -136,6 +142,11 @@ class AlertInfoService(object):
             export_alert_info_msg(status, start_date.strftime('%Y-%m-%d'),
                                   end_date.strftime('%Y-%m-%d'),
                                   alert_info_type, car_id, new_id)
+
+            # 日志
+            func_name, func_param = get_frame_name_param(inspect.currentframe())
+            producer.operation_log(func_name, func_param, user_id)
+
             return new_id
         except SQLAlchemyError:
             db.session.rollback()

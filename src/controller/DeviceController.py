@@ -175,7 +175,7 @@ def device_update(user_id, data, pk):
         raise AppError(*GlobalErrorCode.PARAM_ERROR)
 
     ret = DeviceService.device_update(
-        pk, license_plate_number, car_id, sound_volume, device_type)
+        pk, license_plate_number, car_id, sound_volume, device_type, user_id)
     if ret == -1:
         raise AppError(*GlobalErrorCode.OBJ_NOT_FOUND_ERROR)
     if ret == -2:
@@ -195,8 +195,8 @@ def device_update(user_id, data, pk):
 @get_require_check_with_user([])
 def device_person_info(user_id, data, pk):
     """
-    设备列表
-    设备列表，需要先登录
+    设备人员信息
+    设备人员信息，需要先登录
     ---
     tags:
       - 设备

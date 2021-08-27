@@ -1,8 +1,10 @@
 # coding:utf-8
 import xlrd
+import sys
+import json
 import time
+import inspect
 from datetime import datetime
-from decimal import Decimal
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import or_
 from database.db import db
@@ -13,6 +15,7 @@ from database.Worker import Worker
 from utils import defines
 from msgqueue import producer
 from ext import cache
+from utils.tools import get_frame_name_param
 
 
 class CarService(object):
@@ -140,7 +143,7 @@ class CarService(object):
         return {'results': data, 'count': count}
 
     @staticmethod
-    def car_add(license_plate_number, capacity, company_name):
+    def car_add(license_plate_number, capacity, company_name, user_id):
         """
         车辆编码 车牌号 载客量 公司
 
@@ -170,6 +173,11 @@ class CarService(object):
             db.session.add(car)
             new_id = car.id
             db.session.commit()
+
+            # 日志
+            func_name, func_param = get_frame_name_param(inspect.currentframe())
+            producer.operation_log(func_name, func_param, user_id)
+
             return {'id': new_id}
         except SQLAlchemyError:
             import traceback
@@ -180,7 +188,7 @@ class CarService(object):
             db.session.close()
 
     @staticmethod
-    def car_update(pk, license_plate_number, capacity, company_name):
+    def car_update(pk, license_plate_number, capacity, company_name, user_id):
         db.session.commit() # SELECT
         car = db.session.query(Car).filter(
             Car.id == pk).first()
@@ -227,6 +235,10 @@ class CarService(object):
         try:
             d = {'id': car.id}
             db.session.commit()
+
+            # 日志
+            func_name, func_param = get_frame_name_param(inspect.currentframe())
+            producer.operation_log(func_name, func_param, user_id)
             return d
         except SQLAlchemyError:
             db.session.rollback()
@@ -235,7 +247,7 @@ class CarService(object):
             db.session.close()
 
     @staticmethod
-    def delete_cars(car_ids):
+    def delete_cars(car_ids, user_id):
         """
         car_ids 1,2,3
         """
@@ -265,6 +277,10 @@ class CarService(object):
             row.status = 10
         try:
             db.session.commit()
+
+            # 日志
+            func_name, func_param = get_frame_name_param(inspect.currentframe())
+            producer.operation_log(func_name, func_param, user_id)
             return {'id': 1}
         except SQLAlchemyError:
             import traceback

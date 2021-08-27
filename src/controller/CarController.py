@@ -160,7 +160,7 @@ def car_add(user_id, data):
     capacity = data['capacity']
     license_plate_number = data['license_plate_number']
     license_plate_number = license_plate_number.upper()
-    ret = CarService.car_add(license_plate_number, capacity, company_name)
+    ret = CarService.car_add(license_plate_number, capacity, company_name, user_id)
     if ret == -2:
         raise AppError(*GlobalErrorCode.DB_COMMIT_ERR)
     if ret == -10:
@@ -223,7 +223,7 @@ def car_update(user_id, data, pk):
     if license_plate_number:
         license_plate_number = license_plate_number.upper()
 
-    ret = CarService.car_update(pk, license_plate_number, capacity, company_name)
+    ret = CarService.car_update(pk, license_plate_number, capacity, company_name, user_id)
     if ret == -1:
         raise AppError(*GlobalErrorCode.OBJ_NOT_FOUND_ERROR)
     if ret == -2:
@@ -275,7 +275,7 @@ def car_delete(user_id, data):
                   description: 新Id
     """
     car_ids = data['car_ids']
-    ret = CarService.delete_cars(car_ids)
+    ret = CarService.delete_cars(car_ids, user_id)
     if ret == -2:
         raise AppError(*GlobalErrorCode.DB_COMMIT_ERR)
     elif ret == -10:

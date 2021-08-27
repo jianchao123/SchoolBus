@@ -1,9 +1,11 @@
 # coding:utf-8
 import time
+import sys
+import json
+import inspect
 from datetime import datetime
 from datetime import timedelta
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy import or_
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 from database.db import db
 from database.Device import Device
@@ -16,6 +18,7 @@ from utils import defines
 from database.School import School
 from msgqueue import producer
 from ext import cache
+from utils.tools import get_frame_name_param
 
 
 class DeviceService(object):
@@ -90,7 +93,7 @@ class DeviceService(object):
 
     @staticmethod
     def device_update(pk, license_plate_number, car_id,
-                      sound_volume, device_type):
+                      sound_volume, device_type, user_id):
         """
         设备ID 关联车辆  设备音量
         license_plate_number 似乎没有使用
@@ -161,6 +164,10 @@ class DeviceService(object):
         try:
             d = {'id': device.id}
             db.session.commit()
+
+            # 日志
+            func_name, func_param = get_frame_name_param(inspect.currentframe())
+            producer.operation_log(func_name, func_param, user_id)
             return d
         except SQLAlchemyError:
             db.session.rollback()

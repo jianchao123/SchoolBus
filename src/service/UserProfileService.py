@@ -1,9 +1,14 @@
 # coding:utf-8
+import sys
+import json
+import inspect
 from sqlalchemy.exc import SQLAlchemyError
 from database.AdminUser import AdminUser
 from utils import tools
 from ext import cache1
 from database.db import db
+from msgqueue import producer
+from utils.tools import get_frame_name_param
 
 
 class UserProfileService(object):
@@ -68,6 +73,10 @@ class UserProfileService(object):
     def login(user_id, token):
         cache1.set(UserProfileService.TOKEN_ID_KEY.format(token), user_id)
         cache1.expire(UserProfileService.TOKEN_ID_KEY.format(token), 60 * 60 * 8)
+
+        # 日志
+        func_name, func_param = get_frame_name_param(inspect.currentframe())
+        producer.operation_log(func_name, func_param, user_id)
 
     @staticmethod
     def modify_pwd(user_id, passwd_raw):

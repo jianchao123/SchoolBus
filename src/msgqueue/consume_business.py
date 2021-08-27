@@ -48,6 +48,8 @@ class InsertUpdateConsumer(object):
         if routing_suffix == 'carupdate':
             # 更新关联到该车辆的学生信息
             self.business.student_field_update(data)
+        if routing_suffix == 'oplog':
+            self.business.operation_log(data)
         # 消息确认
         ch.basic_ack(delivery_tag=method.delivery_tag)
 
@@ -109,6 +111,24 @@ class InsertUpdateBusiness(object):
                 'license_plate_number': license_plate_number
             }
             pgsql_db.update(pgsql_cur, d, 'student')
+
+    @transaction(is_commit=True)
+    def operation_log(self, pgsql_cur, data):
+        """操作日志"""
+        pgsql_db = PgsqlDbUtil
+        print data
+        user_id = data['user_id']
+        func_name = data['func_name']
+        func_param = data['func_param']
+        sql = "SELECT username FROM admin_user WHERE id={} LIMIT 1"
+        username = pgsql_db.get(pgsql_cur, sql.format(user_id))[0]
+        d = {
+            'username': username,
+            'func_name': func_name,
+            'func_param': func_param,
+            'create_time': 'now()'
+        }
+        pgsql_db.insert(pgsql_cur, d, table_name='operation_log')
 
 
 class StudentConsumer(object):

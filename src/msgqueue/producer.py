@@ -138,6 +138,14 @@ def heartbeat():
 #     }
 #     _publish_msg('cascade_exchange', 'cascade.workerupdate', json.dumps(d))
 
+def operation_log(func_name, func_param, user_id):
+    d = {
+        'user_id': user_id,
+        'func_name': func_name,
+        'func_param': func_param
+    }
+    _publish_msg('cascade_exchange', 'cascade.oplog', json.dumps(d))
+
 
 def car_update(car_id, license_plate_number):
     d = {

@@ -1,6 +1,9 @@
 # coding:utf-8
 import time
 import xlrd
+import sys
+import json
+import inspect
 from datetime import datetime
 from datetime import timedelta
 from sqlalchemy import func, or_, and_
@@ -18,6 +21,7 @@ from ext import cache
 from utils.defines import grade, classes, gender, RedisKey
 from msgqueue import producer
 from database.db import db
+from utils.tools import get_frame_name_param
 
 
 class StudentService(object):
@@ -149,7 +153,7 @@ class StudentService(object):
     @staticmethod
     def student_add(stu_no, nickname, gender, parents_1, mobile_1, parents_2,
                     mobile_2, address, remarks, school_id, grade_id, class_id,
-                    end_time, car_id, oss_url):
+                    end_time, car_id, oss_url, user_id):
         """增加学生"""
         db.session.commit() # SELECT
         car = db.session.query(Car).filter(
@@ -218,6 +222,10 @@ class StudentService(object):
             db.session.add(audio)
 
             db.session.commit()
+
+            # 日志
+            func_name, func_param = get_frame_name_param(inspect.currentframe())
+            producer.operation_log(func_name, func_param, user_id)
             return {'id': new_stu_id}
         except SQLAlchemyError:
             import traceback
@@ -231,7 +239,7 @@ class StudentService(object):
     def student_update(pk,  stu_no, nickname, gender, parents_1, mobile_1,
                        parents_2, mobile_2, address, remarks, school_id,
                        grade_id, class_id, end_time, car_id,
-                       oss_url):
+                       oss_url, user_id):
         """更新学生
         stu_no 身份证号不能修改
         """
@@ -313,6 +321,10 @@ class StudentService(object):
         try:
             d = {'id': student.id}
             db.session.commit()
+
+            # 日志
+            func_name, func_param = get_frame_name_param(inspect.currentframe())
+            producer.operation_log(func_name, func_param, user_id)
             return d
         except SQLAlchemyError:
             import traceback

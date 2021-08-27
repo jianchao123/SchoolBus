@@ -126,7 +126,7 @@ def export_task_delete(user_id, data):
                   description: 0表示删除成功
     """
     task_ids = data['task_ids']
-    ret = ExportTaskService.export_task_delete(task_ids)
+    ret = ExportTaskService.export_task_delete(task_ids, user_id)
     if ret == -2:
         raise AppError(*GlobalErrorCode.DB_COMMIT_ERR)
     if ret == -10:
