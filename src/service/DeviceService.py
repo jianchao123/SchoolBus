@@ -123,8 +123,15 @@ class DeviceService(object):
                     return -11  # 初始化已完成,不能再修改设备类型
 
         if car_id:
+
             # 清空
             if car_id == -10:
+                device_timestamp = cache.hget(
+                    defines.RedisKey.DEVICE_CUR_TIMESTAMP, device.device_name)
+                if device_timestamp and \
+                        (int(time.time()) - int(device_timestamp) < 32):
+                    return -14
+
                 device.car_id = None
                 device.license_plate_number = None
             else:

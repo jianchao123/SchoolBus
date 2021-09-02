@@ -98,6 +98,28 @@ class DataHandler(object):
                     pgsql_db.insert(pgsql_cur, d, table_name='feature')
 
 
+class FeatureHttps(object):
+
+    @db.transaction(is_commit=True)
+    def change_http(self, pgsql_cur):
+        """
+        修改协议
+        """
+        pgsql_db = db.PgsqlDbUtil
+        results = pgsql_db.query(pgsql_cur, "SELECT oss_url,id FROM feature")
+        for row in results:
+            oss_url = row[0]
+            pk = row[1]
+            if "https" in oss_url:
+                d = {
+                    'id': pk,
+                    'oss_url': oss_url.replace('https', 'http')
+                }
+                pgsql_db.update(pgsql_cur, d, table_name='feature')
+
+
 if __name__ == '__main__':
-    data = DataHandler()
-    data.add_data_to_audio_feature()
+    # data = DataHandler()
+    # data.add_data_to_audio_feature()
+    d = FeatureHttps()
+    d.change_http()
