@@ -294,7 +294,7 @@ class AcsManager(object):
                 float(longitude), float(latitude))
             gps_str = '{},{}'.format(longitude, latitude)
         else:
-            gps_str = '116.290435,40.032377'
+            gps_str = ''
 
         d = defaultdict()
         d['id'] = redis_db.incr(RedisKey.ORDER_ID_INCR)
