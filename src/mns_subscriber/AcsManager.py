@@ -730,7 +730,7 @@ WHERE F.status=4 AND stu.status=1 AND stu.car_id={} AND ft.mfr_id={}
         rds_conn.hset(RedisKey.DEVICE_CUR_TIMESTAMP, device_name,
                       int(time.time()))
         if gps == ",":
-            gps_str = "116.290435,40.032377"
+            gps_str = ""
         else:
             arr = gps.split(",")
             if arr[0] and arr[1]:
