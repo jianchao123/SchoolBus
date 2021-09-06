@@ -14,8 +14,8 @@ class RedisKey(object):
         "url": "https://img.pinganxiaoche.com/apps/1624332193.yaffs2",
         "crc": 981940787, "cmd": "update", "version": 264, "size": 4893824}
     SHENZHEN_UPGRADE_JSON = {
-        "url": "WWW.baidu.com",
-        "crc": 981940787, "cmd": "update", "version": 264, "size": 4893824}
+        "url": "http://cdbus-pro.oss-cn-shanghai.aliyuncs.com/upgradepkt/face263.tar.gz",
+        "crc": 1885887154, "cmd": "update", "version": 264, "size": 4893824}
 
     # 当前设备返回的人员信息是在做什么操作(1更新 2查询设备上人员)
     QUERY_DEVICE_PEOPLE = "QUERY_DEVICE_PEOPLE"

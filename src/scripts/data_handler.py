@@ -118,8 +118,29 @@ class FeatureHttps(object):
                 pgsql_db.update(pgsql_cur, d, table_name='feature')
 
 
+class RdsMysqlDeviceStatus(object):
+    """比对redis和mysql设备状态"""
+
+    @db.transaction(is_commit=True)
+    def rds_mysql_match(self, pgsql_cur):
+        """
+        匹配对比
+        """
+        pgsql_db = db.PgsqlDbUtil
+        rds = db.rds_conn
+        sql = "select device_name,status from device where status!=10;"
+        results = pgsql_db.query(pgsql_cur, sql)
+        for row in results:
+            dev_name = row[0]
+            status = row[1]
+            if status != rds.hget('DEVICE_CUR_STATUS_HASH', dev_name):
+                print dev_name, status, rds.hget('DEVICE_CUR_STATUS_HASH', dev_name)
+
+
 if __name__ == '__main__':
     # data = DataHandler()
     # data.add_data_to_audio_feature()
-    d = FeatureHttps()
-    d.change_http()
+    #d = FeatureHttps()
+    #d.change_http()
+    d = RdsMysqlDeviceStatus()
+    d.rds_mysql_match()
