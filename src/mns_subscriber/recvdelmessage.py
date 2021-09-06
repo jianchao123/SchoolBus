@@ -44,7 +44,6 @@ class ReceiveMessage(object):
         try:
             jdata = json.loads(base64.b64decode(body["payload"]))
         except:
-            print "-------------------------------"
             self.my_queue.delete_message(recv_msg.receipt_handle)
             return
 

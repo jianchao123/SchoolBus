@@ -602,8 +602,11 @@ WHERE F.status=4 AND stu.status=1 AND stu.car_id={} AND ft.mfr_id={}
         """检查版本号"""
         from mns_subscriber import config
         config.logger.info('----current version{}----'.format(cur_version))
+        rds_conn = db.rds_conn
+        all_heartbeat_val = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        rds_conn.hset(RedisKey.ALL_HEARTBEAT_HASH, device_name, all_heartbeat_val)
+
         if cur_version < RedisKey.APPOINT_VERSION_NO:
-            rds_conn = db.rds_conn
             obj = rds_conn.hget(RedisKey.MFR_DEVICE_HASH, device_name)
             if obj:
                 self._upgrade_version(device_name, obj)
