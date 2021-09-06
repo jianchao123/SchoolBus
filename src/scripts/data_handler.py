@@ -133,7 +133,8 @@ class RdsMysqlDeviceStatus(object):
         for row in results:
             dev_name = row[0]
             status = row[1]
-            if status != rds.hget('DEVICE_CUR_STATUS_HASH', dev_name):
+            rds_status = rds.hget('DEVICE_CUR_STATUS_HASH', dev_name)
+            if not rds_status or status != int(rds_status):
                 print dev_name, status, rds.hget('DEVICE_CUR_STATUS_HASH', dev_name)
 
 
