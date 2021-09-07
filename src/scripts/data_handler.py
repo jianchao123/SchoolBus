@@ -138,10 +138,32 @@ class RdsMysqlDeviceStatus(object):
                 print dev_name, status, rds.hget('DEVICE_CUR_STATUS_HASH', dev_name)
 
 
+class AllHeartBeat(object):
+    """所有心跳"""
+
+    @db.transaction(is_commit=True)
+    def all_heartbeat(self, pgsql_cur):
+        """
+        所有心跳
+        """
+        pgsql_db = db.PgsqlDbUtil
+        rds = db.rds_conn
+
+        sql = "select id,status,device_name from device where device_name='{}'"
+        d = rds.hgetall('ALL_HEARTBEAT_HASH')
+        for k, v in d.items():
+            obj = pgsql_db.get(pgsql_cur, sql.format(k))
+            if not obj:
+                print "not found devname={}".format(k)
+            else:
+                if obj[1] == 10:
+                    print "found devname={} status={} pk={}".format(k, str(obj[1]), obj[0])
 if __name__ == '__main__':
     # data = DataHandler()
     # data.add_data_to_audio_feature()
     #d = FeatureHttps()
     #d.change_http()
-    d = RdsMysqlDeviceStatus()
-    d.rds_mysql_match()
+    # d = RdsMysqlDeviceStatus()
+    # d.rds_mysql_match()
+    d = AllHeartBeat()
+    d.all_heartbeat()
