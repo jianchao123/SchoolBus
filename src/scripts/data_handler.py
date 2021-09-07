@@ -201,29 +201,82 @@ class DataHandler(object):
             }
             pgsql_db.insert(pgsql_cur, feature_d, table_name='feature')
 
+    @staticmethod
+    def _feature_status(face_status, feature_results):
+        feature_status = 1
+
+        # face完成
+        if face_status == 4:
+            for feature_row in feature_results:
+                if feature_row[1] != 3:
+                    feature_status = 0
+        # face 未绑定人脸
+        if face_status == 1:
+            for feature_row in feature_results:
+                if feature_row[1] != -1:
+                    feature_status = 0
+
+        # face 等待处理
+        if face_status == 2:
+            for feature_row in feature_results:
+                if feature_row[1] not in (1, 2, 3):
+                    feature_status = 0
+
+        # face 预期数据准备失败
+        if face_status == 5:
+            for feature_row in feature_results:
+                if feature_row[1] not in (3, 4):
+                    feature_status = 0
+
+        # face 过期
+        if face_status == 6:
+            for feature_row in feature_results:
+                if feature_row[1] not in (3, 4):
+                    feature_status = 0
+        return feature_status
+
     @db.transaction(is_commit=False)
     def stu_data_integrity(self, pgsql_cur, *args):
         """学生数据完整性"""
         pgsql_db = db.PgsqlDbUtil
         stu_sql = "SELECT id FROM student WHERE status=1 order by id desc"
-        face_sql = "SELECT id FROM face WHERE stu_id={} and status in (4,6) LIMIT 1"
-        audio_sql = "SELECT id FROM audio WHERE face_id={} and status=3 LIMIT 1"
-        feature_sql = "SELECT count(id) FROM feature WHERE face_id={} and status=3 LIMIT 1"
+        face_sql = "SELECT id,status FROM face WHERE stu_id={} LIMIT 1"
+        audio_sql = "SELECT id,status FROM audio WHERE face_id={} LIMIT 1"
+        feature_sql = "SELECT id,status FROM feature WHERE face_id={}"
         mfr_sql = "SELECT count(id) FROM manufacturer LIMIT 1"
         mfr_count = pgsql_db.get(pgsql_cur, mfr_sql)[0]
 
         results = pgsql_db.query(pgsql_cur, stu_sql)
         for row in results:
             stu_id = row[0]
+
             face = pgsql_db.get(pgsql_cur, face_sql.format(str(stu_id)))
             if face:
                 face_id = face[0]
-                if not pgsql_db.get(pgsql_cur, audio_sql.format(face_id)):
-                    print "not found audio, face_id={}".format(face_id)
-                if pgsql_db.get(pgsql_cur, feature_sql.format(face_id))[0] != mfr_count:
-                    print "no match, face_id={}".format(face_id)
+                audio = pgsql_db.get(pgsql_cur, audio_sql.format(face_id))
+                if not audio:
+                    print "integrity audio, face_id={}".format(face_id)
+                    continue
+                feature_results = pgsql_db.query(pgsql_cur, feature_sql.format(face_id))
+                feature_count = len(feature_results)
+                if feature_count != mfr_count:
+                    print "integrity feature, face_id={}".format(face_id)
+                    continue
+                # 逻辑性判断
+                if face[1] == 4 and audio[1] == 3 and DataHandler._feature_status(4, feature_results):
+                    pass
+                elif face[1] == 1 and audio[1] == 3 and DataHandler._feature_status(1, feature_results):
+                    pass
+                elif face[1] == 2 and audio[1] == 3 and DataHandler._feature_status(2, feature_results):
+                    pass
+                elif face[1] == 5 and audio[1] == 3 and DataHandler._feature_status(5, feature_results):
+                    pass
+                elif face[1] == 6 and audio[1] == 3 and DataHandler._feature_status(6, feature_results):
+                    pass
+                else:
+                    print "数据逻辑问题stu_id={}".format(stu_id)
             else:
-                print "not found face, stu_id={}".format(stu_id)
+                print "integrity face, stu_id={}".format(stu_id)
 
 if __name__ == '__main__':
     # data = DataHandler()
