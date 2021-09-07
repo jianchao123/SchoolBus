@@ -161,13 +161,13 @@ class DataHandler(object):
         """
         pk = args[0]
         pgsql_db = db.PgsqlDbUtil
+        if pk:
+            results = pgsql_db.query(pgsql_cur, "SELECT id FROM feature WHERE mfr_id={}".format(pk))
+            for row in results:
+                feature_id = row[0]
+                pgsql_db.execute_sql(pgsql_cur, "DELETE FROM feature WHERE id={}".format(feature_id))
 
-        results = pgsql_db.query(pgsql_cur, "SELECT id FROM feature WHERE mfr_id={}".format(pk))
-        for row in results:
-            feature_id = row[0]
-            pgsql_db.execute_sql(pgsql_cur, "DELETE FROM feature WHERE id={}".format(feature_id))
-
-        pgsql_db.execute_sql(pgsql_cur, "DELETE FROM manufacturer WHERE id={}".format(pk))
+            pgsql_db.execute_sql(pgsql_cur, "DELETE FROM manufacturer WHERE id={}".format(pk))
 
     @db.transaction(is_commit=True)
     def mfr_add(self, pgsql_cur, *args):
