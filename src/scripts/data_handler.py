@@ -14,118 +14,116 @@ import db
 import config
 
 
+# class DataHandler(object):
+#
+#     @db.transaction(is_commit=True)
+#     def new_mfr(self, pgsql_cur):
+#         """新厂商添加新数据"""
+#         pass
+#
+#     @db.transaction(is_commit=True)
+#     def add_data_to_audio_feature(self, pgsql_cur):
+#         """添加数据到audio feature
+#         只能用于武汉的设备
+#         """
+#         pgsql_db = db.PgsqlDbUtil
+#         sql = "SELECT id FROM manufacturer WHERE status=1"
+#         mfr_list = []
+#         results = pgsql_db.query(pgsql_cur, sql)
+#         for row in results:
+#             mfr_list.append(row[0])
+#
+#         face_sql = "SELECT id,oss_url,feature,feature_crc," \
+#                    "status,aac_url,nickname,stu_no " \
+#                    "FROM face WHERE status != 10"
+#         query_audio_sql = "SELECT id FROM audio WHERE face_id={} LIMIT 1"
+#         query_feature_sql = "SELECT id FROM feature " \
+#                             "WHERE face_id={} and mfr_id={} LIMIT 1"
+#         face_set = pgsql_db.query(pgsql_cur, face_sql)
+#         for face_row in face_set:
+#             face_id = face_row[0]
+#             oss_url = face_row[1]
+#             feature = face_row[2]
+#             feature_crc = face_row[3]
+#             face_status = face_row[4]
+#             aac_url = face_row[5]
+#             nickname = face_row[6]
+#             stu_no = face_row[7]
+#
+#             audio_row = pgsql_db.get(pgsql_cur, query_audio_sql.format(face_id))
+#             # 不存在
+#             if not audio_row:
+#                 # audio
+#                 a_d = {
+#                     'aac_url': aac_url,
+#                     'nickname': nickname,
+#                     'stu_no': stu_no,
+#                     'status': 3,
+#                     'face_id': face_id
+#                 }
+#                 pgsql_db.insert(pgsql_cur, a_d, table_name='audio')
+#
+#             # feature
+#             for mfr_id in mfr_list:
+#                 # 厂商是武汉就添加feature数据
+#                 # 是否存在
+#                 feature_row = pgsql_db.get(
+#                     pgsql_cur, query_feature_sql.format(face_id, mfr_id))
+#                 if not feature_row:
+#                     d = {
+#                         'mfr_id': mfr_id,
+#                         'face_id': face_id
+#                     }
+#                     if face_status == 1:
+#                         d['status'] = -1
+#                     else:
+#                         # 等待处理
+#                         if face_status == 2:
+#                             d['status'] = 1
+#                         # 处理中
+#                         if face_status == 3:
+#                             d['status'] = 2
+#                         # 有效
+#                         if face_status == 4:
+#                             d['status'] = 3
+#                         # 预期数据准备失败
+#                         if face_status == 5:
+#                             d['status'] = 4
+#                         # 过期
+#                         if face_status == 6:
+#                             d['status'] = 3
+#                         d['oss_url'] = oss_url if oss_url else 'null'
+#                         d['feature'] = feature if feature else 'null'
+#                         d['feature_crc'] = feature_crc if feature_crc else 'null'
+#                     pgsql_db.insert(pgsql_cur, d, table_name='feature')
+#
+#
+# class FeatureHttps(object):
+#
+#     @db.transaction(is_commit=True)
+#     def change_http(self, pgsql_cur):
+#         """
+#         修改协议
+#         """
+#         pgsql_db = db.PgsqlDbUtil
+#         results = pgsql_db.query(pgsql_cur, "SELECT oss_url,id FROM feature")
+#         for row in results:
+#             oss_url = row[0]
+#             pk = row[1]
+#             if "https" in oss_url:
+#                 d = {
+#                     'id': pk,
+#                     'oss_url': oss_url.replace('https', 'http')
+#                 }
+#                 pgsql_db.update(pgsql_cur, d, table_name='feature')
+
+
 class DataHandler(object):
 
-    @db.transaction(is_commit=True)
-    def new_mfr(self, pgsql_cur):
-        """新厂商添加新数据"""
-        pass
-
-    @db.transaction(is_commit=True)
-    def add_data_to_audio_feature(self, pgsql_cur):
-        """添加数据到audio feature
-        只能用于武汉的设备
-        """
-        pgsql_db = db.PgsqlDbUtil
-        sql = "SELECT id FROM manufacturer WHERE status=1"
-        mfr_list = []
-        results = pgsql_db.query(pgsql_cur, sql)
-        for row in results:
-            mfr_list.append(row[0])
-
-        face_sql = "SELECT id,oss_url,feature,feature_crc," \
-                   "status,aac_url,nickname,stu_no " \
-                   "FROM face WHERE status != 10"
-        query_audio_sql = "SELECT id FROM audio WHERE face_id={} LIMIT 1"
-        query_feature_sql = "SELECT id FROM feature " \
-                            "WHERE face_id={} and mfr_id={} LIMIT 1"
-        face_set = pgsql_db.query(pgsql_cur, face_sql)
-        for face_row in face_set:
-            face_id = face_row[0]
-            oss_url = face_row[1]
-            feature = face_row[2]
-            feature_crc = face_row[3]
-            face_status = face_row[4]
-            aac_url = face_row[5]
-            nickname = face_row[6]
-            stu_no = face_row[7]
-
-            audio_row = pgsql_db.get(pgsql_cur, query_audio_sql.format(face_id))
-            # 不存在
-            if not audio_row:
-                # audio
-                a_d = {
-                    'aac_url': aac_url,
-                    'nickname': nickname,
-                    'stu_no': stu_no,
-                    'status': 3,
-                    'face_id': face_id
-                }
-                pgsql_db.insert(pgsql_cur, a_d, table_name='audio')
-
-            # feature
-            for mfr_id in mfr_list:
-                # 厂商是武汉就添加feature数据
-                # 是否存在
-                feature_row = pgsql_db.get(
-                    pgsql_cur, query_feature_sql.format(face_id, mfr_id))
-                if not feature_row:
-                    d = {
-                        'mfr_id': mfr_id,
-                        'face_id': face_id
-                    }
-                    if face_status == 1:
-                        d['status'] = -1
-                    else:
-                        # 等待处理
-                        if face_status == 2:
-                            d['status'] = 1
-                        # 处理中
-                        if face_status == 3:
-                            d['status'] = 2
-                        # 有效
-                        if face_status == 4:
-                            d['status'] = 3
-                        # 预期数据准备失败
-                        if face_status == 5:
-                            d['status'] = 4
-                        # 过期
-                        if face_status == 6:
-                            d['status'] = 3
-                        d['oss_url'] = oss_url if oss_url else 'null'
-                        d['feature'] = feature if feature else 'null'
-                        d['feature_crc'] = feature_crc if feature_crc else 'null'
-                    pgsql_db.insert(pgsql_cur, d, table_name='feature')
-
-
-class FeatureHttps(object):
-
-    @db.transaction(is_commit=True)
-    def change_http(self, pgsql_cur):
-        """
-        修改协议
-        """
-        pgsql_db = db.PgsqlDbUtil
-        results = pgsql_db.query(pgsql_cur, "SELECT oss_url,id FROM feature")
-        for row in results:
-            oss_url = row[0]
-            pk = row[1]
-            if "https" in oss_url:
-                d = {
-                    'id': pk,
-                    'oss_url': oss_url.replace('https', 'http')
-                }
-                pgsql_db.update(pgsql_cur, d, table_name='feature')
-
-
-class RdsMysqlDeviceStatus(object):
-    """比对redis和mysql设备状态"""
-
-    @db.transaction(is_commit=True)
+    @db.transaction(is_commit=False)
     def rds_mysql_match(self, pgsql_cur):
-        """
-        匹配对比
-        """
+        """比对redis和mysql设备状态"""
+
         pgsql_db = db.PgsqlDbUtil
         rds = db.rds_conn
         sql = "select device_name,status from device where status!=10;"
@@ -137,14 +135,10 @@ class RdsMysqlDeviceStatus(object):
             if not rds_status or status != int(rds_status):
                 print dev_name, status, rds.hget('DEVICE_CUR_STATUS_HASH', dev_name)
 
-
-class AllHeartBeat(object):
-    """所有心跳"""
-
-    @db.transaction(is_commit=True)
+    @db.transaction(is_commit=False)
     def all_heartbeat(self, pgsql_cur):
         """
-        所有心跳
+        所有心跳的设备是否存在于数据库
         """
         pgsql_db = db.PgsqlDbUtil
         rds = db.rds_conn
@@ -159,12 +153,84 @@ class AllHeartBeat(object):
             else:
                 if obj[1] == 10:
                     print "found devname={} status={} pk={}".format(k, str(obj[1]), obj[0])
+
+    @db.transaction(is_commit=True)
+    def mfr_del(self, pgsql_cur, *args):
+        """
+        删除厂商
+        """
+        pk = args[0]
+        pgsql_db = db.PgsqlDbUtil
+
+        results = pgsql_db.query(pgsql_cur, "SELECT id FROM feature WHERE mfr_id={}".format(pk))
+        for row in results:
+            feature_id = row[0]
+            pgsql_db.execute_sql(pgsql_cur, "DELETE FROM feature WHERE id={}".format(feature_id))
+
+        pgsql_db.execute_sql(pgsql_cur, "DELETE FROM manufacturer WHERE id={}".format(pk))
+
+    @db.transaction(is_commit=True)
+    def mfr_add(self, pgsql_cur, *args):
+        """
+        添加厂商
+        """
+        pgsql_db = db.PgsqlDbUtil
+        pk = args[0]
+        name = args[1]
+
+        # 添加厂商
+        d = {
+            'id': int(pk),
+            'name': name,
+            'status': 1
+        }
+        pgsql_db.insert(pgsql_cur, d, table_name='manufacturer')
+
+        # 添加feature
+        face_results = pgsql_db.query(
+            pgsql_cur, "SELECT id,oss_url FROM face WHERE status!=10")
+        for row in face_results:
+            face_id = row[0]
+            oss_url = row[1]
+            print face_id, oss_url
+            feature_d = {
+                'oss_url': oss_url,
+                'mfr_id': pk,
+                'face_id': face_id,
+                'status': 1
+            }
+            pgsql_db.insert(pgsql_cur, feature_d, table_name='feature')
+
+    @db.transaction(is_commit=False)
+    def stu_data_integrity(self, pgsql_cur, *args):
+        """学生数据完整性"""
+        pgsql_db = db.PgsqlDbUtil
+        stu_sql = "SELECT id FROM student WHERE status=1 order by id desc"
+        face_sql = "SELECT id FROM face WHERE stu_id={} and status in (4,6) LIMIT 1"
+        audio_sql = "SELECT id FROM audio WHERE face_id={} and status=3 LIMIT 1"
+        feature_sql = "SELECT count(id) FROM feature WHERE face_id={} and status=3 LIMIT 1"
+        mfr_sql = "SELECT count(id) FROM manufacturer LIMIT 1"
+        mfr_count = pgsql_db.get(pgsql_cur, mfr_sql)[0]
+
+        results = pgsql_db.query(pgsql_cur, stu_sql)
+        for row in results:
+            stu_id = row[0]
+            face = pgsql_db.get(pgsql_cur, face_sql.format(str(stu_id)))
+            if face:
+                face_id = face[0]
+                if not pgsql_db.get(pgsql_cur, audio_sql.format(face_id)):
+                    print "not found audio, face_id={}".format(face_id)
+                if pgsql_db.get(pgsql_cur, feature_sql.format(face_id))[0] != mfr_count:
+                    print "no match, face_id={}".format(face_id)
+            else:
+                print "not found face, stu_id={}".format(stu_id)
+
 if __name__ == '__main__':
     # data = DataHandler()
     # data.add_data_to_audio_feature()
     #d = FeatureHttps()
     #d.change_http()
-    # d = RdsMysqlDeviceStatus()
-    # d.rds_mysql_match()
-    d = AllHeartBeat()
-    d.all_heartbeat()
+    import sys
+    d = DataHandler()
+    func_name = sys.argv[1]
+    getattr(d, func_name)(*sys.argv[2:])
