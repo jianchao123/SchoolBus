@@ -153,6 +153,7 @@ class AllHeartBeat(object):
         d = rds.hgetall('ALL_HEARTBEAT_HASH')
         for k, v in d.items():
             obj = pgsql_db.get(pgsql_cur, sql.format(k))
+            print obj
             if not obj:
                 print "not found devname={}".format(k)
             else:
