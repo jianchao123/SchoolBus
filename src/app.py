@@ -48,7 +48,7 @@ def create_app():
     conf.init_app(app)
     cache.init_app(app)
     app.config['REDIS_DB'] = 1
-    cache1.init_app(app)
+    cache1.init_app(app)    # cache1用来存用户登录的md5串
     from flask_sqlalchemy import SQLAlchemy
     SQLAlchemy(app)
     register_blueprints('controller', app)
