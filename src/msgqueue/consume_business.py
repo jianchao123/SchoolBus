@@ -122,12 +122,15 @@ class InsertUpdateBusiness(object):
         func_param = data['func_param']
         sql = "SELECT username FROM admin_user WHERE id={} LIMIT 1"
         username = pgsql_db.get(pgsql_cur, sql.format(user_id))[0]
+        if len(func_param) > 250:
+            func_param = func_param[:250]
         d = {
             'username': username,
             'func_name': func_name,
             'func_param': func_param,
             'create_time': 'now()'
         }
+
         pgsql_db.insert(pgsql_cur, d, table_name='operation_log')
 
 
