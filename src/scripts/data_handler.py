@@ -1,6 +1,8 @@
 # coding:utf-8
 import time
 import json
+import os
+import oss2
 import base64
 import decimal
 from datetime import datetime
@@ -12,6 +14,9 @@ from aliyunsdkiot.request.v20180120.RegisterDeviceRequest import \
 from aliyunsdkiot.request.v20180120.PubRequest import PubRequest
 import db
 import config
+
+project_dir = os.path.dirname(os.path.dirname(
+    os.path.dirname(os.path.realpath(__file__))))
 
 
 # class DataHandler(object):
@@ -119,6 +124,10 @@ import config
 
 
 class DataHandler(object):
+
+    def __init__(self):
+        auth = oss2.Auth(config.OSSAccessKeyId, config.OSSAccessKeySecret)
+        self.bucket = oss2.Bucket(auth, config.OSSEndpoint, config.OSSBucketName)
 
     @db.transaction(is_commit=False)
     def rds_mysql_match(self, pgsql_cur):
@@ -277,6 +286,31 @@ class DataHandler(object):
                     print "数据逻辑问题stu_id={}".format(stu_id)
             else:
                 print "integrity face, stu_id={}".format(stu_id)
+
+    @db.transaction(is_commit=False)
+    def png_2_jpg(self, pgsql_cur):
+        from PIL import Image
+        import requests
+        import time
+        pgsql_db = db.PgsqlDbUtil
+        results = pgsql_db.query(pgsql_cur, "SELECT oss_url FROM feature WHERE id=201")
+        for row in results:
+            oss_url = row[0]
+            print oss_url
+            temp_dir = project_dir + '/src/scripts/temp/'
+            img_path = temp_dir + '{}'.format(str(time.time()).replace('.', ''))
+            with open(img_path, 'w') as fd:
+                fd.write(requests.get(oss_url).content)
+            im = Image.open(img_path)
+            im = im.convert('RGB')
+            new_path = img_path + "_1.jpg"
+            im.save(new_path, quality=95)
+            time.sleep(1)
+            oss_key = "person" + oss_url.split("person")[-1]
+            print new_path
+            with open(new_path, 'rb') as fileobj:
+                self.bucket.put_object(oss_key, fileobj)
+
 
 if __name__ == '__main__':
     # data = DataHandler()

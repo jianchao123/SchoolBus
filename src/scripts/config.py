@@ -64,6 +64,7 @@ else:
     OSSAccessKeyId = 'LTAIWE5CGeOiozf7'
     OSSAccessKeySecret = 'IGuoRIxwMlPQqJ9ujWyTvSq2em4RDj'
     OSSEndpoint = 'http://oss-cn-shanghai.aliyuncs.com'
+    OSSBucketName = 'cdbus-dev'
 
     # MNS
     MNSEndpoint = 'http://1162097573951650.mns.cn-shanghai.aliyuncs.com/'
