@@ -45,7 +45,7 @@ class GenerateAAC(object):
         begin = time.time()
 
         # 等待生成中
-        sql = "SELECT id,stu_no,nickname " \
+        sql = "SELECT id,stu_no,nickname,face_id " \
               "FROM audio WHERE status=1 LIMIT 27"
         results = pgsql_db.query(pgsql_cur, sql)
         for row in results:
@@ -66,6 +66,12 @@ class GenerateAAC(object):
                     'status': 4  # 生成失败
                 }
                 pgsql_db.update(pgsql_cur, d, table_name='audio')
+
+                data = {
+                    'id': row[3],
+                    'status': 5  # 预期数据准备失败
+                }
+                pgsql_db.update(pgsql_cur, data, table_name='face')
         end = time.time()
         #print u"{}个aac总共用时{}s".format(len(results), end - begin)
 

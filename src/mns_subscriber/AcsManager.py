@@ -766,10 +766,12 @@ WHERE F.status=4 AND stu.status=1 AND stu.car_id={} AND ft.mfr_id={}
         mfr_id = pgsql_db.get(
             pgsql_cur, "SELECT mfr_id FROM device WHERE "
                        "device_name='{}' LIMIT 1".format(device_name))[0]
-        sql = "SELECT id FROM feature " \
+        sql = "SELECT id,face_id FROM feature " \
               "WHERE mfr_id={} AND face_id={} LIMIT 1"
         print sql.format(mfr_id, fid)
-        feature_id = pgsql_db.get(pgsql_cur, sql.format(mfr_id, fid))[0]
+        feature_obj = pgsql_db.get(pgsql_cur, sql.format(mfr_id, fid))
+        feature_id = feature_obj[0]
+        face_id = feature_obj[1]
         if feature:
 
             d['id'] = feature_id
@@ -780,6 +782,12 @@ WHERE F.status=4 AND stu.status=1 AND stu.car_id={} AND ft.mfr_id={}
             d['id'] = feature_id
             d['status'] = 4     # 生成失败
         pgsql_db.update(pgsql_cur, d, table_name='feature')
+        if not feature:
+            data = {
+                'id': face_id,
+                'status': 5  # 预期数据准备失败
+            }
+            pgsql_db.update(pgsql_cur, data, table_name='face')
         # 将设备从使用中删除
         rds_conn.hdel(RedisKey.DEVICE_USED, device_name)
 
