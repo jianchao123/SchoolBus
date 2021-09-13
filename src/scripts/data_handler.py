@@ -293,7 +293,7 @@ class DataHandler(object):
         import requests
         import time
         pgsql_db = db.PgsqlDbUtil
-        results = pgsql_db.query(pgsql_cur, "SELECT oss_url FROM feature WHERE id=201")
+        results = pgsql_db.query(pgsql_cur, "SELECT oss_url FROM feature WHERE status=4")
         for row in results:
             oss_url = row[0]
             print oss_url
