@@ -113,7 +113,7 @@ else:
 
 
     # OSS
-    OSSDomain = 'http://cdbus-dev.oss-cn-shanghai.aliyuncs.com'
+    OSSDomain = 'cdbus-dev.oss-cn-shanghai.aliyuncs.com'
     OSSEndpoint = 'http://oss-cn-shanghai.aliyuncs.com'
     OSSBucketName = 'cdbus-dev'
     OSSAccessKeyId = 'LTAIWE5CGeOiozf7'

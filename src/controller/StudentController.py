@@ -425,3 +425,109 @@ def student_batch_add(user_id, data):
     if data == -10:
         raise AppError(*SubErrorCode.TASK_EXECUTING)
     return data
+
+
+@bp.route('/bulk/update/audio', methods=['POST'])
+@post_require_check_with_user([])
+def bulk_update_audio(user_id, data):
+    """
+    批量更新音频
+    批量更新音频，需要先登录
+    ---
+    tags:
+      - 学生
+    parameters:
+      - name: token
+        in: header
+        type: string
+        required: true
+        description: TOKEN
+      - name: body
+        in: body
+        required: true
+        schema:
+          properties:
+            ids:
+              type: string
+              description: 学生id字符串,逗号拼接
+
+    responses:
+      200:
+        description: 正常返回http code 200
+        schema:
+          properties:
+            msg:
+              type: string
+              description: 错误消息
+            status:
+              type: integer
+              description: 状态
+            data:
+              type: object
+              properties:
+                is_success:
+                  type: integer
+                  description: 1 成功 0失败
+
+    """
+    ids = data.get('ids', None)
+    if not ids:
+        raise AppError(*GlobalErrorCode.PARAM_ERROR)
+    ret = StudentService.bulk_update_audio(ids)
+    if ret == -2:
+        raise AppError(*GlobalErrorCode.DB_COMMIT_ERR)
+    return ret
+
+
+@bp.route('/bulk/update/feature', methods=['POST'])
+@post_require_check_with_user([])
+def bulk_update_feature(user_id, data):
+    """
+    批量更新特征码
+    批量更新特征码，需要先登录
+    ---
+    tags:
+      - 学生
+    parameters:
+      - name: token
+        in: header
+        type: string
+        required: true
+        description: TOKEN
+      - name: body
+        in: body
+        required: true
+        schema:
+          properties:
+            ids:
+              type: string
+              description: 学生id字符串,逗号拼接
+
+    responses:
+      200:
+        description: 正常返回http code 200
+        schema:
+          properties:
+            msg:
+              type: string
+              description: 错误消息
+            status:
+              type: integer
+              description: 状态
+            data:
+              type: object
+              properties:
+                is_success:
+                  type: integer
+                  description: 1 成功 0失败
+
+    """
+    ids = data.get('ids', None)
+    if not ids:
+        raise AppError(*GlobalErrorCode.PARAM_ERROR)
+    ret = StudentService.bulk_update_feature(ids)
+    if ret == -2:
+        raise AppError(*GlobalErrorCode.DB_COMMIT_ERR)
+    if ret == -10:
+        raise AppError(*SubErrorCode.STUDENT_NOT_BINDING_FACE)
+    return ret

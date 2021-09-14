@@ -40,6 +40,64 @@ class StudentService(object):
             return school_name
 
     @staticmethod
+    def bulk_update_audio(ids):
+        """批量更新音频"""
+        db.session.commit()  # SELECT
+        try:
+            pk_list = ids.split(",")
+            students = db.session.query(Student).filter(
+                Student.id.in_(pk_list)).all()
+            stu_id_list = [row.id for row in students]
+            face_queryset = db.session.query(Face).filter(
+                Face.stu_id.in_(stu_id_list))
+            faces = face_queryset.all()
+            face_id_list = [row.id for row in faces]
+            db.session.query(Audio).filter(
+                Audio.face_id.in_(face_id_list)).update(
+                {Audio.status: 1}, synchronize_session=False)
+            face_queryset.update({Face.status: 2}, synchronize_session=False)
+            db.session.commit()
+            return {"is_success": 1}
+        except SQLAlchemyError:
+            import traceback
+            print traceback.format_exc()
+            db.session.rollback()
+            return -2
+        finally:
+            db.session.close()
+
+    @staticmethod
+    def bulk_update_feature(ids):
+        """批量更新特征码"""
+        db.session.commit()  # SELECT
+        try:
+            pk_list = ids.split(",")
+            students = db.session.query(Student).filter(
+                Student.id.in_(pk_list)).all()
+            stu_id_list = [row.id for row in students]
+            face_queryset = db.session.query(Face).filter(
+                Face.stu_id.in_(stu_id_list))
+            faces = face_queryset.all()
+            for row in faces:
+                if row.status == 1:
+                    return -10
+
+            face_id_list = [row.id for row in faces]
+            db.session.query(Feature).filter(
+                Feature.face_id.in_(face_id_list)).update(
+                {Feature.status: 1}, synchronize_session=False)
+            face_queryset.update({Face.status: 2}, synchronize_session=False)
+            db.session.commit()
+            return {"is_success": 1}
+        except SQLAlchemyError:
+            import traceback
+            print traceback.format_exc()
+            db.session.rollback()
+            return -2
+        finally:
+            db.session.close()
+
+    @staticmethod
     def student_list(query_str, school_id, grade_id, class_id, face_status,
                      start_date, end_date, car_id, license_plate_number,
                      page, size):

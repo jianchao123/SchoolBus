@@ -106,7 +106,7 @@ else:
     DeviceSecret = 'bmq66tsx0OGju0CGqeYjzCTYlwA454j0'
 
     # OSS
-    OSSDomain = 'http://cdbus-dev.oss-cn-shanghai.aliyuncs.com'
+    OSSDomain = 'cdbus-dev.oss-cn-shanghai.aliyuncs.com'
     OSSEndpoint = 'http://oss-cn-shanghai.aliyuncs.com'
     OSSBucketName = 'cdbus-dev'
     OSSAccessKeyId = 'LTAIWE5CGeOiozf7'

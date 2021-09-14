@@ -37,6 +37,7 @@ class SubErrorCode(object):
     STUDENT_ID_CARD_ALREADY_EXISTS = (200030, u"学生身份证号已经存在")
     STUDENT_NOT_FOUND_PARENTS_MOBILE = (200031, u"不是家长或工作人员,无法绑定")
     STUDENT_NOT_PARENTS = (200032, u"您不是家长")
+    STUDENT_NOT_BINDING_FACE = (200033, u"学生还未绑定人脸")
 
     WORKER_EMP_NO_ALREADY_EXISTS = (200040, u"工号已经存在")
     WORKER_ALREADY_EXISTS_DUTY = (200041, u"该车辆已经存在该职务的工作人员")
