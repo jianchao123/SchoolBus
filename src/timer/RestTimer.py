@@ -180,6 +180,10 @@ class CheckAccClose(object):
                         info['mobile_1'], info['mobile_2']))
 
                 people_info = "|".join(people_info_list)
+
+                current_gps = rds_conn.hget(RedisKey.DEVICE_CUR_GPS, dev_name)
+                if not current_gps:
+                    current_gps = ''
                 d = {
                     'car_id': car_id,
                     'license_plate_number': license_plate_number,
@@ -193,7 +197,7 @@ class CheckAccClose(object):
                     'first_alert': 1,
                     'second_alert': 0,
                     'alert_start_time': 'NOW()',
-                    'gps': rds_conn.hget(RedisKey.DEVICE_CUR_GPS, dev_name),
+                    'gps': current_gps,
                     'status': 1,         # 正在报警
                     'periods': periods,
                     'stu_ids': ','.join(stu_id_list)
