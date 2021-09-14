@@ -782,12 +782,12 @@ WHERE F.status=4 AND stu.status=1 AND stu.car_id={} AND ft.mfr_id={}
             d['id'] = feature_id
             d['status'] = 4     # 生成失败
         pgsql_db.update(pgsql_cur, d, table_name='feature')
-        if not feature:
-            data = {
-                'id': face_id,
-                'status': 5  # 预期数据准备失败
-            }
-            pgsql_db.update(pgsql_cur, data, table_name='face')
+        # if not feature:
+        #     data = {
+        #         'id': face_id,
+        #         'status': 5  # 预期数据准备失败
+        #     }
+        #     pgsql_db.update(pgsql_cur, data, table_name='face')
         # 将设备从使用中删除
         rds_conn.hdel(RedisKey.DEVICE_USED, device_name)
 

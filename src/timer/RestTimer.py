@@ -66,12 +66,12 @@ class GenerateAAC(object):
                     'status': 4  # 生成失败
                 }
                 pgsql_db.update(pgsql_cur, d, table_name='audio')
-
-                data = {
-                    'id': row[3],
-                    'status': 5  # 预期数据准备失败
-                }
-                pgsql_db.update(pgsql_cur, data, table_name='face')
+                #
+                # data = {
+                #     'id': row[3],
+                #     'status': 5  # 预期数据准备失败
+                # }
+                # pgsql_db.update(pgsql_cur, data, table_name='face')
         end = time.time()
         #print u"{}个aac总共用时{}s".format(len(results), end - begin)
 
@@ -408,33 +408,42 @@ class FaceGenerateIsfinish(object):
         sql_db = db.PgsqlDbUtil
 
         # face处理中的状态
+        mfr_sql = "SELECT count(id) FROM manufacturer WHERE status=1 LIMIT 1"
         face_sql = "SELECT id FROM face WHERE status in (2,3) LIMIT 50"
         feature_sql = "SELECT status FROM feature WHERE face_id={}"
         audio_sql = "SELECT status,aac_url FROM audio WHERE face_id={} LIMIT 1"
+        mfr_cnt = sql_db.get(sql_cur, mfr_sql)[0]
         results = sql_db.query(sql_cur, face_sql)
         for row in results:
             pk = row[0]
             # 查询feature audio表
             feature_set = sql_db.query(sql_cur, feature_sql.format(pk))
             audio_row = sql_db.get(sql_cur, audio_sql.format(pk))
-            flag = True
+            feature_success_cnt = 0
             # 是否生成成功
             for feature_row in feature_set:
                 # 所有feature都是成功状态
-                if feature_row[0] != 3:
-                    flag = False
-            if flag and audio_row[0] == 3:
+                if feature_row[0] == 3:
+                    feature_success_cnt += 1
+            if feature_success_cnt == mfr_cnt and audio_row[0] == 3:
                 data = {
                     'id': pk,
                     'status': 4    # 处理完成
                 }
                 sql_db.update(sql_cur, data, table_name='face')
-            # else:
-            #     data = {
-            #         'id': pk,
-            #         'status': 5  # 预期数据准备失败
-            #     }
-            #     sql_db.update(sql_cur, data, table_name='face')
+
+            # 是否生成失败
+            feature_fail_cnt = 0
+            for feature_row in feature_set:
+                # 所有feature都是成功状态
+                if feature_row[0] == 4:
+                    feature_fail_cnt += 1
+            if feature_fail_cnt or audio_row[0] == 4:
+                data = {
+                    'id': pk,
+                    'status': 5    # 失败
+                }
+                sql_db.update(sql_cur, data, table_name='face')
 
 
 class EveryMinuteExe(object):

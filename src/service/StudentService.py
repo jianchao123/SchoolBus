@@ -84,24 +84,25 @@ class StudentService(object):
         results = query.order_by(
             Student.id.desc()).offset(offset).limit(size).all()
 
+        mfr_cnt = db.session.query(Manufacturer).filter(
+            Manufacturer.status == 1).count()
         data = []
         for row in results:
             student = row[0]
             face = row[1]
-            feature_obj = db.session.query(Feature).filter(
-                Feature.face_id == face.id).first()
+            feature_fail_cnt = db.session.query(Feature).filter(
+                Feature.face_id == face.id, Feature.status == 4).count()
+            feature_success_cnt = db.session.query(Feature).filter(
+                Feature.face_id == face.id, Feature.status == 3).count()
+
             audio_obj = db.session.query(Audio).filter(
                 Audio.face_id == face.id).first()
-            # if feature_obj.status == -1:
-            #     feature_status_str = u"未绑定人脸"
-            # elif feature_obj.status == 1:
-            #     feature_status_str = u"等待生成"
-            # elif feature_obj.status == 2:
-            #     feature_status_str = u"生成中"
-            # elif feature_obj.status == 3:
-            #     feature_status_str = u"生成成功"
-            # else:
-            #     feature_status_str = u"生成失败"
+            if feature_fail_cnt:
+                face_status = 4
+            elif feature_success_cnt == mfr_cnt:
+                face_status = 3
+            else:
+                face_status = 1
 
             data.append({
                 'id': student.id,
@@ -122,12 +123,12 @@ class StudentService(object):
                 'car_id': student.car_id,
                 'license_plate_number': student.license_plate_number,
                 'status': student.status,
-                'face_status': feature_obj.status,
+                'face_status': face_status,
                 'audio_status': audio_obj.status,
                 'school_name': StudentService._get_school_cache(student.school_id),
                 'grade_name': grade[student.grade_id],
                 'class_name': classes[student.class_id],
-                'oss_url': feature_obj.oss_url
+                'oss_url': face.oss_url
             })
         return {'results': data, 'count': count}
 
@@ -261,8 +262,8 @@ class StudentService(object):
         if nickname:
             student.nickname = nickname
             face.nickname = nickname
+            face.status = 2
             # 更新语音
-            #producer.create_video(face.id, student.stu_no, student.nickname)
             audio = db.session.query(Audio).filter(
                 Audio.face_id == face.id).first()
             audio.nickname = nickname
