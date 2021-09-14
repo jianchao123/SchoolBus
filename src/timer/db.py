@@ -109,7 +109,7 @@ class PgsqlDbUtil(object):
                     sql += k + "=" + v + ","
                 elif "TO_TIMESTAMP" in v:
                     sql += k + "=" + v + ","
-                elif "NULL" in v:
+                elif "NULL" == v:
                     sql += k + "=" + v + ","
                 else:
                     sql += k + "=" + "'" + v + "'" + ","
