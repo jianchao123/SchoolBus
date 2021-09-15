@@ -606,10 +606,12 @@ WHERE F.status=4 AND stu.status=1 AND stu.car_id={} AND ft.mfr_id={}
         all_heartbeat_val = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         rds_conn.hset(RedisKey.ALL_HEARTBEAT_HASH, device_name, all_heartbeat_val)
 
-        if cur_version < RedisKey.APPOINT_VERSION_NO:
-            obj = rds_conn.hget(RedisKey.MFR_DEVICE_HASH, device_name)
-            if obj:
-                self._upgrade_version(device_name, obj)
+        mfr_name = RedisKey.get_device_mfr_name(rds_conn, device_name)
+        version_k = mfr_name + '_VERSION_NO'
+        if cur_version < getattr(RedisKey, version_k):
+            #obj = rds_conn.hget(RedisKey.MFR_DEVICE_HASH, device_name)
+            #if obj:
+            self._upgrade_version(device_name, mfr_name)
 
     @db.transaction(is_commit=True)
     def _update_device(self, pgsql_cur, data):
@@ -634,58 +636,56 @@ WHERE F.status=4 AND stu.status=1 AND stu.car_id={} AND ft.mfr_id={}
         """
         rds_conn = db.rds_conn
 
-        if cur_version == RedisKey.APPOINT_VERSION_NO:
+        device_status = rds_conn.hget(
+            RedisKey.DEVICE_CUR_STATUS, device_name)
+        # 如果没有找到这个设备直接消费掉消息
+        if not device_status:
+            return -10
 
-            device_status = rds_conn.hget(
-                RedisKey.DEVICE_CUR_STATUS, device_name)
-            # 如果没有找到这个设备直接消费掉消息
-            if not device_status:
-                return -10
+        d = {}
 
-            d = {}
+        # 5表示已初始化人员
+        if device_status and int(device_status) == 5:
+            return 0
+        pk, status, version_no, sound_volume, license_plate_number, \
+            device_type, person_limit = \
+            self._get_device_info_data(device_name)
 
-            # 5表示已初始化人员
-            if device_status and int(device_status) == 5:
-                return 0
-            pk, status, version_no, sound_volume, license_plate_number, \
-                device_type, person_limit = \
-                self._get_device_info_data(device_name)
+        # '已创建虚拟设备'状态
+        if status in [1, 2, 3, 4, 5]:
+            d['device_iid'] = shd_devid
 
-            # '已创建虚拟设备'状态
-            if status in [1, 2, 3, 4, 5]:
-                d['device_iid'] = shd_devid
+        # 设备为生成特征值设备
+        if device_type == 2:
+            license_plate_number = u'生成特征值专用'
+            workmode = 3    # 注册模式
+        else:   # device_type == 1:
+            workmode = 0    # 车载模式
+        # '已关联车辆'状态
+        if status == 2:
+            d['status'] = 3   # 已设置工作模式
+            print u"设置工作模式"
+            person_limit = int(person_limit) if person_limit else 40
+            self._set_device_work_mode(
+                device_name, license_plate_number, sound_volume,
+                workmode, person_limit)
+            rds_conn.hset(RedisKey.DEVICE_CUR_STATUS, device_name, 3)
+        elif status == 3:       # 已设置工作模式
+            d['status'] = 4     # 设置oss信息
+            print u"设置oss信息"
+            self._set_oss_info(device_name)
+            rds_conn.hset(RedisKey.DEVICE_CUR_STATUS, device_name, 4)
+        elif status == 4:       # 设置oss信息
+            d['status'] = 5     # 初始人员
+            d['device_iid'] = shd_devid
+            print u"初始化人员"
 
-            # 设备为生成特征值设备
-            if device_type == 2:
-                license_plate_number = u'生成特征值专用'
-                workmode = 3    # 注册模式
-            else:   # device_type == 1:
-                workmode = 0    # 车载模式
-            # '已关联车辆'状态
-            if status == 2:
-                d['status'] = 3   # 已设置工作模式
-                print u"设置工作模式"
-                person_limit = int(person_limit) if person_limit else 40
-                self._set_device_work_mode(
-                    device_name, license_plate_number, sound_volume,
-                    workmode, person_limit)
-                rds_conn.hset(RedisKey.DEVICE_CUR_STATUS, device_name, 3)
-            elif status == 3:       # 已设置工作模式
-                d['status'] = 4     # 设置oss信息
-                print u"设置oss信息"
-                self._set_oss_info(device_name)
-                rds_conn.hset(RedisKey.DEVICE_CUR_STATUS, device_name, 4)
-            elif status == 4:       # 设置oss信息
-                d['status'] = 5     # 初始人员
-                d['device_iid'] = shd_devid
-                print u"初始化人员"
+            rds_conn.hset(RedisKey.DEVICE_CUR_STATUS, device_name, 5)
+            self._init_people([], device_name)
 
-                rds_conn.hset(RedisKey.DEVICE_CUR_STATUS, device_name, 5)
-                self._init_people([], device_name)
-
-            if d:
-                d['id'] = pk
-                self._update_device(d)
+        if d:
+            d['id'] = pk
+            self._update_device(d)
 
     @db.transaction(is_commit=False)
     def _get_sound_vol_by_name(self, pgsql_cur, dev_name):

@@ -6,7 +6,8 @@ class RedisKey(object):
     DEVICE_USED = "DEVICE_USED_HASH"
 
     # 设备版本相关
-    APPOINT_VERSION_NO = 264
+    WUHAN_VERSION_NO = 264
+    SHENZHEN_VERSION_NO = 264
     # UPGRADE_JSON = {"url": "https://img.pinganxiaoche.com/apps/1608795066.yaffs2",
     #                 "crc": -2090701703, "cmd": "update",
     #                 "version": 250, "size": 4843776}
@@ -84,6 +85,12 @@ class RedisKey(object):
 
     ALL_HEARTBEAT_HASH = "ALL_HEARTBEAT_HASH"
 
+    @staticmethod
+    def get_device_mfr_name(rds_conn, device_name):
+        mfr_name = rds_conn.hget(RedisKey.MFR_DEVICE_HASH, device_name)
+        if not mfr_name:
+            return "WUHAN"
+        return mfr_name
 
 grade = [u"TBD", u'小班', u'中班', u'大班', u'学前班', u'一年级', u'二年级', u'三年级',
          u'四年级', u'五年级', u'六年级']

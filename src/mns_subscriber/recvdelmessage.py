@@ -64,7 +64,8 @@ class ReceiveMessage(object):
                             jdata['devtime']).strftime('%Y-%m-%d %H:%M:%S')))
                     acs_manager.check_version(
                         dev_name, jdata['version'], jdata['devtime'])
-                    if jdata['version'] == RedisKey.APPOINT_VERSION_NO:
+                    # 以下业务版本最低264
+                    if jdata['version'] >= 264:
                         ret = acs_manager.init_device_params(
                             jdata['version'], dev_name, jdata['devtime'],
                             jdata['shd_devid'], jdata['gps'])
