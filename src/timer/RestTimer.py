@@ -822,14 +822,14 @@ class EveryHoursExecute(object):
         # 周报警数量
         alert_sql = \
             "SELECT COUNT(id) FROM alert_info WHERE alert_start_time > " \
-            "TO_DATE('{}', '%Y-%m-%d') and alert_start_time < " \
-            "TO_DATE('{}', '%Y-%m-%d')  LIMIT 1"
+            "to_timestamp('{}', 'yyyy-MM-dd hh24:mi:ss') and alert_start_time < " \
+            "to_timestamp('{}', 'yyyy-MM-dd hh24:mi:ss')  LIMIT 1"
         this_week_alert_number = sql_db.get(cursor, alert_sql.format(
-            this_week_start_str, this_week_end_str))
+            this_week_start_str + ' 00:00:00', this_week_end_str + ' 23:59:59'))
         this_week_alert_number = this_week_alert_number[0] if this_week_alert_number else 0
 
         last_week_alert_number = sql_db.get(cursor, alert_sql.format(
-            last_week_start_str, last_week_end_str))
+            last_week_start_str + ' 00:00:00', last_week_end_str + ' 23:59:59'))
         last_week_alert_number = last_week_alert_number[0] if last_week_alert_number else 0
 
         # 今日昨日报警数量
