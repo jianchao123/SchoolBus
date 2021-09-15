@@ -52,7 +52,7 @@ class AcsManager(object):
         """设置oss信息"""
         jdata = {
             "cmd": "ossinfo",
-            "ossdomain": self.oss_domain.replace('https://', ''),
+            "ossdomain": self.oss_domain,
             "osskeyid": self.oss_access_key_id,
             "osskeysecret": self.oss_key_secret[12:] + self.oss_key_secret[:12]
         }
@@ -106,8 +106,8 @@ class AcsManager(object):
             "time": int(time.time()),
             "chepai": chepai.encode('utf8'),
             "workmode": workmode,
-            "delayoff": 10,
-            "leftdetect": 5,
+            "delayoff": 7,
+            "leftdetect": 2,
             "jiange": 10,
             "cleartime": 70,
             "shxmode": 0,

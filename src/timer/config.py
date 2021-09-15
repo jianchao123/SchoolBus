@@ -15,7 +15,7 @@ if env == "TEST":
     DeviceSecret = 'bmq66tsx0OGju0CGqeYjzCTYlwA454j0'
 
     # OSS
-    OSSDomain = 'http://cdbus-dev.oss-cn-shanghai.aliyuncs.com'
+    OSSDomain = 'cdbus-dev.oss-cn-shanghai.aliyuncs.com'
     OSSAccessKeyId = 'LTAIWE5CGeOiozf7'
     OSSAccessKeySecret = 'IGuoRIxwMlPQqJ9ujWyTvSq2em4RDj'
     OSSEndpoint = ''
@@ -61,7 +61,7 @@ elif env == "PRO":
     DeviceSecret = 'e2245121d52abc850b2fc220f937f512'
 
     # OSS
-    OSSDomain = 'http://cdbus-pro.oss-cn-shanghai.aliyuncs.com'
+    OSSDomain = 'cdbus-pro.oss-cn-shanghai.aliyuncs.com'
     OSSAccessKeyId = 'LTAIWE5CGeOiozf7'
     OSSAccessKeySecret = 'IGuoRIxwMlPQqJ9ujWyTvSq2em4RDj'
     OSSEndpoint = 'http://oss-cn-shanghai.aliyuncs.com'

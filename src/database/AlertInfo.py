@@ -15,7 +15,7 @@ class AlertInfo(db.Model):
     worker_name_2 = db.Column(db.String(16))
     company_name = db.Column(db.String(16))     # 工作人员公司名字
     people_number = db.Column(db.Integer)       # 报警人员数量
-    people_info = db.Column(db.String(128))     # 报警人员信息
+    people_info = db.Column(db.String(2048))     # 报警人员信息
     first_alert = db.Column(db.Integer)         # 第一次报警 1是 0否
     second_alert = db.Column(db.Integer)        # 第二次报警 1是 0否
     alert_start_time = db.Column(db.DateTime, default=datetime.now) # 报警开始时间

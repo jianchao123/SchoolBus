@@ -119,7 +119,6 @@ class PgsqlDbUtil(object):
                 ",".join(data["id"]))
         else:
             sql = sql[:-1] + " WHERE id = {}".format(data["id"])
-        print sql
         pgsql_cur.execute(sql)
 
     @staticmethod

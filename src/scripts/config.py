@@ -1,6 +1,6 @@
 # coding=utf-8
 
-env = "PRO"
+env = "DEV"
 if env == "TEST":
     # 物联网
     Productkey = 'a1vperyb2Cg'
@@ -9,7 +9,7 @@ if env == "TEST":
     DeviceSecret = 'bmq66tsx0OGju0CGqeYjzCTYlwA454j0'
 
     # OSS
-    OSSDomain = 'http://cdbus-dev.oss-cn-shanghai.aliyuncs.com'
+    OSSDomain = 'cdbus-dev.oss-cn-shanghai.aliyuncs.com'
     OSSAccessKeyId = 'LTAIWE5CGeOiozf7'
     OSSAccessKeySecret = 'IGuoRIxwMlPQqJ9ujWyTvSq2em4RDj'
 
@@ -60,7 +60,7 @@ else:
     DeviceSecret = 'bmq66tsx0OGju0CGqeYjzCTYlwA454j0'
 
     # OSS
-    OSSDomain = 'http://cdbus-dev.oss-cn-shanghai.aliyuncs.com'
+    OSSDomain = 'cdbus-dev.oss-cn-shanghai.aliyuncs.com'
     OSSAccessKeyId = 'LTAIWE5CGeOiozf7'
     OSSAccessKeySecret = 'IGuoRIxwMlPQqJ9ujWyTvSq2em4RDj'
     OSSEndpoint = 'http://oss-cn-shanghai.aliyuncs.com'

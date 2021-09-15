@@ -48,6 +48,7 @@ class ReceiveMessage(object):
             return
 
         acs_manager.check_cur_stream_no(dev_name, jdata)
+        print jdata
         if 'cmd' in jdata:
             cmd = jdata['cmd']
             if cmd == 'syndata':

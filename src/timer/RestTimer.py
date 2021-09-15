@@ -53,7 +53,7 @@ class GenerateAAC(object):
             oss_key = 'audio/' + row[1] + '.aac'
             try:
                 aip_word_to_audio(row[2], oss_key)
-                aac_url_str = config.OSSDomain.replace('https', 'http') + '/' + oss_key
+                aac_url_str = "http://" + config.OSSDomain + '/' + oss_key
                 d = {
                     'id': row[0],
                     'aac_url': aac_url_str,
@@ -574,7 +574,7 @@ class FromOssQueryFace(object):
             intersection = intersection[:1000]
 
             for row in intersection:
-                oss_url_str = config.OSSDomain + "/person/face/" + row + ".png"
+                oss_url_str = 'http://' + config.OSSDomain + "/person/face/" + row + ".png"
                 d = {
                     'id': stu_no_pk_map[row],
                     'oss_url': oss_url_str,
