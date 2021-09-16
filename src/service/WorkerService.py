@@ -1,12 +1,12 @@
 # coding:utf-8
 import xlrd
-import sys
-import json
+import time
 import inspect
 from sqlalchemy import func, or_
 from sqlalchemy.exc import SQLAlchemyError
 from database.db import db
 from database.Worker import Worker
+from database.Device import Device
 from database.Car import Car
 from utils import defines
 from msgqueue import producer
@@ -146,6 +146,16 @@ class WorkerService(object):
             worker.duty_id = duty_id
 
         if car_id:
+            if worker.car_id:
+                cur_device = db.session.query(Device).filter(
+                    Device.car_id == worker.car_id).first()
+                if cur_device:
+                    device_timestamp = cache.hget(
+                        defines.RedisKey.DEVICE_CUR_TIMESTAMP, cur_device.device_name)
+                    if device_timestamp and \
+                            (int(time.time()) - int(device_timestamp) < 120):
+                        return -15
+
             if car_id == -10:
                 worker.car_id = None
                 worker.license_plate_number = None
