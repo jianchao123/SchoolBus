@@ -101,6 +101,7 @@ class CheckAccClose(object):
                      time_diff, face_ids, periods):
         pgsql_db = db.PgsqlDbUtil
 
+        # TODO 缓存
         sql = "SELECT CAR.license_plate_number,CAR.company_name," \
               "CAR.id FROM device D INNER JOIN car CAR ON " \
               "CAR.id=D.car_id WHERE D.device_name='{}' LIMIT 1"
@@ -131,6 +132,8 @@ class CheckAccClose(object):
                     pgsql_cur, get_alert_info_sql.format(periods))
                 if alert_info:
                     return
+
+                # TODO 设备启动时缓存工作人员信息
                 # 工作人员
                 sql = "SELECT id,nickname,duty_id,open_id FROM worker " \
                       "WHERE car_id={}".format(car_id)
@@ -197,7 +200,7 @@ class CheckAccClose(object):
                     'first_alert': 1,
                     'second_alert': 0,
                     'alert_start_time': 'NOW()',
-                    'gps': current_gps,
+                    'gps': current_gps[:30],
                     'status': 1,         # 正在报警
                     'periods': periods,
                     'stu_ids': ','.join(stu_id_list)
@@ -242,6 +245,7 @@ class CheckAccClose(object):
                         send_msg_student_info.append(row.split(",")[0])
                 license_plate_number = result[4]
 
+                # TODO 设备启动时缓存工作人员信息
                 sql = "SELECT duty_id,open_id FROM worker " \
                       "WHERE car_id={}".format(car_id)
                 results = pgsql_db.query(pgsql_cur, sql)

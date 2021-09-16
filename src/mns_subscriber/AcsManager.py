@@ -203,19 +203,19 @@ class AcsManager(object):
         return d['driver_name'], d['zgy_name'], \
                d['driver_mobile'], d['zgy_mobile']
 
-    @staticmethod
-    def _get_school_cache(pgsql_db, pgsql_cur, redis_db, school_id):
-        school_name = \
-            redis_db.hget(RedisKey.CACHE_SCHOOL_NAME_DATA, str(school_id))
-        if not school_name:
-            sql = "SELECT school_name FROM school " \
-                  "WHERE id={} LIMIT 1".format(school_id)
-            school_name = pgsql_db.get(pgsql_cur, sql)[0]
-            redis_db.hset(RedisKey.CACHE_SCHOOL_NAME_DATA,
-                          str(school_id), school_name)
-            return school_name
-        else:
-            return school_name
+    # @staticmethod
+    # def _get_school_cache(pgsql_db, pgsql_cur, redis_db, school_id):
+    #     school_name = \
+    #         redis_db.hget(RedisKey.CACHE_SCHOOL_NAME_DATA, str(school_id))
+    #     if not school_name:
+    #         sql = "SELECT school_name FROM school " \
+    #               "WHERE id={} LIMIT 1".format(school_id)
+    #         school_name = pgsql_db.get(pgsql_cur, sql)[0]
+    #         redis_db.hset(RedisKey.CACHE_SCHOOL_NAME_DATA,
+    #                       str(school_id), school_name)
+    #         return school_name
+    #     else:
+    #         return school_name
 
     @db.transaction(is_commit=True)
     def add_order(self, pgsql_cur, fid, gps_str, add_time, dev_name, cnt):

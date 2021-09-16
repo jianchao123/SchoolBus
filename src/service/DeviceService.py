@@ -155,9 +155,10 @@ class DeviceService(object):
                 if device.status == 1:
                     device.status = 2
 
-                # 修改设备关联的车辆需要删除缓存
-                cache.hdel(defines.RedisKey.CACHE_CAR_DATA,
-                           device.device_name)
+            # 修改设备关联的车辆需要删除缓存
+            # cache.hdel(defines.RedisKey.CACHE_CAR_DATA,
+            #            device.device_name)
+            cache.delete(defines.RedisKey.CACHE_CAR_DATA)
         # 查看设备是否在machine表
         from database.Machine import Machine
         machine = db.session.query(Machine).filter(

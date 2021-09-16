@@ -219,7 +219,8 @@ class CarService(object):
                                        int(sound_vol), workmode,
                                        person_limit)
                 # 修改车牌需要删除车辆数据缓存
-                cache.hdel(defines.RedisKey.CACHE_CAR_DATA, device.device_name)
+                # cache.hdel(defines.RedisKey.CACHE_CAR_DATA, device.device_name)
+                cache.delete(defines.RedisKey.CACHE_CAR_DATA)
 
         if company_name:
             car.company_name = company_name

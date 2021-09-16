@@ -113,7 +113,7 @@ class WorkerService(object):
             return -1
 
         # 修改工作人员需要删除缓存
-        cache.hdel(defines.RedisKey.CACHE_STAFF_DATA, str(worker.car_id))
+        cache.delete(defines.RedisKey.CACHE_STAFF_DATA)
 
         if emp_no:
             cnt = db.session.query(Worker).filter(
