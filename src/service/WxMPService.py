@@ -326,10 +326,13 @@ class WxMPService(object):
                 device = db.session.query(Device).join(
                     Car, Car.id == Device.car_id).filter(
                     Car.id == order.car_id).first()
-                # 获取设备gps
-                device_gps = cache.hget(
-                    defines.RedisKey.DEVICE_CUR_GPS, device.device_name)
-                d['gps'] = device_gps
+                if device:
+                    # 获取设备gps
+                    device_gps = cache.hget(
+                        defines.RedisKey.DEVICE_CUR_GPS, device.device_name)
+                    d['gps'] = device_gps
+                else:
+                    d['gps'] = order.gps
                 d['staff'] = '驾驶员 ({} {})|照管员 ({} {})'.format(
                     order.driver_name, order.driver_mobile,
                     order.zgy_name, order.zgy_mobile)
