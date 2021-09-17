@@ -99,6 +99,10 @@ elif env == "PRO":
 
     MP_PARENTS_TEMPLATE_ID = "aRznTze3zLqP9mSoOh45DhrAgL-OOz3ut2bE0c5TwpM"
     MP_STAFF_TEMP_ID = "NlJspxFFiPl4lH8gjf-pKU-dZiMuFYgdSJ4wSpmEesg"
+
+    # 监控中心
+    SC_URL = "https://car.vcolco.com/api/paas-trans-school-bus/school/bus/report"
+
     # MP_PARENTS_REDIRECT_URL = \
     #     "http://cdmp.wgxing.com/static/push.html?order_id={}"
     # MP_STAFF_REDIRECT_URL = \
@@ -148,6 +152,9 @@ else:
     MP_APP_SECRET = 'bf3e50ed4b549fc007d5ad39634cdc4d'
     MP_TOKEN = 'gK9gY3cV2bM6pH9gF7vJ5uC8vN9cI0cL'
     MP_ENCODING_AES_KEY = 'CAmGrrm1rJ0HqgcbIBQbhKAHLUKGGbv3RJTTFnixTaC'
+
+    # 监控中心
+    SC_URL = ""
 
 redis_conf = dict(host="127.0.0.1", port=6379, db=0, decode_responses=True)
 pgsql_conf = dict(host=pgsql_host, database=pgsql_db, port=pgsql_port,

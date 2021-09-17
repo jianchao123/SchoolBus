@@ -18,6 +18,7 @@ import hashlib
 import base64
 import requests
 from datetime import datetime
+import config
 
 
 project_src_dir = os.path.dirname(os.path.realpath(__file__))
@@ -26,7 +27,6 @@ sys.path.insert(0, project_src_dir)
 from timer import db
 from timer.define import RedisKey
 
-url = "https://car.vcolco.com/api/paas-trans-school-bus/school/bus/report"
 access_key_id = "hnxccs8865"
 access_key_secret = "3422af52-9905-4965-b678-18c0a99fc106"
 access_token = "76D1B5030005F6474A3230013A7B9884"
@@ -80,7 +80,7 @@ def send_order():
             raw_data = raw_data[1]
             try:
                 raw_data = raw_data.encode('utf8')
-                res = requests.post(url, raw_data, headers=get_header(raw_data))
+                res = requests.post(config.SC_URL, raw_data, headers=get_header(raw_data))
                 db.logger.error(res.content)
                 if res.status_code == 200:
                     res_data = json.loads(res.content)

@@ -66,12 +66,7 @@ class GenerateAAC(object):
                     'status': 4  # 生成失败
                 }
                 pgsql_db.update(pgsql_cur, d, table_name='audio')
-                #
-                # data = {
-                #     'id': row[3],
-                #     'status': 5  # 预期数据准备失败
-                # }
-                # pgsql_db.update(pgsql_cur, data, table_name='face')
+
         end = time.time()
         #print u"{}个aac总共用时{}s".format(len(results), end - begin)
 
@@ -299,15 +294,6 @@ class DeviceMfrList(object):
             device_name = row[2]
             mfr_id = row[1]
             rds_conn.hset(RedisKey.MFR_GENERATE_DEVICE_HASH, device_name, str(mfr_id))
-        #     if str(mfr_id) in d:
-        #         device_name_list = d[str(mfr_id)]
-        #         if device_name not in device_name_list:
-        #             device_name_list.append(device_name)
-        #     else:
-        #         d[str(mfr_id)] = [device_name]
-        #
-        # for k, v in d.items():
-        #     rds_conn.hset(RedisKey.MFR_GENERATE_DEVICE_HASH, k, ','.join(v))
 
 
 class GenerateFeature(object):
@@ -464,19 +450,12 @@ class EveryMinuteExe(object):
 
         cur_date = datetime.now().strftime('%Y-%m-%d')
 
-        # # 定时删除车内人员
-        # if datetime.now().hour in (12, 23):
-        #     student_set_key = rds_conn.keys(RedisKey.STUDENT_SET.format('*'))
-        #     for row in student_set_key:
-        #         # 删除车内人员
-        #         rds_conn.delete(row)
         # 超过70分钟清除student_set
         timestatmp_d = rds_conn.hgetall(RedisKey.DEVICE_CUR_TIMESTAMP)
         for dev_name, dev_timestamp in timestatmp_d.items():
             if int(time.time()) > (int(dev_timestamp) + 60*70):
                 print "clear student set"
                 rds_conn.delete(RedisKey.STUDENT_SET.format(dev_name))
-        #print "------------------------------clear student set"
 
         # 过期人脸更新状态
         expire_sql = """SELECT F.id FROM student AS STU 
@@ -546,7 +525,7 @@ class FromOssQueryFace(object):
     @db.transaction(is_commit=True)
     def from_oss_get_face(self, pgsql_cur):
         """从oss获取人脸"""
-        #print u"==================从oss获取人脸====================="
+
         start = time.time()
         # 获取未绑定的人脸
         mysql_db = db.PgsqlDbUtil
@@ -626,11 +605,6 @@ class HeartBeat30s(object):
         rds_conn = db.rds_conn
         if not rds_conn.get("HEART_BEAT"):
             return
-        # from gevent import monkey
-        # monkey.patch_all()
-        # import gevent
-        # import urllib2
-
         start = time.time()
         func_list = []
         prefix = 'dev_'
@@ -981,7 +955,6 @@ class UploadAlarmData(object):
 
     access_key_id = "hnxccs8865"
     access_key_secret = "3422af52-9905-4965-b678-18c0a99fc106"
-    url = "https://car.vcolco.com/api/paas-trans-school-bus/school/bus/report"
     access_token = "76D1B5030005F6474A3230013A7B9884"
 
     @staticmethod
@@ -1090,7 +1063,7 @@ class UploadAlarmData(object):
                     UploadAlarmData.access_key_id, password_digest, nonce, created)
             headers['ACCESS_TOKEN'] = UploadAlarmData.access_token
 
-            res = requests.post(UploadAlarmData.url, data, headers=headers)
+            res = requests.post(config.SC_URL, data, headers=headers)
             #print res.content
             if res.status_code == 200:
                 # 上传成功修改redis  key
