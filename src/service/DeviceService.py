@@ -131,11 +131,12 @@ class DeviceService(object):
 
         if car_id:
 
-            device_timestamp = cache.hget(
-                defines.RedisKey.DEVICE_CUR_TIMESTAMP, device.device_name)
-            if device_timestamp and \
-                    (int(time.time()) - int(device_timestamp) < 120):
-                return -14
+            if device.car_id:
+                device_timestamp = cache.hget(
+                    defines.RedisKey.DEVICE_CUR_TIMESTAMP, device.device_name)
+                if device_timestamp and \
+                        (int(time.time()) - int(device_timestamp) < 120):
+                    return -14
             # 清空
             if car_id == -10:
                 device.car_id = None
