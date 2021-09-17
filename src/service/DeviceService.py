@@ -24,7 +24,7 @@ from utils.tools import get_frame_name_param
 class DeviceService(object):
 
     @staticmethod
-    def device_list(device_iid, license_plate_number, status, page, size):
+    def device_list(device_iid, license_plate_number, status, binding, page, size):
         """
         设备id  车牌号 设备状态
         """
@@ -52,6 +52,13 @@ class DeviceService(object):
                         devices.append(device_name)
 
             query = query.filter(Device.device_name.in_(devices))
+        if binding:
+            binding = int(binding)
+            if binding == 1:
+                query = query.filter(Device.car_id.isnot(None))
+            elif binding == 2:
+                query = query.filter(Device.car_id.is_(None))
+
         query = query.filter(Device.status != 10)
 
         count = query.count()

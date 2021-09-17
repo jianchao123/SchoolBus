@@ -44,6 +44,10 @@ def car_list(user_id, data):
         in: query
         type: integer
         description: 是否在线 1上线 2下线
+      - name: scheduling
+        in: query
+        type: integer
+        description: 是否排班 1是 2否
       - name: status
         in: query
         type: integer
@@ -105,7 +109,8 @@ def car_list(user_id, data):
     status = data.get('status', None)
     page = int(data['page'])
     size = int(data['size'])
-    return CarService.car_list(query_str, is_online, status, page, size)
+    scheduling = data.get('scheduling', None)
+    return CarService.car_list(query_str, is_online, scheduling, status, page, size)
 
 
 @bp.route('/add', methods=['POST'])

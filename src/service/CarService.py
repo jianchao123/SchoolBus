@@ -6,6 +6,7 @@ import time
 import inspect
 from datetime import datetime
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy import func
 from sqlalchemy import or_
 from database.db import db
 from database.Car import Car
@@ -36,7 +37,7 @@ class CarService(object):
         return {'results': d, 'count': 0}
 
     @staticmethod
-    def car_list(query_str, is_online, status, page, size):
+    def car_list(query_str, is_online, scheduling, status, page, size):
         db.session.commit() # SELECT
         cur_timestamp = int(time.time())
         offset = (page - 1) * size
@@ -69,6 +70,16 @@ class CarService(object):
                 if row.car_id:
                     car_ids.append(row.car_id)
             query = query.filter(Car.id.in_(car_ids))
+        if scheduling:
+            worker_group = db.session.query(
+                Worker.car_id, func.count(Worker.id)).filter(
+                Worker.status == 1).group_by(Worker.car_id).having(
+                func.count(Worker.id) > 1).all()
+            scheduling_cars = [row[0] for row in worker_group]
+            if int(scheduling) == 1:
+                query = query.filter(Car.id.in_(scheduling_cars))
+            if int(scheduling) == 2:
+                query = query.filter(Car.id.notin_(scheduling_cars))
 
         if status:
             status = int(status)

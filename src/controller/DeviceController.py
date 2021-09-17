@@ -44,6 +44,10 @@ def device_list(user_id, data):
         in: query
         type: string
         description: 车牌号
+      - name: binding
+        in: query
+        type: integer
+        description: 1已绑定车辆 2未绑定车辆
       - name: status
         in: query
         type: integer
@@ -107,11 +111,12 @@ def device_list(user_id, data):
     """
     device_iid = data.get('device_iid', None)
     license_plate_number = data.get('license_plate_number', None)
+    binding = data.get('binding', None)
     status = data.get('status', None)
     page = int(data['page'])
     size = int(data['size'])
     return DeviceService.device_list(device_iid, license_plate_number,
-                                     status, page, size)
+                                     status, binding, page, size)
 
 
 @bp.route('/update/<int:pk>', methods=['POST'])
