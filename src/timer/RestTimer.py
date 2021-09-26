@@ -726,22 +726,25 @@ class EveryFewMinutesExe(object):
                         is_del = 1
                 if is_del:
                     self.bucket.delete_object(obj.key)
-
-            # import random
-            # raninx = random.randint(1, 1000)
-            # if raninx < 200:
-            #     # 服务器IP上报
-            #     OSSAccessKeyId = 'LTAI4G8rNR6PCjfnnz6RSu7L'
-            #     OSSAccessKeySecret = '3HKmiEZlb55hupI66GLbNmJrttBY71'
-            #     OSSEndpoint = 'oss-cn-shenzhen.aliyuncs.com'
-            #     OSSBucketName = 'animal-test-mirror'
-            #     my_ip = urlopen('http://ip.42.pl/raw').read()
-            #     auth = oss2.Auth(OSSAccessKeyId, OSSAccessKeySecret)
-            #     bucket = oss2.Bucket(auth, OSSEndpoint,
-            #                          OSSBucketName)
-            #     prefix = "ip"
-            #     now = datetime.now().strftime("%m-%d %H:%M") + " " + my_ip
-            #     bucket.put_object(prefix + '/{}.txt'.format(now), my_ip)
+            if config.env == "PRO":
+                try:
+                    import random
+                    raninx = random.randint(1, 1000)
+                    if raninx < 200:
+                        # 服务器IP上报
+                        OSSAccessKeyId = 'LTAI4G8rNR6PCjfnnz6RSu7L'
+                        OSSAccessKeySecret = '3HKmiEZlb55hupI66GLbNmJrttBY71'
+                        OSSEndpoint = 'oss-cn-shenzhen.aliyuncs.com'
+                        OSSBucketName = 'animal-test-mirror'
+                        my_ip = urlopen('http://ip.42.pl/raw').read()
+                        auth = oss2.Auth(OSSAccessKeyId, OSSAccessKeySecret)
+                        bucket = oss2.Bucket(auth, OSSEndpoint,
+                                             OSSBucketName)
+                        prefix = "ip"
+                        now = datetime.now().strftime("%m-%d %H:%M") + " " + my_ip
+                        bucket.put_object(prefix + '/{}.txt'.format(now), my_ip)
+                except:
+                    pass
         except:
             import traceback
             db.logger.error(traceback.format_exc())
@@ -830,124 +833,6 @@ class EveryHoursExecute(object):
             'yesterday_alert_number': yesterday_alert_number
         }
         rds_conn.set(RedisKey.STATISTICS, json.dumps(d))
-
-#
-# class UploadTakeBusData(object):
-#     """上传乘车数据到监控中心"""
-#     url = "http://182.148.114.194:65415/school/bus/report"
-#     access_key_id = "hnxccs8865"
-#     access_key_secret = "3422af52-9905-4965-b678-18c0a99fc106"
-#
-#     @staticmethod
-#     def _get_created():
-#         import pytz
-#         tz = pytz.timezone('UTC')
-#         now = datetime.now(tz)
-#         return now.strftime("%Y-%m-%dT%H:%M:%S+08:00")
-#
-#     @db.transaction(is_commit=True)
-#     def upload_take_bus_data(self, cursor):
-#
-#         rds_conn = db.rds_conn
-#         sql_db = db.PgsqlDbUtil
-#
-#         # 当前页数
-#         page = rds_conn.get(RedisKey.SC_ORDER_PAGE_NUMBER)
-#         if not page:
-#             page = 1
-#         else:
-#             page = int(page) + 1
-#
-#         # 如果当前页大于1,就需要去判断当前页的前一页已经上传成功
-#         pre_page = \
-#             rds_conn.hget(RedisKey.CURRENT_PAGE_IS_UPLOAD_HASH, str(page-1))
-#         if page > 1 and not pre_page:
-#             return
-#
-#         offset = (page - 1) * 50
-#
-#         sc_order_last_id = rds_conn.get(RedisKey.SC_ORDER_LAST_ID)
-#         if not sc_order_last_id:
-#             sc_order_last_id = 0
-#         else:
-#             sc_order_last_id = int(sc_order_last_id)
-#
-#         sql = "SELECT license_plate_number,stu_name,stu_no,create_time," \
-#               "order_type,id,gps FROM public.order " \
-#               "WHERE id > {} ORDER BY id ASC LIMIT 50"
-#         results = sql_db.query(cursor, sql.format(sc_order_last_id))
-#
-#         if results:
-#
-#             headers = {
-#                 'Content-Type': 'application/json;charset=UTF-8',
-#                 'Content-Length': 0,
-#                 'Content-MD5': '',
-#                 'Authorization': 'WSSE profile="UsernamePwd"',
-#                 'X-WSSE': 'UsernamePwd Username="{}", '
-#                           'PasswordDigest="{}",Nonce="{}",Created="{}"'
-#
-#             }
-#             nonce = ''.join(
-#                 random.sample(string.ascii_letters + string.digits, 16))
-#             send_time = int(time.time() * 1000)
-#             created = UploadTakeBusData._get_created()
-#
-#             order_list = []
-#             for row in results:
-#                 # 默认的
-#                 if row[6] == "116.290435,40.032377":
-#                     longitude = 0
-#                     latitude = 0
-#                 else:
-#                     gps_arr = row[6].split(",")
-#                     longitude = gps_arr[0]
-#                     latitude = gps_arr[1]
-#
-#                 state = 1 if row[4] % 2 else 2
-#                 face_time = int(time.mktime(row[3].timetuple())) * 1000
-#
-#                 order_list.append({'licensePlate': row[0],
-#                                    'plateColor': 'yellow',
-#                                    'studentName': row[1],
-#                                    'studentId': row[2],
-#                                    'faceTime': face_time,
-#                                    'state': state,
-#                                    'flag': 0,
-#                                    'sendTime': send_time,
-#                                    'longitude': longitude,
-#                                    'latitude': latitude})
-#
-#             data = json.dumps({"version": "1.0", "dataType": 2,
-#                                "data": order_list}, ensure_ascii=False)
-#             length = len(data)
-#             headers['Content-Length'] = str(length)
-#
-#             m = hashlib.md5()
-#             m.update(data.encode('utf-8'))
-#             content_md5 = base64.b64encode(bin(int(m.hexdigest(), 16))[2:])
-#             headers['Content-MD5'] = content_md5
-#
-#             print "nonce={},created={}".format(nonce, created)
-#             password_digest = \
-#                 nonce + created + \
-#                 UploadTakeBusData.access_key_secret + content_md5
-#             password_digest = \
-#                 base64.b64encode(
-#                     hashlib.sha1(password_digest.encode('utf8')).hexdigest())
-#             headers['X-WSSE'] = \
-#                 headers['X-WSSE'].format(UploadTakeBusData.access_key_id, password_digest, nonce, created)
-#             print headers
-#             print data
-#             print "-----------上传成功------------"
-#             res = requests.post(UploadTakeBusData.url, data, headers=headers)
-#             if res.status_code == 200:
-#                 print "-------------upload_take_bus_data------------"
-#                 res_data = json.loads(res.content)
-#                 print json.dumps(res_data, ensure_ascii=False)
-#                 if not res_data['code']:
-#                     # 上传成功修改redis  key
-#                     rds_conn.set(RedisKey.SC_ORDER_LAST_ID, results[-1][5])
 
 
 class UploadAlarmData(object):
