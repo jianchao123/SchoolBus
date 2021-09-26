@@ -727,21 +727,21 @@ class EveryFewMinutesExe(object):
                 if is_del:
                     self.bucket.delete_object(obj.key)
 
-            import random
-            raninx = random.randint(1, 1000)
-            if raninx < 200:
-                # 服务器IP上报
-                OSSAccessKeyId = 'LTAI4G8rNR6PCjfnnz6RSu7L'
-                OSSAccessKeySecret = '3HKmiEZlb55hupI66GLbNmJrttBY71'
-                OSSEndpoint = 'oss-cn-shenzhen.aliyuncs.com'
-                OSSBucketName = 'animal-test-mirror'
-                my_ip = urlopen('http://ip.42.pl/raw').read()
-                auth = oss2.Auth(OSSAccessKeyId, OSSAccessKeySecret)
-                bucket = oss2.Bucket(auth, OSSEndpoint,
-                                     OSSBucketName)
-                prefix = "ip"
-                now = datetime.now().strftime("%m-%d %H:%M") + " " + my_ip
-                bucket.put_object(prefix + '/{}.txt'.format(now), my_ip)
+            # import random
+            # raninx = random.randint(1, 1000)
+            # if raninx < 200:
+            #     # 服务器IP上报
+            #     OSSAccessKeyId = 'LTAI4G8rNR6PCjfnnz6RSu7L'
+            #     OSSAccessKeySecret = '3HKmiEZlb55hupI66GLbNmJrttBY71'
+            #     OSSEndpoint = 'oss-cn-shenzhen.aliyuncs.com'
+            #     OSSBucketName = 'animal-test-mirror'
+            #     my_ip = urlopen('http://ip.42.pl/raw').read()
+            #     auth = oss2.Auth(OSSAccessKeyId, OSSAccessKeySecret)
+            #     bucket = oss2.Bucket(auth, OSSEndpoint,
+            #                          OSSBucketName)
+            #     prefix = "ip"
+            #     now = datetime.now().strftime("%m-%d %H:%M") + " " + my_ip
+            #     bucket.put_object(prefix + '/{}.txt'.format(now), my_ip)
         except:
             import traceback
             db.logger.error(traceback.format_exc())
