@@ -429,7 +429,7 @@ class FaceGenerateIsfinish(object):
             # 是否生成失败
             feature_fail_cnt = 0
             for feature_row in feature_set:
-                # 所有feature都是成功状态
+                # 失败状态
                 if feature_row[0] == 4:
                     feature_fail_cnt += 1
             if feature_fail_cnt or audio_row[0] == 4:
