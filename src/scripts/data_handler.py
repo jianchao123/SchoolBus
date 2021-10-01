@@ -188,12 +188,15 @@ class DataHandler(object):
         name = args[1]
 
         # 添加厂商
-        d = {
-            'id': int(pk),
-            'name': name,
-            'status': 1
-        }
-        pgsql_db.insert(pgsql_cur, d, table_name='manufacturer')
+        obj = pgsql_db.get(pgsql_cur, "SELECT id FROM manufacturer WHERE "
+                                      "id={} LIMIT 1".format(pk))
+        if not obj:
+            d = {
+                'id': int(pk),
+                'name': name,
+                'status': 1
+            }
+            pgsql_db.insert(pgsql_cur, d, table_name='manufacturer')
 
         # 添加feature
         face_results = pgsql_db.query(
