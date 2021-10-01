@@ -314,6 +314,34 @@ class DataHandler(object):
             with open(new_path, 'rb') as fileobj:
                 self.bucket.put_object(oss_key, fileobj)
 
+    @db.transaction(is_commit=False)
+    def testtt(self, pgsql_cur):
+        pgsql_db = db.PgsqlDbUtil
+        sql = "select face_id from feature where status=4 order by oss_url desc"
+        results = pgsql_db.query(pgsql_cur, sql)
+        faceids = []
+        for row in results:
+            faceids.append(row[0])
+        faceids = list(set(faceids))
+        print faceids
+        for face_id in faceids:
+            d = {
+                'id': face_id,
+                'status': 2
+            }
+            pgsql_db.update(pgsql_cur, d, table_name='face')
+
+
+            res = pgsql_db.query(pgsql_cur,
+                                 "SELECT id FROM feature WHERE face_id={}".format(face_id))
+            for row in res:
+                d1 = {
+                    'id': row[0],
+                    'status': 1
+                }
+                pgsql_db.update(pgsql_cur, d1, table_name='feature')
+
+
 
 if __name__ == '__main__':
     # data = DataHandler()
