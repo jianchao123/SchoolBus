@@ -314,7 +314,7 @@ class DataHandler(object):
             with open(new_path, 'rb') as fileobj:
                 self.bucket.put_object(oss_key, fileobj)
 
-    @db.transaction(is_commit=False)
+    @db.transaction(is_commit=True)
     def testtt(self, pgsql_cur):
         pgsql_db = db.PgsqlDbUtil
         sql = "select face_id from feature where status=4 order by oss_url desc"
