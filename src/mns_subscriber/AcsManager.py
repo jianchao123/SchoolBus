@@ -107,7 +107,7 @@ class AcsManager(object):
             "chepai": chepai.encode('utf8'),
             "workmode": workmode,
             "delayoff": 7,
-            "leftdetect": 3,
+            "leftdetect": 2,
             "jiange": 10,
             "cleartime": 70,
             "shxmode": 0,
