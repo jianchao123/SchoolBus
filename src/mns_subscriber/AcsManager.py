@@ -711,7 +711,7 @@ WHERE F.status=4 AND stu.status=1 AND stu.car_id={} AND ft.mfr_id={}
 
         # 长时间关机
         if device_timestamp and \
-                int(time.time()) - int(device_timestamp) > 60 * 10 and \
+                int(time.time()) - int(device_timestamp) > 60 * 1 and \
                 (not ret):
             producer.dev_while_list(device_name)
             pk, status, version_no, sound_volume, license_plate_number, \
