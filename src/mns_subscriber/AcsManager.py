@@ -601,7 +601,7 @@ WHERE F.status=4 AND stu.status=1 AND stu.car_id={} AND ft.mfr_id={}
     def check_version(self, device_name, cur_version, dev_time):
         """检查版本号"""
         from mns_subscriber import config
-        config.logger.info('----current version{}----'.format(cur_version))
+        #config.logger.info('----current version{}----'.format(cur_version))
         rds_conn = db.rds_conn
         all_heartbeat_val = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         rds_conn.hset(RedisKey.ALL_HEARTBEAT_HASH, device_name, all_heartbeat_val)
