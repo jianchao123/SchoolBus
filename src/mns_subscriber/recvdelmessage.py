@@ -58,10 +58,10 @@ class ReceiveMessage(object):
                     acs_manager.create_device(jdata['mac'], jdata['shd_devid'])
 
                 else:
-                    config.logger.error("heartbeat--{}--{}--{}".format(
-                        dev_name, jdata['shd_devid'],
-                        datetime.fromtimestamp(
-                            jdata['devtime']).strftime('%Y-%m-%d %H:%M:%S')))
+                    # config.logger.error("heartbeat--{}--{}--{}".format(
+                    #     dev_name, jdata['shd_devid'],
+                    #     datetime.fromtimestamp(
+                    #         jdata['devtime']).strftime('%Y-%m-%d %H:%M:%S')))
                     acs_manager.check_version(
                         dev_name, jdata['version'], jdata['devtime'])
                     # 以下业务版本最低264
