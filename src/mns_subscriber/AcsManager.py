@@ -107,7 +107,7 @@ class AcsManager(object):
             "chepai": chepai.encode('utf8'),
             "workmode": workmode,
             "delayoff": 7,
-            "leftdetect": 2,
+            "leftdetect": 3,
             "jiange": 10,
             "cleartime": 70,
             "shxmode": 0,
@@ -690,10 +690,16 @@ WHERE F.status=4 AND stu.status=1 AND stu.car_id={} AND ft.mfr_id={}
     @db.transaction(is_commit=False)
     def _get_sound_vol_by_name(self, pgsql_cur, dev_name):
         pgsql_db = db.PgsqlDbUtil
-        sql = "SELECT sound_volume,license_plate_number,device_type " \
+        sql = "SELECT sound_volume,car_id,device_type " \
               "FROM device WHERE device_name='{}' LIMIT 1"
+        chepai_sql = "SELECT license_plate_number FROM car WHERE id={} LIMIT 1"
         result = pgsql_db.get(pgsql_cur, sql.format(dev_name))
-        return result[0], result[1], result[2]
+        car_id = result[1]
+        if car_id:
+            chepai = pgsql_db.get(pgsql_cur, chepai_sql.format(car_id))[0]
+        else:
+            chepai = ""
+        return result[0], chepai, result[2]
 
     def device_incar_person_number(self, dev_name, cnt):
         """车内人员数"""
