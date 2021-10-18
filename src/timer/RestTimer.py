@@ -901,7 +901,7 @@ class UploadAlarmData(object):
                 gps_str = row[8]
 
                 # 默认的
-                if gps_str == "116.290435,40.032377":
+                if not gps_str or gps_str == "116.290435,40.032377":
                     longitude = 0
                     latitude = 0
                 else:
