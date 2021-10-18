@@ -134,9 +134,9 @@ class CheckAccClose(object):
                       "WHERE car_id={}".format(car_id)
                 results = pgsql_db.query(pgsql_cur, sql)
                 worker_id_1 = None
-                worker_name_1 = None
+                worker_name_1 = ""
                 worker_id_2 = None
-                worker_name_2 = None
+                worker_name_2 = ""
                 open_id_1 = None
                 open_id_2 = None
                 for row in results:
@@ -185,10 +185,6 @@ class CheckAccClose(object):
                 d = {
                     'car_id': car_id,
                     'license_plate_number': license_plate_number,
-                    'worker_id_1': worker_id_1,
-                    'worker_name_1': worker_name_1,
-                    'worker_id_2': worker_id_2,
-                    'worker_name_2': worker_name_2,
                     'company_name': company_name,
                     'people_number': number,
                     'people_info': people_info,
@@ -200,7 +196,13 @@ class CheckAccClose(object):
                     'periods': periods,
                     'stu_ids': ','.join(stu_id_list)
                 }
-
+                if worker_id_1:
+                    d['worker_id_1'] = worker_id_1
+                    d['worker_name_1'] = worker_name_1
+                if worker_id_2:
+                    d['worker_id_2'] = worker_id_2
+                    d['worker_name_2'] = worker_name_2
+                print d
                 send_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 pgsql_db.insert(pgsql_cur, d, 'alert_info')
                 send_msg_student_info = ','.join(send_msg_student_info)
