@@ -470,6 +470,11 @@ WHERE F.status=4 AND stu.status=1 AND stu.car_id={} AND ft.mfr_id={}
                 producer.device_people_update_msg(
                     add_list, del_list, update_list, device_name)
             print add_list, del_list, update_list
+        else:
+            # 清空设备所有人脸
+            producer.delete_all_face(device_name)
+            # 提示
+            producer.update_chepai(device_name, "没有绑定车辆", 6, 0, 20)
 
     @db.transaction(is_commit=True)
     def create_device(self, pgsql_cur, mac, shd_devid):
@@ -717,7 +722,7 @@ WHERE F.status=4 AND stu.status=1 AND stu.car_id={} AND ft.mfr_id={}
 
         # 长时间关机
         if device_timestamp and \
-                int(time.time()) - int(device_timestamp) > 60 * 10 and \
+                int(time.time()) - int(device_timestamp) > 60 * 1 and \
                 (not ret):
             producer.dev_while_list(device_name)
             pk, status, version_no, sound_volume, license_plate_number, \

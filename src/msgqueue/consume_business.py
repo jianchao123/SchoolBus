@@ -412,6 +412,8 @@ class DeviceConsumer(object):
             self.device_business.dev_white_list_msg(data)
         if routing_suffix == 'clearcnt':
             self.device_business.clear_count(data)
+        if routing_suffix == 'delallface':
+            self.device_business.delete_all_face(data)
         # 消息确认
         ch.basic_ack(delivery_tag=method.delivery_tag)
 
@@ -661,6 +663,14 @@ class DeviceBusiness(object):
         jdata = {
             "cmd": "clearcnt",
             "value": 0
+        }
+        self._pub_msg(device_name, jdata)
+
+    def delete_all_face(self, data):
+        """清空车内人数"""
+        device_name = data['device_name']
+        jdata = {
+            "cmd": "delallface"
         }
         self._pub_msg(device_name, jdata)
 

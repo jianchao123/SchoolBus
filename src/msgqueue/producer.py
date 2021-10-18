@@ -216,6 +216,11 @@ def create_video(face_id, stu_no, nickname):
     _publish_msg('student_exchange', 'student.updatenickname', json.dumps(data))
 
 
+def delete_all_face(device_name):
+    data = {'device_name': device_name}
+    _publish_msg('device_exchange', 'device.delallface', json.dumps(data))
+
+
 # 测试用户创建
 if __name__ == "__main__":
     # generate_create_student_msg(12)

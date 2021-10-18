@@ -7,7 +7,7 @@ class RedisKey(object):
 
     # 设备版本相关
     WUHAN_VERSION_NO = 264
-    SHENZHEN_VERSION_NO = 268
+    SHENZHEN_VERSION_NO = 273
     # UPGRADE_JSON = {"url": "https://img.pinganxiaoche.com/apps/1608795066.yaffs2",
     #                 "crc": -2090701703, "cmd": "update",
     #                 "version": 250, "size": 4843776}
@@ -15,8 +15,8 @@ class RedisKey(object):
         "url": "https://img.pinganxiaoche.com/apps/1624332193.yaffs2",
         "crc": 981940787, "cmd": "update", "version": 264, "size": 4893824}
     SHENZHEN_UPGRADE_JSON = {
-        "url": "http://cdbus-pro.oss-cn-shanghai.aliyuncs.com/upgradepkt/268.tar.gz",
-        "crc": 3088859824, "cmd": "update", "version": 268, "size": 4893824}
+        "url": "http://cdbus-pro.oss-cn-shanghai.aliyuncs.com/upgradepkt/273.tar.gz",
+        "crc": 804933218, "cmd": "update", "version": 273, "size": 4893824}
 
     # 当前设备返回的人员信息是在做什么操作(1更新 2查询设备上人员)
     QUERY_DEVICE_PEOPLE = "QUERY_DEVICE_PEOPLE"
