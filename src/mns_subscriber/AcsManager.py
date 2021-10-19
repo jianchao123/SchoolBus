@@ -436,9 +436,11 @@ INNER JOIN feature AS ft ON ft.face_id=F.id
 INNER JOIN student AS stu ON stu.id=F.stu_id 
 WHERE F.status=4 AND stu.status=1 AND stu.car_id={} AND ft.mfr_id={} 
         """
-        device_sql = "SELECT car_id FROM device " \
+        device_sql = "SELECT car_id,device_type FROM device " \
                      "WHERE device_name = '{}' LIMIT 1"
-        dev_car_id = pgsql_db.get(pgsql_cur, device_sql.format(device_name))[0]
+        device_object = pgsql_db.get(pgsql_cur, device_sql.format(device_name))
+        dev_car_id = device_object[0]
+        device_type = device_object[1]
 
         if dev_car_id:
             device_fid_set = set(fid_dict.keys())
@@ -471,10 +473,17 @@ WHERE F.status=4 AND stu.status=1 AND stu.car_id={} AND ft.mfr_id={}
                     add_list, del_list, update_list, device_name)
             print add_list, del_list, update_list
         else:
-            # 清空设备所有人脸
-            producer.delete_all_face(device_name)
-            # 提示
-            producer.update_chepai(device_name, "没有绑定车辆", 6, 0, 20)
+            # 刷脸设备
+            if device_type == 1:
+                # 清空设备所有人脸
+                producer.delete_all_face(device_name)
+                # 提示
+                producer.update_chepai(device_name, "没有绑定车辆", 6, 0, 20)
+            elif device_type == 2:
+                # 清空设备所有人脸
+                producer.delete_all_face(device_name)
+                # 提示
+                producer.update_chepai(device_name, "生成特征值专用", 6, 3, 20)
 
     @db.transaction(is_commit=True)
     def create_device(self, pgsql_cur, mac, shd_devid):
