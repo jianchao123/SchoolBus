@@ -124,18 +124,15 @@ def student_list(user_id, data):
     page = int(data['page'])
     size = int(data['size'])
 
-    if dup_list and int(dup_list) == 1:
-        return StudentService.query_nickname_dup(page, size)
-    else:
-        if start_date and end_date:
-            try:
-                start_date = datetime.strptime(start_date, '%Y-%m-%d')
-                end_date = datetime.strptime(end_date, '%Y-%m-%d')
-            except ValueError:
-                raise AppError(*GlobalErrorCode.PARAM_ERROR)
-        return StudentService.student_list(
-            query_str, school_id, grade_id, class_id, face_status,
-            start_date, end_date, car_id, license_plate_number, page, size)
+    if start_date and end_date:
+        try:
+            start_date = datetime.strptime(start_date, '%Y-%m-%d')
+            end_date = datetime.strptime(end_date, '%Y-%m-%d')
+        except ValueError:
+            raise AppError(*GlobalErrorCode.PARAM_ERROR)
+    return StudentService.student_list(
+        query_str, school_id, grade_id, class_id, face_status,
+        start_date, end_date, car_id, license_plate_number, dup_list, page, size)
 
 
 @bp.route('/add', methods=['POST'])

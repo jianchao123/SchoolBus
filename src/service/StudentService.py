@@ -100,7 +100,7 @@ class StudentService(object):
     @staticmethod
     def student_list(query_str, school_id, grade_id, class_id, face_status,
                      start_date, end_date, car_id, license_plate_number,
-                     page, size):
+                     dup_list, page, size):
         """
         学生姓名/身份证号
         """
@@ -110,6 +110,16 @@ class StudentService(object):
         query = db.session.query(Student, Face).outerjoin(
             Face, Face.stu_id == Student.id)
         query = query.filter(Student.status != 10)
+        if dup_list:
+            students = db.session.query(Student.nickname) \
+                .group_by(Student.nickname).having(
+                func.count(Student.id) > 1).all()
+            name_list = []
+            for student in students:
+                name_list.append(student.nickname)
+            query = query.filter(
+                Student.nickname.in_(name_list))
+
         if face_status:
             query = query.filter(Face.status == face_status)
         if school_id:
@@ -139,8 +149,12 @@ class StudentService(object):
             print car_id_list
 
         count = query.with_entities(func.count(Student.id)).scalar()
-        results = query.order_by(
-            Student.id.desc()).offset(offset).limit(size).all()
+        if dup_list:
+            results = query.order_by(
+                Student.nickname.desc()).offset(offset).limit(size).all()
+        else:
+            results = query.order_by(
+                Student.id.desc()).offset(offset).limit(size).all()
 
         mfr_cnt = db.session.query(Manufacturer).filter(
             Manufacturer.status == 1).count()
