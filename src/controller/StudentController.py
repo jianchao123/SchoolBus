@@ -65,6 +65,10 @@ def student_list(user_id, data):
         in: query
         type: string
         description: 车牌号
+      - name: dup_list
+        in: query
+        type: integer
+        description: 重复列表 默认值1
       - name: page
         in: query
         type: integer
@@ -116,18 +120,22 @@ def student_list(user_id, data):
     end_date = data.get('end_date', None)
     car_id = data.get('car_id', None)
     license_plate_number = data.get('license_plate_number', None)
+    dup_list = data.get('dup_list', None)
     page = int(data['page'])
     size = int(data['size'])
 
-    if start_date and end_date:
-        try:
-            start_date = datetime.strptime(start_date, '%Y-%m-%d')
-            end_date = datetime.strptime(end_date, '%Y-%m-%d')
-        except ValueError:
-            raise AppError(*GlobalErrorCode.PARAM_ERROR)
-    return StudentService.student_list(
-        query_str, school_id, grade_id, class_id, face_status,
-        start_date, end_date, car_id, license_plate_number, page, size)
+    if dup_list:
+        return StudentService.query_nickname_dup()
+    else:
+        if start_date and end_date:
+            try:
+                start_date = datetime.strptime(start_date, '%Y-%m-%d')
+                end_date = datetime.strptime(end_date, '%Y-%m-%d')
+            except ValueError:
+                raise AppError(*GlobalErrorCode.PARAM_ERROR)
+        return StudentService.student_list(
+            query_str, school_id, grade_id, class_id, face_status,
+            start_date, end_date, car_id, license_plate_number, page, size)
 
 
 @bp.route('/add', methods=['POST'])

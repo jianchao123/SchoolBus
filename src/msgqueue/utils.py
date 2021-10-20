@@ -147,3 +147,19 @@ def aip_word_to_audio(text, oss_key):
     else:
         print result
     return False
+
+
+def zip_name_list(zip_url):
+    import requests
+    import time
+    res = requests.get(zip_url)
+
+    temp_file = './temp/' + str(int(time.time())) + '.zip'
+    with open(temp_file, 'w') as fd:
+        fd.write(res.content)
+    zip = zipfile.ZipFile(temp_file, 'r')
+    return zip.namelist()
+
+
+if __name__ == "__main__":
+    print zip_name_list("https://cdbus-pro.oss-cn-shanghai.aliyuncs.com/facezip/%E7%89%A9%E6%B5%81%E4%B8%AD%E5%BF%83%E4%B9%98%E8%BD%A6%E4%BA%BA%E5%91%98%E7%85%A7%E7%89%87.zip")

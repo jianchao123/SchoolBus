@@ -572,3 +572,75 @@ class StudentService(object):
             producer.batch_add_student(send_list)
             send_list = student_list[start + 1000: end + 1000]
         return {"c": 0, 'msg': ''}
+
+    @staticmethod
+    def query_nickname_dup():
+        db.session.commit()
+        try:
+
+            students = db.session.query(Student.nickname) \
+                .group_by(Student.nickname).having(func.count(Student.id) > 1).all()
+            name_list = []
+            for student in students:
+                name_list.append(student.nickname)
+
+            query = db.session.query(Student, Face).outerjoin(
+                Face, Face.stu_id == Student.id).filter(
+                Student.nickname.in_(name_list))
+
+            count = query.count()
+
+            students = query.order_by(
+                Student.nickname.desc()).all()
+
+            mfr_cnt = db.session.query(Manufacturer).filter(
+                Manufacturer.status == 1).count()
+
+            data = []
+            for row in students:
+                student = row[0]
+                face = row[1]
+                feature_fail_cnt = db.session.query(Feature).filter(
+                    Feature.face_id == face.id, Feature.status == 4).count()
+                feature_success_cnt = db.session.query(Feature).filter(
+                    Feature.face_id == face.id, Feature.status == 3).count()
+
+                audio_obj = db.session.query(Audio).filter(
+                    Audio.face_id == face.id).first()
+                if feature_fail_cnt:
+                    face_status = 4
+                elif feature_success_cnt == mfr_cnt:
+                    face_status = 3
+                else:
+                    face_status = 1
+
+                data.append({
+                    'id': student.id,
+                    'stu_no': student.stu_no,
+                    'nickname': student.nickname,
+                    'gender': student.gender,
+                    'parents_1': student.parents_1,
+                    'mobile_1': student.mobile_1,
+                    'parents_2': student.parents_2,
+                    'mobile_2': student.mobile_2,
+                    'address': student.address,
+                    'remarks': student.remarks,
+                    'school_id': student.school_id,
+                    'grade_id': student.grade_id,
+                    'class_id': student.class_id,
+                    'create_time': student.create_time.strftime('%Y-%m-%d %H:%M:%S'),
+                    'end_time': student.end_time.strftime('%Y-%m-%d'),
+                    'car_id': student.car_id,
+                    'license_plate_number': student.license_plate_number,
+                    'status': student.status,
+                    'face_status': face_status,
+                    'audio_status': audio_obj.status,
+                    'school_name': StudentService._get_school_cache(student.school_id),
+                    'grade_name': grade[student.grade_id],
+                    'class_name': classes[student.class_id],
+                    'oss_url': face.oss_url
+                })
+        except:
+            import traceback
+            print traceback.format_exc()
+        return {'results': data, 'count': count}
