@@ -125,7 +125,7 @@ def student_list(user_id, data):
     size = int(data['size'])
 
     if dup_list and int(dup_list) == 1:
-        return StudentService.query_nickname_dup()
+        return StudentService.query_nickname_dup(page, size)
     else:
         if start_date and end_date:
             try:

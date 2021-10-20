@@ -574,10 +574,10 @@ class StudentService(object):
         return {"c": 0, 'msg': ''}
 
     @staticmethod
-    def query_nickname_dup():
+    def query_nickname_dup(page, size):
         db.session.commit()
         try:
-
+            offset = (page - 1) * size
             students = db.session.query(Student.nickname) \
                 .group_by(Student.nickname).having(func.count(Student.id) > 1).all()
             name_list = []
@@ -591,7 +591,7 @@ class StudentService(object):
             count = query.count()
 
             students = query.order_by(
-                Student.nickname.desc()).all()
+                Student.nickname.desc()).offset(offset).limit(size).all()
 
             mfr_cnt = db.session.query(Manufacturer).filter(
                 Manufacturer.status == 1).count()
