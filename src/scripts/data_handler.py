@@ -341,6 +341,14 @@ class DataHandler(object):
                 }
                 pgsql_db.update(pgsql_cur, d1, table_name='feature')
 
+    @db.transaction(is_commit=False)
+    def idcard_check_dup(self, pgsql_cur):
+        """检查身份证是否重复"""
+        pgsql_db = db.PgsqlDbUtil
+        sql = "select stu_no from student group by stu_no having count(id) > 1"
+        results = pgsql_db.query(pgsql_cur, sql)
+        for row in results:
+            print row
 
 
 if __name__ == '__main__':
