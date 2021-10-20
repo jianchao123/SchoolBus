@@ -345,11 +345,16 @@ class DataHandler(object):
     def idcard_check_dup(self, pgsql_cur):
         """检查身份证是否重复"""
         pgsql_db = db.PgsqlDbUtil
+        print "------------student-----------"
         sql = "select stu_no from student group by stu_no having count(id) > 1"
         results = pgsql_db.query(pgsql_cur, sql)
         for row in results:
             print row
-
+        print "------------face-----------"
+        sql = "select stu_no from face group by stu_no having count(id) > 1"
+        results = pgsql_db.query(pgsql_cur, sql)
+        for row in results:
+            print row
 
 if __name__ == '__main__':
     # data = DataHandler()
