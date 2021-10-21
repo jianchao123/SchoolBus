@@ -588,6 +588,31 @@ class StudentService(object):
         return {"c": 0, 'msg': ''}
 
     @staticmethod
+    def student_delete(pk, user_id):
+        """删除学生"""
+        db.session.commit()
+
+        student = db.session.query(Student).filter(Student.id == pk).first()
+        if not student:
+            return -1
+        student.status = 10
+        try:
+            d = {'id': student.id}
+            db.session.commit()
+
+            # 日志
+            func_name, func_param = get_frame_name_param(inspect.currentframe())
+            producer.operation_log(func_name, func_param, user_id)
+            return d
+        except SQLAlchemyError:
+            import traceback
+            print traceback.format_exc()
+            db.session.rollback()
+            return -2
+        finally:
+            db.session.close()
+
+    @staticmethod
     def query_nickname_dup(page, size):
         db.session.commit()
         try:

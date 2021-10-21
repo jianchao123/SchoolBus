@@ -960,66 +960,6 @@ class UploadAlarmData(object):
                 rds_conn.set(RedisKey.SC_ALARM_LAST_ID, results[-1][7])
 
 
-# from db import logger
-# class OrderSendMsg(object):
-#
-#     def __init__(self):
-#         self.auth = oss2.Auth(config.OSSAccessKeyId, config.OSSAccessKeySecret)
-#         self.bucket = oss2.Bucket(self.auth, config.OSSEndpoint,
-#                                   config.OSSBucketName)
-#
-#         self.client = AcsClient(config.MNSAccessKeyId,
-#                                 config.MNSAccessKeySecret, 'cn-shanghai')
-#         self.product_key = config.Productkey
-#         self.request = PubRequest()
-#         self.request.set_Qos(0)
-#         self.request.set_accept_format('json')
-#
-#     def order_sent_msg(self):
-#         """顺序发送消息"""
-#         try:
-#             start = time.time()
-#             rds_conn = db.rds_conn
-#             device_queues = rds_conn.keys('mns_list_*')
-#             for queue_name in device_queues:
-#                 device_name = queue_name[9:]
-#                 k = "cur_{}_stream_no".format(device_name)
-#                 # 不存在就取出一条消息发送到物联网
-#                 if not rds_conn.get(k):
-#                     raw_msg_content = rds_conn.lpop(queue_name)
-#                     if raw_msg_content:
-#                         data = json.loads(raw_msg_content)
-#                         stream_no = data['stream_no']
-#                         rds_conn.set(k, stream_no)
-#                         rds_conn.expire(k, 30)
-#
-#                         # 测试,正式时注释
-#                         # print data
-#                         # if 'cmd' in data:
-#                         #     if data['cmd'] in \
-#                         #             ['heartbeat30s', 'flagfidinx', 'sendorder' ,'callnewdevn']:
-#                         #         print u"删除-----------------------"
-#                         #         rds_conn.delete(k)
-#
-#                         # 发送消息
-#                         topic = '/' + self.product_key + '/' \
-#                                 + device_name + '/user/get'
-#                         self.request.set_TopicFullName(topic)
-#
-#                         b64_str = base64.b64encode(json.dumps(data))
-#                         self.request.set_MessageContent(b64_str)
-#                         self.request.set_ProductKey(self.product_key)
-#
-#                         self.client.do_action_with_exception(self.request)
-#             end = time.time()
-#             logger.error("Order Time.={}".format(end - start))
-#         except:
-#             import traceback
-#             err_msg = traceback.format_exc()
-#             print err_msg
-#             db.logger.error(err_msg)
-
-
 class EveryDayOneClock(object):
 
     def everyday_one_clock(self):

@@ -536,3 +536,49 @@ def bulk_update_feature(user_id, data):
     if ret == -10:
         raise AppError(*SubErrorCode.STUDENT_NOT_BINDING_FACE)
     return ret
+
+
+@bp.route('/delete/<int:pk>', methods=['POST'])
+@post_require_check_with_user([])
+def student_delete(user_id, data, pk):
+    """
+    删除学生
+    删除学生，需要先登录
+    ---
+    tags:
+      - 学生
+    parameters:
+      - name: token
+        in: header
+        type: string
+        required: true
+        description: TOKEN
+      - name: pk
+        in: path
+        type: integer
+        description: 主键
+    responses:
+      200:
+        description: 正常返回http code 200
+        schema:
+          properties:
+            msg:
+              type: string
+              description: 错误消息
+            status:
+              type: integer
+              description: 状态
+            data:
+              type: object
+              properties:
+                id:
+                  type: integer
+                  description: 新增的学生Id
+    """
+
+    data = StudentService.student_delete(pk, user_id)
+    if data == -1:
+        raise AppError(*GlobalErrorCode.OBJ_NOT_FOUND_ERROR)
+    if data == -2:
+        raise AppError(*GlobalErrorCode.DB_COMMIT_ERR)
+    return data
