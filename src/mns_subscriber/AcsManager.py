@@ -136,7 +136,8 @@ class AcsManager(object):
         """检查当前stream_no"""
         if "stream_no" in jdata:
             from mns_subscriber import config
-            config.logger.error("------------stream_no----------------{}".format(str(jdata)))
+            #config.logger.error("------------stream_no----------------{}".format(str(jdata)))
+            #print jdata
             rds_conn = db.rds_conn
             stream_no = jdata["stream_no"]
             k = "cur_{}_stream_no".format(device_name)
@@ -731,7 +732,7 @@ WHERE F.status=4 AND stu.status=1 AND stu.car_id={} AND ft.mfr_id={}
 
         # 长时间关机
         if device_timestamp and \
-                int(time.time()) - int(device_timestamp) > 60 * 5 and \
+                int(time.time()) - int(device_timestamp) > 60 * 1 and \
                 (not ret):
             producer.dev_while_list(device_name)
             pk, status, version_no, sound_volume, license_plate_number, \
