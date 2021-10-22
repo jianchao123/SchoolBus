@@ -221,6 +221,12 @@ def delete_all_face(device_name):
     _publish_msg('device_exchange', 'device.delallface', json.dumps(data))
 
 
+def bulk_upload_zip(zip_url):
+    """批量导入zip人脸压缩包"""
+    data = {'zip_url': zip_url}
+    _publish_msg('student_exchange', 'student.bulkuploadzip', json.dumps(data))
+
+
 # 测试用户创建
 if __name__ == "__main__":
     # generate_create_student_msg(12)

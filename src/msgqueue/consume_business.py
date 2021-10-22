@@ -156,6 +156,8 @@ class StudentConsumer(object):
                 self.student_business.batch_add_school(data)
             if routing_suffix == 'updatenickname':
                 self.student_business.create_video(data)
+            if routing_suffix == 'bulkuploadzip':
+                self.student_business.bulk_upload_zip_handler(data)
         finally:
             ch.basic_ack(delivery_tag=method.delivery_tag)
 
@@ -388,38 +390,41 @@ class StudentBusiness(object):
                 pgsql_db.insert(pgsql_cur, d, 'school')
         rds_conn.delete('batch_add_school')
 
-    # @transaction(is_commit=True)
-    # def bulk_upload_zip_handler(self, pgsql_cur, data):
-    #     """批量上传的zip人脸处理"""
-    #     pgsql_db = PgsqlDbUtil
-    #     zip_url = data['zip_url']
-    #
-    #     face_sql = "SELECT id FROM face WHERE stu_no='{}' LIMIT 1"
-    #     feature_sql = "SELECT id FROM feature WHERE face_id={}"
-    #     name_list = utils.zip_name_list(zip_url)
-    #     for face_name in name_list:
-    #         arr = face_name.split('.')
-    #         if len(arr) == 2:
-    #             stu_no = arr[0]
-    #             face = pgsql_db.get(pgsql_cur, face_sql.format(stu_no))
-    #             if face:
-    #                 face_id = face[0]
-    #                 features = pgsql_db.query(pgsql_cur,
-    #                                           feature_sql.format(face_id))
-    #                 for feature_row in features:
-    #                     feature_d = {
-    #                         'id': feature_row[0],
-    #                         'status': 1
-    #                     }
-    #                     pgsql_db.update(pgsql_cur, feature_d)
-    #
-    #                 oss_url_str = 'http://' + config.OSSDomain + "/person/face/" + row + ".png"
-    #                 face_d = {
-    #                     'id': face_id,
-    #                     'oss_url': oss_url_str,
-    #                     'status': 2  # 未处理
-    #                 }
-    #                 mysql_db.update(pgsql_cur, d, table_name='face')
+    @transaction(is_commit=True)
+    def bulk_upload_zip_handler(self, pgsql_cur, data):
+        """批量上传的zip人脸处理"""
+        pgsql_db = PgsqlDbUtil
+        zip_url = data['zip_url']
+
+        face_sql = "SELECT id FROM face WHERE stu_no='{}' LIMIT 1"
+        feature_sql = "SELECT id FROM feature WHERE face_id={}"
+        name_list = utils.zip_name_list(zip_url)
+        for face_name in name_list:
+            arr = face_name.split('.')
+            if len(arr) == 2:
+                stu_no = arr[0]
+                face = pgsql_db.get(pgsql_cur, face_sql.format(stu_no))
+                if face:
+                    face_id = face[0]
+                    features = pgsql_db.query(pgsql_cur,
+                                              feature_sql.format(face_id))
+                    oss_url_str = 'http://' + config.OSSDomain + "/person/face/" + face_name
+
+                    for feature_row in features:
+                        feature_d = {
+                            'id': feature_row[0],
+                            'oss_url': oss_url_str,
+                            'status': 1 # 等待处理
+                        }
+                        pgsql_db.update(pgsql_cur, feature_d, table_name='feature')
+
+                    face_d = {
+                        'id': face_id,
+                        'oss_url': oss_url_str,
+                        'status': 2  # 未处理
+                    }
+                    pgsql_db.update(pgsql_cur, face_d, table_name='face')
+
 
 class DeviceConsumer(object):
     def __init__(self):

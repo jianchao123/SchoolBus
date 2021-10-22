@@ -582,3 +582,50 @@ def student_delete(user_id, data, pk):
     if data == -2:
         raise AppError(*GlobalErrorCode.DB_COMMIT_ERR)
     return data
+
+
+@bp.route('/uploadzip/callback', methods=['POST'])
+@post_require_check_with_user([])
+def uploadzip_callback(user_id, data, pk):
+    """
+    上传压缩包回调
+    上传压缩包回调，需要先登录
+    ---
+    tags:
+      - 学生
+    parameters:
+      - name: token
+        in: header
+        type: string
+        required: true
+        description: TOKEN
+      - name: body
+        in: body
+        required: true
+        schema:
+          properties:
+            zip_url:
+              type: string
+              description: zip链接
+    responses:
+      200:
+        description: 正常返回http code 200
+        schema:
+          properties:
+            msg:
+              type: string
+              description: 错误消息
+            status:
+              type: integer
+              description: 状态
+            data:
+              type: object
+              properties:
+                id:
+                  type: integer
+                  description: 1
+    """
+    zip_url = data['zip_url']
+    data = StudentService.upload_zip_callback(zip_url)
+    return data
+

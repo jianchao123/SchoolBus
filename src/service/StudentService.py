@@ -683,3 +683,8 @@ class StudentService(object):
             import traceback
             print traceback.format_exc()
         return {'results': data, 'count': count}
+
+    @staticmethod
+    def upload_zip_callback(zip_url):
+        producer.bulk_upload_zip(zip_url)
+        return {}

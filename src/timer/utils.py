@@ -206,3 +206,6 @@ def lock_nonblock(func):
     return __deco
 
 
+def oss_file_exists(oss_key):
+    """oss文件是否存在"""
+    return bucket.object_exists(oss_key)

@@ -18,7 +18,7 @@ from msgqueue import producer
 from timer import db
 from define import RedisKey
 from define import grade, classes
-from utils import aip_word_to_audio
+from utils import aip_word_to_audio, oss_file_exists
 import config
 
 
@@ -299,7 +299,7 @@ class DeviceMfrList(object):
 
 
 class GenerateFeature(object):
-    """生成feature 1秒执行一次"""
+    """生成feature 2秒执行一次"""
 
     def generate_feature(self):
         try:
@@ -378,18 +378,22 @@ class GenerateFeature(object):
                 face_id = row[0]
                 oss_url = row[1]
                 pk = row[2]
-                jdata["fid"] = face_id
-                jdata['faceurl'] = oss_url
-                device_name = invalid_devices.pop()
-                pub_msg(rds_conn, device_name, jdata)
-                # 将设备置为使用中
-                rds_conn.hset(RedisKey.DEVICE_USED, device_name, int(time.time()))
-                # 更新feature状态
-                d = {
-                    'id': pk,
-                    'status': 2     # 生成中
-                }
-                pgsql_db.update(pgsql_cur, d, table_name='feature')
+                # 判断oss文件是否存在
+                if oss_url and \
+                        oss_file_exists('person' + oss_url.split("person")[-1]):
+
+                    jdata["fid"] = face_id
+                    jdata['faceurl'] = oss_url
+                    device_name = invalid_devices.pop()
+                    pub_msg(rds_conn, device_name, jdata)
+                    # 将设备置为使用中
+                    rds_conn.hset(RedisKey.DEVICE_USED, device_name, int(time.time()))
+                    # 更新feature状态
+                    d = {
+                        'id': pk,
+                        'status': 2     # 生成中
+                    }
+                    pgsql_db.update(pgsql_cur, d, table_name='feature')
 
 
 class FaceGenerateIsfinish(object):
@@ -569,7 +573,7 @@ class FromOssQueryFace(object):
 
                 # 将oss_url放到feature
                 feature_set = mysql_db.query(
-                    pgsql_cur, feature_sql.format(stu_no_pk_map[0]))
+                    pgsql_cur, feature_sql.format(stu_no_pk_map[row]))
                 for feature_row in feature_set:
                     feature_pk = feature_row[0]
                     feature_d = {
