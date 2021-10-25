@@ -360,6 +360,21 @@ class DataHandler(object):
         for row in results:
             print row
 
+    @db.transaction(is_commit=False)
+    def copy_feature_to_face(self, pgsql_cur):
+        """"""
+        pgsql_db = db.PgsqlDbUtil
+        results = pgsql_db.query(pgsql_cur, "select id from face where oss_url is null")
+        for row in results:
+            pk = row[0]
+            oss_url = pgsql_db.get(pgsql_cur, "select oss_url from feature where face_id={} limit 1".format(pk))
+            if oss_url:
+                d = {
+                    'id': pk,
+                    'oss_url': oss_url
+                }
+                pgsql_db.update(pgsql_cur, d, table_name='face')
+
 if __name__ == '__main__':
     # data = DataHandler()
     # data.add_data_to_audio_feature()
