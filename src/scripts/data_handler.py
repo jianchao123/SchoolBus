@@ -362,12 +362,12 @@ class DataHandler(object):
 
     @db.transaction(is_commit=True)
     def copy_feature_to_face(self, pgsql_cur):
-        """"""
+        """face的oss_url字段为空"""
         pgsql_db = db.PgsqlDbUtil
         results = pgsql_db.query(pgsql_cur, "select id from face where oss_url is null")
         for row in results:
             pk = row[0]
-            oss_url = pgsql_db.get(pgsql_cur, "select oss_url from feature where face_id={} limit 1".format(pk))
+            oss_url = pgsql_db.get(pgsql_cur, "select oss_url from feature where face_id={} limit 1".format(pk))[0]
             if oss_url:
                 d = {
                     'id': pk,
