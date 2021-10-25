@@ -215,6 +215,7 @@ class DataHandler(object):
 
     @staticmethod
     def _feature_status(face_status, feature_results):
+        """1表示所有feature生成成功 0失败"""
         feature_status = 1
 
         # face完成
@@ -239,7 +240,10 @@ class DataHandler(object):
             for feature_row in feature_results:
                 if feature_row[1] not in (3, 4):
                     feature_status = 0
-
+            # 且不能两条数据都是3
+            if feature_results[0][1] == 3 or feature_results[1][1] == 3:
+                if not (feature_results[0][1] ^ feature_results[1][1]):
+                    feature_status = 0
         # face 过期
         if face_status == 6:
             for feature_row in feature_results:
