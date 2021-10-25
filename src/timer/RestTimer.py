@@ -687,7 +687,7 @@ class EveryFewMinutesExe(object):
 
     def __init__(self):
         self.auth = oss2.Auth(config.OSSAccessKeyId, config.OSSAccessKeySecret)
-        self.bucket = oss2.Bucket(self.auth, config.OSSEndpointInternal, config.OSSBucketName)
+        self.bucket = oss2.Bucket(self.auth, config.OSSEndpoint, config.OSSBucketName)
 
         self.client = AcsClient(config.MNSAccessKeyId,
                                 config.MNSAccessKeySecret, 'cn-shanghai')
