@@ -412,7 +412,7 @@ class FaceGenerateIsfinish(object):
         face_sql = "SELECT id FROM face WHERE status in (2,3) LIMIT 50"
         feature_sql = "SELECT status FROM feature WHERE face_id={}"
         audio_sql = "SELECT status,aac_url FROM audio WHERE face_id={} LIMIT 1"
-        mfr_cnt = sql_db.get(sql_cur, mfr_sql)[0]
+        mfr_cnt = int(sql_db.get(sql_cur, mfr_sql)[0])
         results = sql_db.query(sql_cur, face_sql)
         for row in results:
             pk = row[0]
@@ -441,6 +441,7 @@ class FaceGenerateIsfinish(object):
                     status_fail_cnt += 1
                 if feature_row[0] in [3, 4]:
                     status_sum += 1
+            db.logger.error("status_fail_cnt={},type={}.status_sum={},type={}".format(status_fail_cnt, type(status_fail_cnt), status_sum, type(status_sum)))
             if (status_fail_cnt and status_sum == mfr_cnt) or audio_row[0] == 4:
                 data = {
                     'id': pk,
