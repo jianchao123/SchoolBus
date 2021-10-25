@@ -156,8 +156,8 @@ class StudentConsumer(object):
                 self.student_business.batch_add_school(data)
             if routing_suffix == 'updatenickname':
                 self.student_business.create_video(data)
-            if routing_suffix == 'bulkuploadzip':
-                self.student_business.bulk_upload_zip_handler(data)
+            if routing_suffix == 'bulkupdateface':
+                self.student_business.bulk_update_face(data)
         finally:
             ch.basic_ack(delivery_tag=method.delivery_tag)
 
@@ -391,8 +391,8 @@ class StudentBusiness(object):
         rds_conn.delete('batch_add_school')
 
     @transaction(is_commit=True)
-    def bulk_upload_zip_handler(self, pgsql_cur, data):
-        """批量上传的zip人脸处理"""
+    def bulk_update_face(self, pgsql_cur, data):
+        """批量更新人脸"""
         pgsql_db = PgsqlDbUtil
         zip_url = data['zip_url']
 
@@ -414,7 +414,7 @@ class StudentBusiness(object):
                         feature_d = {
                             'id': feature_row[0],
                             'oss_url': oss_url_str,
-                            'status': 1 # 等待处理
+                            'status': 1     # 等待处理
                         }
                         pgsql_db.update(pgsql_cur, feature_d, table_name='feature')
 

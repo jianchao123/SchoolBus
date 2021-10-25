@@ -687,5 +687,5 @@ class StudentService(object):
 
     @staticmethod
     def upload_zip_callback(zip_url):
-        producer.bulk_upload_zip(zip_url)
+        producer.bulk_update_face(zip_url)
         return {}

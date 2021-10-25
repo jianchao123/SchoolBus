@@ -687,7 +687,7 @@ class EveryFewMinutesExe(object):
 
     def __init__(self):
         self.auth = oss2.Auth(config.OSSAccessKeyId, config.OSSAccessKeySecret)
-        self.bucket = oss2.Bucket(self.auth, config.OSSEndpoint, config.OSSBucketName)
+        self.bucket = oss2.Bucket(self.auth, config.OSSEndpointInternal, config.OSSBucketName)
 
         self.client = AcsClient(config.MNSAccessKeyId,
                                 config.MNSAccessKeySecret, 'cn-shanghai')
@@ -715,6 +715,7 @@ class EveryFewMinutesExe(object):
                     rds_conn.hset(
                         RedisKey.MFR_DEVICE_HASH, device_name, 'SHENZHEN')
 
+            # 从oss拉取图片名字存到redis
             for obj in oss2.ObjectIterator(self.bucket, prefix='person/face/'):
                 slash_arr = obj.key.split("/")
                 # 将oss上的图片名字保存到redis
