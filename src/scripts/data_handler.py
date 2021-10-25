@@ -360,7 +360,7 @@ class DataHandler(object):
         for row in results:
             print row
 
-    @db.transaction(is_commit=False)
+    @db.transaction(is_commit=True)
     def copy_feature_to_face(self, pgsql_cur):
         """"""
         pgsql_db = db.PgsqlDbUtil
