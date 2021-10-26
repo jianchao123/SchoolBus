@@ -395,7 +395,8 @@ class StudentBusiness(object):
         pgsql_db = PgsqlDbUtil
         zip_url = data['zip_url']
 
-        face_sql = "SELECT id FROM face WHERE stu_no='{}' LIMIT 1"
+        face_sql = "SELECT id FROM face WHERE stu_no='{}' " \
+                   "AND status in (4,5) LIMIT 1"
         feature_sql = "SELECT id FROM feature WHERE face_id={}"
         name_list = utils.zip_name_list(zip_url, config.project_dir)
         for face_name in name_list:

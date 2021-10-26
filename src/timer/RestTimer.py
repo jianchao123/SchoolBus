@@ -573,6 +573,7 @@ class FromOssQueryFace(object):
                     'oss_url': oss_url_str,
                     'status': 2  # 未处理
                 }
+                print d
                 mysql_db.update(pgsql_cur, d, table_name='face')
 
                 # 将oss_url放到feature
