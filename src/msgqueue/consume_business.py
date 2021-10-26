@@ -16,7 +16,6 @@ from aliyunsdkiot.request.v20180120.PubRequest import PubRequest
 from define import grade, classes, gender, duty
 
 
-
 class HeartBeatConsumer(object):
 
     def __init__(self):
@@ -398,9 +397,10 @@ class StudentBusiness(object):
 
         face_sql = "SELECT id FROM face WHERE stu_no='{}' LIMIT 1"
         feature_sql = "SELECT id FROM feature WHERE face_id={}"
-        name_list = utils.zip_name_list(zip_url)
+        name_list = utils.zip_name_list(zip_url, config.project_dir)
         for face_name in name_list:
             arr = face_name.split('.')
+            print face_name
             if len(arr) == 2:
                 stu_no = arr[0]
                 face = pgsql_db.get(pgsql_cur, face_sql.format(stu_no))
@@ -409,7 +409,7 @@ class StudentBusiness(object):
                     features = pgsql_db.query(pgsql_cur,
                                               feature_sql.format(face_id))
                     oss_url_str = 'http://' + config.OSSDomain + "/person/face/" + face_name
-
+                    print oss_url_str
                     for feature_row in features:
                         feature_d = {
                             'id': feature_row[0],

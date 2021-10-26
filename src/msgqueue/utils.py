@@ -149,13 +149,16 @@ def aip_word_to_audio(text, oss_key):
     return False
 
 
-def zip_name_list(zip_url):
+def zip_name_list(zip_url, local_path):
     import requests
     import time
+    print zip_url
     res = requests.get(zip_url)
 
-    temp_file = './temp/' + str(int(time.time())) + '.zip'
-    with open(temp_file, 'w') as fd:
+    temp_file = \
+        local_path + '/src/msgqueue/temp/' + str(int(time.time())) + '.zip'
+    print temp_file
+    with open(temp_file, 'wb') as fd:
         fd.write(res.content)
     zip = zipfile.ZipFile(temp_file, 'r')
     return zip.namelist()

@@ -566,10 +566,10 @@ class FromOssQueryFace(object):
                 RedisKey.OSS_ID_CARD_SET, RedisKey.OSS_ID_CARD_SET + "CP"))
             intersection = intersection[:1000]
 
-            for row in intersection:
-                oss_url_str = 'http://' + config.OSSDomain + "/person/face/" + row + ".png"
+            for stuno in intersection:
+                oss_url_str = 'http://' + config.OSSDomain + "/person/face/" + stuno + ".png"
                 d = {
-                    'id': stu_no_pk_map[row],
+                    'id': stu_no_pk_map[stuno],
                     'oss_url': oss_url_str,
                     'status': 2  # 未处理
                 }
@@ -577,7 +577,7 @@ class FromOssQueryFace(object):
 
                 # 将oss_url放到feature
                 feature_set = mysql_db.query(
-                    pgsql_cur, feature_sql.format(stu_no_pk_map[row]))
+                    pgsql_cur, feature_sql.format(stu_no_pk_map[stuno]))
                 for feature_row in feature_set:
                     feature_pk = feature_row[0]
                     feature_d = {
@@ -733,8 +733,8 @@ class EveryFewMinutesExe(object):
                     comma_arr = slash_arr[-1].split('.')
                     if comma_arr and len(comma_arr) != 2:
                         is_del = 1
-                    if comma_arr and comma_arr[-1] == 'JPG':
-                        is_del = 1
+                    # if comma_arr and comma_arr[-1] == 'JPG':
+                    #     is_del = 1
                 if is_del:
                     self.bucket.delete_object(obj.key)
             if config.env == "PRO":

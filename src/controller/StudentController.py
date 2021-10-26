@@ -585,8 +585,8 @@ def student_delete(user_id, data, pk):
 
 
 @bp.route('/uploadzip/callback', methods=['POST'])
-@post_require_check_with_user([])
-def uploadzip_callback(user_id, data, pk):
+@post_require_check_with_user(['zip_url'])
+def uploadzip_callback(user_id, data):
     """
     上传压缩包回调
     上传压缩包回调，需要先登录
