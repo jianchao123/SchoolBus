@@ -3,6 +3,9 @@ import time
 import json
 import os
 import oss2
+from PIL import Image
+import requests
+import time
 import base64
 import decimal
 from datetime import datetime
@@ -294,25 +297,43 @@ class DataHandler(object):
             else:
                 print "integrity face, stu_id={}".format(stu_id)
 
+    def compress_under_size(self, imagefile, targetfile, targetsize):
+        """压缩图片尺寸直到某一尺寸
+
+        :param imagefile: 原图路径
+        :param targetfile: 保存图片路径
+        :param targetsize: 目标大小，单位byte
+        """
+        currentsize = os.path.getsize(imagefile)
+        print currentsize
+        for quality in range(99, 0, -1):  # 压缩质量递减
+            if currentsize > targetsize:
+                image = Image.open(imagefile)
+                image.save(targetfile, optimize=True, quality=quality)
+                currentsize = os.path.getsize(targetfile)
+
     @db.transaction(is_commit=False)
     def png_2_jpg(self, pgsql_cur):
-        from PIL import Image
-        import requests
-        import time
+
         pgsql_db = db.PgsqlDbUtil
         results = pgsql_db.query(pgsql_cur, "SELECT oss_url FROM feature WHERE status=4")
         for row in results:
             oss_url = row[0]
-            print oss_url
             temp_dir = project_dir + '/src/scripts/temp/'
             img_path = temp_dir + '{}'.format(str(time.time()).replace('.', ''))
             with open(img_path, 'w') as fd:
                 fd.write(requests.get(oss_url).content)
-            im = Image.open(img_path)
-            im = im.convert('RGB')
+
+            currentsize = os.path.getsize(img_path)
+            if currentsize < 60 * 1024:
+                continue
+
+            time.sleep(0.1)
+            # 压缩图片
             new_path = img_path + "_1.jpg"
-            im.save(new_path, quality=95)
-            time.sleep(1)
+            self.compress_under_size(img_path, new_path, 50*1024)
+
+            time.sleep(0.1)
             oss_key = "person" + oss_url.split("person")[-1]
             print new_path
             with open(new_path, 'rb') as fileobj:
