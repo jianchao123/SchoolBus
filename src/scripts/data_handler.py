@@ -309,6 +309,7 @@ class DataHandler(object):
         for quality in range(99, 0, -1):  # 压缩质量递减
             if currentsize > targetsize:
                 image = Image.open(imagefile)
+                image = image.convert('RGB')
                 image.save(targetfile, optimize=True, quality=quality)
                 currentsize = os.path.getsize(targetfile)
 
