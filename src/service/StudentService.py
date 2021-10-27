@@ -387,6 +387,7 @@ class StudentService(object):
             for feature_row in feature_set:
                 feature_row.oss_url = oss_url
                 feature_row.status = 1  # 等待生成
+            face.oss_url= oss_url
             face.status = 2     # 等待处理
 
         if end_time:
