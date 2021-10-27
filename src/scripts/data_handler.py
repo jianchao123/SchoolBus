@@ -339,47 +339,38 @@ class DataHandler(object):
             with open(new_path, 'rb') as fileobj:
                 self.bucket.put_object(oss_key, fileobj)
 
-    @db.transaction(is_commit=True)
-    def testtt(self, pgsql_cur):
-        pgsql_db = db.PgsqlDbUtil
-        sql = "select face_id from feature where status=4 order by oss_url desc"
-        results = pgsql_db.query(pgsql_cur, sql)
-        faceids = []
-        for row in results:
-            faceids.append(row[0])
-        faceids = list(set(faceids))
-        print faceids
-        for face_id in faceids:
-            d = {
-                'id': face_id,
-                'status': 2
-            }
-            pgsql_db.update(pgsql_cur, d, table_name='face')
-
-
-            res = pgsql_db.query(pgsql_cur,
-                                 "SELECT id FROM feature WHERE face_id={}".format(face_id))
-            for row in res:
-                d1 = {
-                    'id': row[0],
-                    'status': 1
-                }
-                pgsql_db.update(pgsql_cur, d1, table_name='feature')
-
     @db.transaction(is_commit=False)
-    def idcard_check_dup(self, pgsql_cur):
-        """检查身份证是否重复"""
+    def stu_no_and_image_is_match(self, pgsql_cur):
+        """身份证号和图片是否匹配"""
         pgsql_db = db.PgsqlDbUtil
-        print "------------student-----------"
-        sql = "select stu_no from student group by stu_no having count(id) > 1"
+        sql = "SELECT id,stu_no FROM student WHERE status=1"
+        face_sql = "SELECT id,stu_no FROM face WHERE stu_id={}"
+        feature_sql = "SELECT oss_url FROM feature WHERE face_id={}"
         results = pgsql_db.query(pgsql_cur, sql)
         for row in results:
-            print row
-        print "------------face-----------"
-        sql = "select stu_no from face group by stu_no having count(id) > 1"
-        results = pgsql_db.query(pgsql_cur, sql)
-        for row in results:
-            print row
+            print "---------------------------"
+            stu_id = row[0]
+            student_stu_no = row[1]
+            face_results = pgsql_db.query(pgsql_cur, face_sql.format(stu_id))
+            if len(face_results) > 1:
+                print "人脸有两条记录 stu_id={}".format(stu_id)
+                continue
+            face_id = face_results[0][0]
+            face_stu_no = face_results[0][1]
+            if student_stu_no != face_stu_no:
+                print "student表和face表的stu_no不一致 stu_id={}".format(stu_id)
+                continue
+            feature_results = pgsql_db.query(pgsql_cur, feature_sql.format(face_id))
+            if len(feature_results) != 2:
+                print "feature表记录条数不是2 stu_id={} face_id={}".format(stu_id, face_id)
+                continue
+            if student_stu_no not in feature_results[0][0]:
+                print "stu_no不在feature oss_url字段内 stu_id={} face_id={}".format(stu_id, face_id)
+                continue
+            if student_stu_no not in feature_results[1][0]:
+                print "stu_no不在feature oss_url字段内 stu_id={} face_id={}".format(
+                    stu_id, face_id)
+                continue
 
     @db.transaction(is_commit=True)
     def copy_feature_to_face(self, pgsql_cur):
