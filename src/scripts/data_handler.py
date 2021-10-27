@@ -345,7 +345,7 @@ class DataHandler(object):
         pgsql_db = db.PgsqlDbUtil
         sql = "SELECT id,stu_no FROM student WHERE status=1"
         face_sql = "SELECT id,stu_no FROM face WHERE stu_id={}"
-        feature_sql = "SELECT oss_url FROM feature WHERE face_id={}"
+        feature_sql = "SELECT oss_url,status FROM feature WHERE face_id={}"
         results = pgsql_db.query(pgsql_cur, sql)
         for row in results:
             print "---------------------------"
@@ -364,10 +364,10 @@ class DataHandler(object):
             if len(feature_results) != 2:
                 print "feature表记录条数不是2 stu_id={} face_id={}".format(stu_id, face_id)
                 break
-            if not feature_results[0][0]:
+            if not feature_results[0][0] and feature_results[0][1] != -1:
                 print "feature oss_url为空 stu_id={} face_id={}".format(stu_id, face_id)
                 break
-            if not feature_results[1][0]:
+            if not feature_results[1][0] and feature_results[1][1] != -1:
                 print "feature oss_url为空 stu_id={} face_id={}".format(stu_id, face_id)
                 break
             if student_stu_no not in feature_results[0][0]:
