@@ -372,10 +372,10 @@ class DataHandler(object):
                 if feature_results[1][1] != -1:
                     print "feature oss_url为空 stu_id={} face_id={}".format(stu_id, face_id)
                     break
-            if student_stu_no not in feature_results[0][0]:
+            if feature_results[0][0] and student_stu_no not in feature_results[0][0]:
                 print "stu_no不在feature oss_url字段内 stu_id={} face_id={}".format(stu_id, face_id)
                 break
-            if student_stu_no not in feature_results[1][0]:
+            if feature_results[1][0] and student_stu_no not in feature_results[1][0]:
                 print "stu_no不在feature oss_url字段内 stu_id={} face_id={}".format(
                     stu_id, face_id)
                 break
