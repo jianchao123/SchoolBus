@@ -354,23 +354,23 @@ class DataHandler(object):
             face_results = pgsql_db.query(pgsql_cur, face_sql.format(stu_id))
             if len(face_results) > 1:
                 print "人脸有两条记录 stu_id={}".format(stu_id)
-                continue
+                break
             face_id = face_results[0][0]
             face_stu_no = face_results[0][1]
             if student_stu_no != face_stu_no:
                 print "student表和face表的stu_no不一致 stu_id={}".format(stu_id)
-                continue
+                break
             feature_results = pgsql_db.query(pgsql_cur, feature_sql.format(face_id))
             if len(feature_results) != 2:
                 print "feature表记录条数不是2 stu_id={} face_id={}".format(stu_id, face_id)
-                continue
+                break
             if student_stu_no not in feature_results[0][0]:
                 print "stu_no不在feature oss_url字段内 stu_id={} face_id={}".format(stu_id, face_id)
-                continue
+                break
             if student_stu_no not in feature_results[1][0]:
                 print "stu_no不在feature oss_url字段内 stu_id={} face_id={}".format(
                     stu_id, face_id)
-                continue
+                break
 
     @db.transaction(is_commit=True)
     def copy_feature_to_face(self, pgsql_cur):
