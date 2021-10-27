@@ -364,10 +364,10 @@ class DataHandler(object):
             if len(feature_results) != 2:
                 print "feature表记录条数不是2 stu_id={} face_id={}".format(stu_id, face_id)
                 break
-            if not feature_results[0]:
+            if not feature_results[0][0]:
                 print "feature oss_url为空 stu_id={} face_id={}".format(stu_id, face_id)
                 break
-            if not feature_results[1]:
+            if not feature_results[1][0]:
                 print "feature oss_url为空 stu_id={} face_id={}".format(stu_id, face_id)
                 break
             if student_stu_no not in feature_results[0][0]:
