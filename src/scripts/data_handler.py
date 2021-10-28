@@ -396,6 +396,18 @@ class DataHandler(object):
                 }
                 pgsql_db.update(pgsql_cur, d, table_name='face')
 
+    @db.transaction(is_commit=True)
+    def is_exists_null_url(self, pgsql_cur):
+        """url是否为空"""
+        pgsql_db = db.PgsqlDbUtil
+        sql = "SELECT oss_url FROM face WHERE status in (2,3,4,5,6)"
+        results = pgsql_db.query(pgsql_cur, sql)
+        for row in results:
+            oss_url = row[0]
+            if not self.bucket.object_exists(oss_url):
+                print oss_url
+
+
 if __name__ == '__main__':
     # data = DataHandler()
     # data.add_data_to_audio_feature()
