@@ -567,7 +567,8 @@ class FromOssQueryFace(object):
             intersection = intersection[:1000]
 
             for stuno in intersection:
-                oss_url_str = 'http://' + config.OSSDomain + "/person/face/" + stuno + ".png"
+                suffix = rds_conn.hget('IMAGE_SUFFIX_HASH', stuno)
+                oss_url_str = 'http://' + config.OSSDomain + "/person/face/" + stuno + ".{}".format(suffix)
                 d = {
                     'id': stu_no_pk_map[stuno],
                     'oss_url': oss_url_str,
@@ -725,6 +726,7 @@ class EveryFewMinutesExe(object):
                     if comma_arr and len(comma_arr) == 2 \
                             and comma_arr[-1] in ['png', 'jpg', 'jpeg']:
                         rds_conn.sadd(RedisKey.OSS_ID_CARD_SET, comma_arr[0])
+                        rds_conn.hset('IMAGE_SUFFIX_HASH', comma_arr[0], comma_arr[-1])
 
                 # 删除不规则的人脸
                 is_del = 0
