@@ -723,7 +723,7 @@ class EveryFewMinutesExe(object):
                 if slash_arr and len(slash_arr) == 3:
                     comma_arr = slash_arr[-1].split('.')
                     if comma_arr and len(comma_arr) == 2 \
-                            and comma_arr[-1] == 'png':
+                            and comma_arr[-1] in ['png', 'jpg', 'jpeg']:
                         rds_conn.sadd(RedisKey.OSS_ID_CARD_SET, comma_arr[0])
 
                 # 删除不规则的人脸
@@ -734,8 +734,8 @@ class EveryFewMinutesExe(object):
                     comma_arr = slash_arr[-1].split('.')
                     if comma_arr and len(comma_arr) != 2:
                         is_del = 1
-                    if comma_arr and comma_arr[-1] in ['JPG', 'jpg', 'JPEG', 'jpeg']:
-                        is_del = 1
+                    # if comma_arr and comma_arr[-1] in ['JPG', 'jpg', 'JPEG', 'jpeg']:
+                    #     is_del = 1
                 if is_del:
                     self.bucket.delete_object(obj.key)
             if config.env == "PRO":
