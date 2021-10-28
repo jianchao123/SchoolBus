@@ -396,7 +396,7 @@ class DataHandler(object):
                 }
                 pgsql_db.update(pgsql_cur, d, table_name='face')
 
-    @db.transaction(is_commit=True)
+    @db.transaction(is_commit=False)
     def is_exists_null_url(self, pgsql_cur):
         """url是否为空"""
         pgsql_db = db.PgsqlDbUtil
@@ -404,7 +404,7 @@ class DataHandler(object):
         results = pgsql_db.query(pgsql_cur, sql)
         for row in results:
             oss_url = row[0]
-            if not self.bucket.object_exists(oss_url):
+            if not self.bucket.object_exists("person" + oss_url.split('person')[-1]):
                 print oss_url
 
 
