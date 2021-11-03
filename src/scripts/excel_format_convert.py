@@ -9,9 +9,9 @@ import time
 from xlutils.copy import copy
 from datetime import datetime
 # py文件路径
-#project_dir = os.path.split(os.path.realpath(__file__))[0]
+project_dir = os.path.split(os.path.realpath(__file__))[0]
 # pe文件路径
-project_dir = os.path.dirname(os.path.realpath(sys.argv[0]))
+#project_dir = os.path.dirname(os.path.realpath(sys.argv[0]))
 
 def create_new_workbook():
     workbook = xlwt.Workbook()  # 新建一个工作簿
@@ -54,6 +54,7 @@ def xlsx_names(file_dir):
 
 def extract_xlsx_data(file_names):
     """提取学校提供的xlsx数据"""
+    index = 0
     try:
         err_dict = {}
         file_names = sorted(file_names)
@@ -133,7 +134,7 @@ def extract_xlsx_data(file_names):
             for inx, sheet in enumerate(sheets, 1):
                 nrows = sheet.nrows
                 for rowx in range(nrows):
-                    # 获取行数据
+                    index = index + 1
                     values = sheet.row_values(rowx, start_colx=0, end_colx=None)
                     if rowx < 10:
                         value_decode_list = []
@@ -147,41 +148,43 @@ def extract_xlsx_data(file_names):
                         values = sheet.row_values(rowx, start_colx=0, end_colx=None)
                         nickname = values[2]
                         sex = values[3]
-                        mobile = str(int(values[5])) if type(values[5]) == float else values[0]
+                        mobile = str(int(values[5])) if type(values[5]) == float else values[5]
                         parents = nickname[1] + nickname[1]
                         license_plate_number = values[4]
-                        stu_no = str(int(time.time() * 1000)) + mobile[:5]
+                        stu_no = str(int(time.time() * 1000)) + "%05d" % index
                         new_data.append(
-                            [nickname, stu_no, sex, parents, mobile, '', '',
+                            [stu_no, nickname, sex, parents, mobile, '', '',
                              u"没有填写", '', school_name, u'小班', u'一班',
                              '2023-12-30', license_plate_number])
-
+        stuno_list = [row[0] for row in new_data]
+        print(len(stuno_list))
+        print(len(set(stuno_list)))
         # 导出数据
-        value_title = [u'姓名', u'身份证号', u'性别',	u'家长1姓名', u'家长1手机号',
-                       u'家长2姓名', u'家长2手机号', u'家庭地址', u'备注', u'学校',
-                       u'年级', u'班级', u'截止日期', u'车牌']
-        excel_name = u"转换后的.xlsx"
-        sheet_name = u'学生数据'
+        # value_title = [u'身份证号', u'姓名', u'性别',	u'家长1姓名', u'家长1手机号',
+        #                u'家长2姓名', u'家长2手机号', u'家庭地址', u'备注', u'学校',
+        #                u'年级', u'班级', u'截止日期', u'车牌']
+        # excel_name = u"转换后的.xlsx"
+        # sheet_name = u'学生数据'
 
-        path = project_dir + "/" + excel_name
-        path = path.replace("/", "\\")
-        if os.path.exists(path):
-            try:
-                os.remove(path)
-            except:
-                pass
-        sheet_data = [value_title]
-        for index, row in enumerate(new_data):
-            sheet_data.append([row[0], row[1], row[2], row[3], row[4],
-                               row[5], row[6], row[7], row[8], row[9],
-                               row[10], row[11], row[12], row[13]])
+        # path = project_dir + "/" + excel_name
+        # path = path.replace("/", "\\")
+        # if os.path.exists(path):
+        #     try:
+        #         os.remove(path)
+        #     except:
+        #         pass
+        # sheet_data = [value_title]
+        # for index, row in enumerate(new_data):
+        #     sheet_data.append([row[0], row[1], row[2], row[3], row[4],
+        #                        row[5], row[6], row[7], row[8], row[9],
+        #                        row[10], row[11], row[12], row[13]])
 
-        workbook = create_new_workbook()
-        write_excel_xls(
-            workbook,
-            path,
-            sheet_name,
-            sheet_data)
+        # workbook = create_new_workbook()
+        # write_excel_xls(
+        #     workbook,
+        #     path,
+        #     sheet_name,
+        #     sheet_data)
     except:
         import traceback
         return traceback.format_exc()
@@ -189,10 +192,11 @@ def extract_xlsx_data(file_names):
 
 
 if __name__ == "__main__":
-	print(project_dir)
-	files = xlsx_names(project_dir.replace('/', '\\') + '\\sources')
-	if not files:
-		print("当前目录下没有要转换的xlsx")
-	else:
-		print(extract_xlsx_data(files))
-	os.system("pause")
+    print(project_dir)
+    #files = xlsx_names(project_dir.replace('/', '\\') + '\\sources')
+    files = xlsx_names(project_dir + '/sources')
+    if not files:
+        print("当前目录下没有要转换的xlsx")
+    else:
+        print(extract_xlsx_data(files))
+    os.system("pause")

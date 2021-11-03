@@ -317,7 +317,7 @@ class DataHandler(object):
     def png_2_jpg(self, pgsql_cur):
 
         pgsql_db = db.PgsqlDbUtil
-        results = pgsql_db.query(pgsql_cur, "SELECT oss_url FROM feature WHERE status=4")
+        results = pgsql_db.query(pgsql_cur, "SELECT oss_url FROM feature WHERE status in (1,4)")
         for row in results:
             oss_url = row[0]
             temp_dir = project_dir + '/src/scripts/temp/'

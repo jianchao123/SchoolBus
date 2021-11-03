@@ -1,8 +1,9 @@
 # coding:utf-8
+import os
 import time
 import xlrd
-import sys
-import json
+import jpype
+import shutil
 import inspect
 from datetime import datetime
 from datetime import timedelta
@@ -21,7 +22,9 @@ from ext import cache
 from utils.defines import grade, classes, gender, RedisKey
 from msgqueue import producer
 from database.db import db
-from utils.tools import get_frame_name_param
+from utils.tools import get_frame_name_param, create_new_workbook, \
+    write_excel_xls, zip_dir, upload_zip
+from ext import conf
 
 
 class StudentService(object):
@@ -690,3 +693,203 @@ class StudentService(object):
     def upload_zip_callback(zip_url):
         producer.bulk_update_face(zip_url)
         return {}
+
+    @staticmethod
+    def extract_image(source_path, target_dir):
+        if not isinstance(source_path, unicode):
+            source_path = source_path.decode('utf8')
+        # 启动JVM
+        jvmPath = jpype.getDefaultJVMPath()
+        try:
+            # 加载jar包
+            jpype.startJVM(jvmPath, "-ea",
+                           "-Djava.class.path={}test.jar".format(conf.config['PROJECT_DIR'] + '/src/service/temp/'))
+            # 指定main class
+            ImportClass = jpype.JClass("imporExcel.imporExcel.ExcelUtil")
+            # 创建类实例对象
+            ic = ImportClass()
+            # 引用jar包类中的方法
+            ic.getExcelPicture(source_path, target_dir)
+        finally:
+            # 关闭JVM
+            if jpype.isJVMStarted():
+                jpype.shutdownJVM()
+            print "stop jvm"
+        return
+
+    @staticmethod
+    def convert_excel(excel_file):
+        try:
+            suffix = str(int(time.time() * 1000))
+            xlsx_path = conf.config['PROJECT_DIR'] + '/src/service/temp/' + suffix + ".xlsx"
+            with open(xlsx_path, 'wb') as f:
+                f.write(excel_file.read())
+
+            workbook = xlrd.open_workbook(filename=xlsx_path)
+            sheets = workbook.sheets()
+            err_dict = {}
+
+            for inx, sheet in enumerate(sheets, 1):
+                if str(inx) not in err_dict:
+                    err_dict[str(inx)] = []
+
+                nrows = sheet.nrows
+                for rowx in range(nrows):
+                    values = sheet.row_values(rowx, start_colx=0, end_colx=None)
+                    value_decode_list = []
+                    for row in values:
+                        value_decode_list.append(row)
+
+                    if rowx < 10:
+                        row_val = ','.join(value_decode_list)
+                        # 第4行是所属地区和学校名字
+                        if rowx == 4:
+                            if u"所属地区" not in row_val or u"学校名称" not in row_val:
+                                err_dict[str(inx)].append(u"第5行格式错误")
+                            else:
+                                school_name = \
+                                row_val.replace(",", "").split(u'学校名称')[-1]
+                                if not school_name:
+                                    err_dict[str(inx)].append(
+                                        u"第5行没有填写学校名称")
+                        if rowx == 9:
+                            if u"序号" not in row_val \
+                                    or u"照片" not in row_val \
+                                    or u"姓名" not in row_val \
+                                    or u"性别" not in row_val \
+                                    or u"乘坐车辆" not in row_val \
+                                    or u"家长1手机号" not in row_val \
+                                    or u"家长2手机号" not in row_val:
+                                err_dict[str(inx)].append(u"第10行格式错误")
+                    if rowx > 9:
+                        # -------------检查是否为空----------------------
+                        if not values[0] or not values[2] or not values[3] \
+                                or not values[4] or not values[5]:
+                            err_dict[str(inx)].append(
+                                u"第{}行有空数据".format(rowx))
+
+                        # -------------检查类型----------------------
+                        if len(values[2]) > 6:
+                            err_dict[str(inx)].append(
+                                u"第{}行3列长度过长".format(rowx))
+                        if values[3] not in [u'男', u'女']:
+                            err_dict[str(inx)].append(
+                                u"第{}行4列性别有问题".format(rowx))
+                        if type(values[5]) == float:
+                            mobile = str(int(values[5]))
+                        else:
+                            mobile = values[5]
+                        if len(mobile) != 11:
+                            err_dict[str(inx)].append(
+                                u"第{}行5列手机号长度问题".format(rowx))
+            # 错误消息
+            msg_list = []
+
+            for sheet_key, sheet_val in err_dict.items():
+                if sheet_val:
+                    err_msg = u",".join(sheet_val)
+                    msg_list.append(
+                        u"第{}张表格,  {}".format(sheet_key, err_msg))
+            if msg_list:
+                content = "\n".join(msg_list)
+                return {'excel_err': 1, 'content': content}
+
+            # 图片
+            target_dir = conf.config['PROJECT_DIR'] + '/src/service/temp/images'
+            if not os.path.exists(target_dir):
+                os.mkdir(target_dir)
+            print xlsx_path, target_dir
+            StudentService.extract_image(xlsx_path, target_dir + '/1')
+
+            # -----------------------获取数据--------------------
+            index = 1
+            new_data = []
+            # 文件
+            school_name = None
+            sheets = workbook.sheets()
+            # 获取表数据
+            for inx, sheet in enumerate(sheets, 1):
+                nrows = sheet.nrows
+                for rowx in range(nrows):
+                    # 获取行数据
+                    values = sheet.row_values(rowx, start_colx=0,
+                                              end_colx=None)
+                    if rowx < 10:
+                        value_decode_list = []
+                        for row in values:
+                            value_decode_list.append(row)
+                        row_val = ','.join(value_decode_list)
+                        if rowx == 4:
+                            school_name = \
+                                row_val.replace(",", "").split(u'学校名称')[-1]
+
+                    if rowx > 9:
+                        values = sheet.row_values(rowx, start_colx=0,
+                                                  end_colx=None)
+                        nickname = values[2]
+                        sex = values[3]
+                        mobile = str(int(values[5])) if type(
+                            values[5]) == float else values[0]
+                        parents = nickname[1] + nickname[1]
+                        license_plate_number = values[4]
+                        stu_no = str(int(time.time() * 1000)) + ("%05d" % index)
+                        new_data.append(
+                            [stu_no, nickname, sex, parents, mobile, '', '',
+                             u"没有填写", '', school_name, u'小班', u'一班',
+                             '2023-12-30', license_plate_number])
+                        index += 1
+
+            # 获取目录下所有文件名
+            files = os.listdir(target_dir)
+            for k, v in zip(sorted(files), new_data):
+                oldname = target_dir + os.sep + k
+                newname = target_dir + os.sep + v[0] + ".jpeg"
+                print oldname, newname
+                os.rename(oldname, newname)  # 用os模块中的rename方法对文件改名
+
+            # 导出数据
+            value_title = [u'身份证号', u'姓名', u'性别', u'家长1姓名', u'家长1手机号',
+                           u'家长2姓名', u'家长2手机号', u'家庭地址', u'备注', u'学校',
+                           u'年级', u'班级', u'截止日期', u'车牌']
+            excel_name = u"转换后的.xlsx"
+            sheet_name = u'学生数据'
+
+            path = conf.config['PROJECT_DIR'] + "/src/service/temp/images/" + excel_name
+            if os.path.exists(path):
+                try:
+                    os.remove(path)
+                except:
+                    pass
+            sheet_data = [value_title]
+            for index, row in enumerate(new_data):
+                sheet_data.append([row[0], row[1], row[2], row[3], row[4],
+                                   row[5], row[6], row[7], row[8], row[9],
+                                   row[10], row[11], row[12], row[13]])
+
+            workbook = create_new_workbook()
+            write_excel_xls(
+                workbook,
+                path,
+                sheet_name,
+                sheet_data)
+
+            # 压缩文件夹
+            image_path = conf.config['PROJECT_DIR'] + "/src/service/temp/images"
+            local_zip_path = conf.config['PROJECT_DIR'] + "/src/service/temp/转换后的.zip"
+            zip_dir(image_path, local_zip_path)
+
+            zip_key = 'zips/转换后的{}.zip'.format(int(time.time()))
+            upload_zip(zip_key,
+                       local_zip_path,
+                       conf.config['OSS_ALL_KEY'],
+                       conf.config['OSS_ALL_SECRET'],
+                       conf.config['OSS_POINT'],
+                       conf.config['OSS_BUCKET'])
+            zip_url = "http://" + conf.config['OSS_BUCKET'] + "." + conf.config['OSS_POINT'] + "/" + zip_key
+
+            os.remove(xlsx_path)
+            os.remove(local_zip_path)
+            shutil.rmtree(image_path)
+        except:
+            return {'excel_err': 1}
+        return {'excel_err': 0, 'url': zip_url}

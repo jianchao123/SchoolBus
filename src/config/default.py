@@ -1,4 +1,5 @@
 # coding:utf-8
+import os
 
 
 class Config(object):
@@ -38,3 +39,5 @@ class Config(object):
 
     APP_LOG_LEVEL = 'info'
 
+    PROJECT_DIR = os.path.dirname(os.path.dirname(
+        os.path.dirname(os.path.realpath(__file__))))

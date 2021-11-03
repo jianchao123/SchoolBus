@@ -629,3 +629,48 @@ def uploadzip_callback(user_id, data):
     data = StudentService.upload_zip_callback(zip_url)
     return data
 
+
+@bp.route('/convertexcel', methods=['POST'])
+@form_none_param_with_permissions()
+def convert_excel(user_id, data):
+    """
+    转换excel
+    转换excel，无需登录
+    ---
+    tags:
+      - 学生
+    parameters:
+      - name: fd
+        in: formData
+        type: file
+        required: true
+        description: excel文件
+    responses:
+      200:
+        description: 正常返回http code 200
+        schema:
+          properties:
+            msg:
+              type: string
+              description: 错误消息
+            status:
+              type: integer
+              description: 状态
+            data:
+              type: object
+              properties:
+                excel_err:
+                  type: integer
+                  description: 1 excel有错误 0 excel一切正常
+                content:
+                  type: string
+                  description: 错误信息,非必选
+                url:
+                  type: string
+                  description: 转换后的压缩包url,非必选
+    """
+    from flask import request
+    print request.files
+    fd = request.files['fd']
+    data = StudentService.convert_excel(fd)
+    return data
