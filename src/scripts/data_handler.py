@@ -355,6 +355,7 @@ class DataHandler(object):
             # 压缩图片到
             new_path = img_path + "_1.jpg"
             img = Image.open(img_path)
+            img = img.convert('RGB')
             out = img.resize((480, 640), Image.ANTIALIAS)
             out.save(new_path, 'jpeg')
 
