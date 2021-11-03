@@ -344,7 +344,9 @@ class GenerateFeature(object):
 
     @db.transaction(is_commit=True)
     def execute(self, pgsql_cur, rds_conn, unused_devices):
-        """start到end大概0.004秒"""
+        """start到end大概0.004秒
+        unused_devices 所有在线且未使用的设备
+        """
         pgsql_db = db.PgsqlDbUtil
 
         jdata = {
@@ -365,9 +367,9 @@ class GenerateFeature(object):
 
         # 将未使用的设备按照厂商分开
         for mfr_id, device_name_list in mfr_dict.items():
-
+            # 该厂商所有在线未使用的设备
             invalid_devices = list(set(device_name_list) & set(unused_devices))
-            unused_devices = list(set(unused_devices) - set(invalid_devices))
+            #unused_devices = list(set(unused_devices) - set(invalid_devices))
 
             # 等待生成状态中
             sql = "SELECT face_id,oss_url,id FROM feature " \
@@ -381,19 +383,22 @@ class GenerateFeature(object):
                 # 判断oss文件是否存在
                 if oss_url and \
                         oss_file_exists('person' + oss_url.split("person")[-1]):
-
-                    jdata["fid"] = face_id
-                    jdata['faceurl'] = oss_url
                     device_name = invalid_devices.pop()
-                    pub_msg(rds_conn, device_name, jdata)
-                    # 将设备置为使用中
-                    rds_conn.hset(RedisKey.DEVICE_USED, device_name, int(time.time()))
-                    # 更新feature状态
-                    d = {
-                        'id': pk,
-                        'status': 2     # 生成中
-                    }
-                    pgsql_db.update(pgsql_cur, d, table_name='feature')
+                    # 如果为空，表示没有被使用
+                    if not rds_conn.hget(RedisKey.DEVICE_USED, device_name):
+                        # 将设备置为使用中
+                        rds_conn.hset(RedisKey.DEVICE_USED, device_name,
+                                      int(time.time()))
+                        jdata["fid"] = face_id
+                        jdata['faceurl'] = oss_url
+                        pub_msg(rds_conn, device_name, jdata)
+
+                        # 更新feature状态
+                        d = {
+                            'id': pk,
+                            'status': 2     # 生成中
+                        }
+                        pgsql_db.update(pgsql_cur, d, table_name='feature')
 
 
 class FaceGenerateIsfinish(object):
