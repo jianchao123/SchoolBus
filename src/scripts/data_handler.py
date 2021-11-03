@@ -341,6 +341,29 @@ class DataHandler(object):
                 self.bucket.put_object(oss_key, fileobj)
 
     @db.transaction(is_commit=False)
+    def resize_image(self, pgsql_cur):
+        pgsql_db = db.PgsqlDbUtil
+        results = pgsql_db.query(pgsql_cur, "SELECT oss_url FROM feature WHERE status in (1,4)")
+        for row in results:
+            oss_url = row[0]
+            # 先写入本地
+            temp_dir = project_dir + '/src/scripts/temp/'
+            img_path = temp_dir + '{}'.format(str(time.time()).replace('.', ''))
+            with open(img_path, 'w') as fd:
+                fd.write(requests.get(oss_url).content)
+
+            # 压缩图片到
+            new_path = img_path + "_1.jpg"
+            img = Image.open(img_path)
+            out = img.resize((480, 640), Image.ANTIALIAS)
+            out.save(new_path, 'jpeg')
+
+            oss_key = "person" + oss_url.split("person")[-1]
+            with open(new_path, 'rb') as fileobj:
+                result = self.bucket.put_object(oss_key, fileobj)
+                print('http status: {0}'.format(result.status))
+
+    @db.transaction(is_commit=False)
     def stu_no_and_image_is_match(self, pgsql_cur):
         """身份证号和图片是否匹配"""
         pgsql_db = db.PgsqlDbUtil
