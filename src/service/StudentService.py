@@ -698,23 +698,20 @@ class StudentService(object):
     def extract_image(source_path, target_dir):
         if not isinstance(source_path, unicode):
             source_path = source_path.decode('utf8')
-        # 启动JVM
-        jvmPath = jpype.getDefaultJVMPath()
-        try:
-            # 加载jar包
-            jpype.startJVM(jvmPath, "-ea",
-                           "-Djava.class.path={}test.jar".format(conf.config['PROJECT_DIR'] + '/src/service/temp/'))
-            # 指定main class
-            ImportClass = jpype.JClass("imporExcel.imporExcel.ExcelUtil")
-            # 创建类实例对象
-            ic = ImportClass()
-            # 引用jar包类中的方法
-            ic.getExcelPicture(source_path, target_dir)
-        finally:
-            # 关闭JVM
-            if jpype.isJVMStarted():
-                jpype.shutdownJVM()
-            print "stop jvm"
+        if not jpype.isJVMStarted():
+            ivm_path = jpype.getDefaultJVMPath()
+            jar_path = "-Djava.class.path={}test.jar".format(conf.config['PROJECT_DIR'] + '/src/service/temp/')
+            jpype.startJVM(ivm_path, "-ea", jar_path)
+        else:
+            print "----------------jvm已启动--------------------"
+
+        # 指定main class
+        import_class = jpype.JClass("imporExcel.imporExcel.ExcelUtil")
+        # 创建类实例对象
+        ic = import_class()
+        # 引用jar包类中的方法
+        ic.getExcelPicture(source_path, target_dir)
+
         return
 
     @staticmethod
@@ -838,10 +835,25 @@ class StudentService(object):
                              u"没有填写", '', school_name, u'小班', u'一班',
                              '2023-12-30', license_plate_number])
                         index += 1
+            for row in new_data:
+                print row[1]
+
+            img_names = os.listdir(target_dir)
+            # 分组统计数量最多的行
+            max_col = 0
+            for img_name in img_names:
+                col_vol = int(img_name.replace(".jpeg", "").split("_")[1])
+                if col_vol > max_col:
+                    max_col = col_vol
+
+            def row_col_sort(file_name):
+                arr = file_name.replace(".jpeg", "").split("_")
+                return int(arr[0]) * max_col + int(arr[1])
+            img_names = sorted(img_names, key=row_col_sort)
 
             # 获取目录下所有文件名
             files = os.listdir(target_dir)
-            for k, v in zip(sorted(files), new_data):
+            for k, v in zip(img_names, new_data):
                 oldname = target_dir + os.sep + k
                 newname = target_dir + os.sep + v[0] + ".jpeg"
                 print oldname, newname
