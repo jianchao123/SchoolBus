@@ -2,7 +2,6 @@
 import os
 import time
 import xlrd
-import jpype
 import shutil
 import inspect
 from datetime import datetime
@@ -696,6 +695,8 @@ class StudentService(object):
 
     @staticmethod
     def extract_image(source_path, target_dir):
+        import jpype
+
         if not isinstance(source_path, unicode):
             source_path = source_path.decode('utf8')
         if not jpype.isJVMStarted():
