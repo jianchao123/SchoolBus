@@ -21,9 +21,7 @@ from ext import cache
 from utils.defines import grade, classes, gender, RedisKey
 from msgqueue import producer
 from database.db import db
-from utils.tools import get_frame_name_param, create_new_workbook, \
-    write_excel_xls, zip_dir, upload_zip
-from ext import conf
+from utils.tools import get_frame_name_param, create_new_workbook
 
 
 class StudentService(object):
@@ -696,6 +694,7 @@ class StudentService(object):
     @staticmethod
     def extract_image(source_path, target_dir):
         import jpype
+        from ext import conf
 
         if not isinstance(source_path, unicode):
             source_path = source_path.decode('utf8')
@@ -717,6 +716,8 @@ class StudentService(object):
 
     @staticmethod
     def convert_excel(excel_file):
+        from ext import conf
+        from utils.tools import write_excel_xls, zip_dir, upload_zip
         try:
             suffix = str(int(time.time() * 1000))
             xlsx_path = conf.config['PROJECT_DIR'] + '/src/service/temp/' + suffix + ".xlsx"
