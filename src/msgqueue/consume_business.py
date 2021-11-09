@@ -983,9 +983,13 @@ class MpMsgBusiness(object):
                 "color": "#173177"
             }
         }
-        wx_mp.template_send(
-            config.MP_PARENTS_TEMPLATE_ID, open_id, d,
-            url=config.MP_PARENTS_REDIRECT_URL.format(order_id))
+        try:
+            wx_mp.template_send(
+                config.MP_PARENTS_TEMPLATE_ID, open_id, d,
+                url=config.MP_PARENTS_REDIRECT_URL.format(order_id))
+        except:
+            import traceback
+            self.logger.error(traceback.format_exc())
 
     def staff_mp_msg(self, data):
         """工作人员模板消息"""
