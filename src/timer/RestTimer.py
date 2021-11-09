@@ -76,20 +76,24 @@ class CheckAccClose(object):
 
     def check_acc_close(self):
         """检查acc close"""
-        rds_conn = db.rds_conn
-        acc_hash = rds_conn.hgetall(RedisKey.ACC_CLOSE)
-        cur_timestamp = int(time.time())
-        for dev_name, value in acc_hash.items():
-            arr = value.split("|")
-            acc_timestamp = int(arr[0])
-            face_ids = arr[1]
-            periods = arr[2]
-            time_diff = cur_timestamp - acc_timestamp
-            if face_ids:
-                self.acc_business(rds_conn, dev_name, time_diff, face_ids, periods)
-            else:
-                # 若没有人滞留,删除acc key
-                rds_conn.hdel(RedisKey.ACC_CLOSE, dev_name)
+        try:
+            rds_conn = db.rds_conn
+            acc_hash = rds_conn.hgetall(RedisKey.ACC_CLOSE)
+            cur_timestamp = int(time.time())
+            for dev_name, value in acc_hash.items():
+                arr = value.split("|")
+                acc_timestamp = int(arr[0])
+                face_ids = arr[1]
+                periods = arr[2]
+                time_diff = cur_timestamp - acc_timestamp
+                if face_ids:
+                    self.acc_business(rds_conn, dev_name, time_diff, face_ids, periods)
+                else:
+                    # 若没有人滞留,删除acc key
+                    rds_conn.hdel(RedisKey.ACC_CLOSE, dev_name)
+        except:
+            import traceback
+            print traceback.format_exc()
 
     @db.transaction(is_commit=True)
     def acc_business(self, pgsql_cur, rds_conn, dev_name,
@@ -275,11 +279,15 @@ class RefreshWxAccessToken(object):
 
     @staticmethod
     def refresh_wechat_token():
-        rds_conn = db.rds_conn
-        from weixin.mp import WeixinMP
-        mp = WeixinMP(config['MP_APP_ID'], config['MP_SECRET_ID'])
-        rds_conn.set(RedisKey.WECHAT_ACCESS_TOKEN, mp.access_token)
-        return
+        try:
+            rds_conn = db.rds_conn
+            from weixin.mp import WeixinMP
+            mp = WeixinMP(config['MP_APP_ID'], config['MP_SECRET_ID'])
+            rds_conn.set(RedisKey.WECHAT_ACCESS_TOKEN, mp.access_token)
+            return
+        except:
+            import traceback
+            print traceback.format_exc()
 
 
 class DeviceMfrList(object):
@@ -287,15 +295,19 @@ class DeviceMfrList(object):
 
     @db.transaction(is_commit=True)
     def device_mfr_list(self, pgsql_cur):
-        pgsql_db = db.PgsqlDbUtil
-        rds_conn = db.rds_conn
-        sql = "SELECT id,mfr_id,device_name FROM device " \
-              "WHERE device_type = 2 AND status != 10"
-        results = pgsql_db.query(pgsql_cur, sql)
-        for row in results:
-            device_name = row[2]
-            mfr_id = row[1]
-            rds_conn.hset(RedisKey.MFR_GENERATE_DEVICE_HASH, device_name, str(mfr_id))
+        try:
+            pgsql_db = db.PgsqlDbUtil
+            rds_conn = db.rds_conn
+            sql = "SELECT id,mfr_id,device_name FROM device " \
+                  "WHERE device_type = 2 AND status != 10"
+            results = pgsql_db.query(pgsql_cur, sql)
+            for row in results:
+                device_name = row[2]
+                mfr_id = row[1]
+                rds_conn.hset(RedisKey.MFR_GENERATE_DEVICE_HASH, device_name, str(mfr_id))
+        except:
+            import traceback
+            print traceback.format_exc()
 
 
 class GenerateFeature(object):
@@ -708,65 +720,61 @@ class EveryFewMinutesExe(object):
         """
         pgsql_db = db.PgsqlDbUtil
         rds_conn = db.rds_conn
-        try:
-            # 厂商设备分类
-            sql = 'SELECT device_name,mfr_id FROM device WHERE status!=10'
-            results = pgsql_db.query(pgsql_cur, sql)
-            for row in results:
-                device_name = row[0]
-                mfr_id = row[1]
-                if mfr_id == 1:
-                    rds_conn.hset(
-                        RedisKey.MFR_DEVICE_HASH, device_name, 'WUHAN')
-                elif mfr_id == 2:
-                    rds_conn.hset(
-                        RedisKey.MFR_DEVICE_HASH, device_name, 'SHENZHEN')
+        # 厂商设备分类
+        sql = 'SELECT device_name,mfr_id FROM device WHERE status!=10'
+        results = pgsql_db.query(pgsql_cur, sql)
+        for row in results:
+            device_name = row[0]
+            mfr_id = row[1]
+            if mfr_id == 1:
+                rds_conn.hset(
+                    RedisKey.MFR_DEVICE_HASH, device_name, 'WUHAN')
+            elif mfr_id == 2:
+                rds_conn.hset(
+                    RedisKey.MFR_DEVICE_HASH, device_name, 'SHENZHEN')
 
-            # 从oss拉取图片名字存到redis
-            for obj in oss2.ObjectIterator(self.bucket, prefix='person/face/'):
-                slash_arr = obj.key.split("/")
-                # 将oss上的图片名字保存到redis
-                if slash_arr and len(slash_arr) == 3:
-                    comma_arr = slash_arr[-1].split('.')
-                    if comma_arr and len(comma_arr) == 2 \
-                            and comma_arr[-1] in ['png', 'jpg', 'jpeg']:
-                        rds_conn.sadd(RedisKey.OSS_ID_CARD_SET, comma_arr[0])
-                        rds_conn.hset('IMAGE_SUFFIX_HASH', comma_arr[0], comma_arr[-1])
+        # 从oss拉取图片名字存到redis
+        for obj in oss2.ObjectIterator(self.bucket, prefix='person/face/'):
+            slash_arr = obj.key.split("/")
+            # 将oss上的图片名字保存到redis
+            if slash_arr and len(slash_arr) == 3:
+                comma_arr = slash_arr[-1].split('.')
+                if comma_arr and len(comma_arr) == 2 \
+                        and comma_arr[-1] in ['png', 'jpg', 'jpeg']:
+                    rds_conn.sadd(RedisKey.OSS_ID_CARD_SET, comma_arr[0])
+                    rds_conn.hset('IMAGE_SUFFIX_HASH', comma_arr[0], comma_arr[-1])
 
-                # 删除不规则的人脸
-                is_del = 0
-                if slash_arr and len(slash_arr) != 3:
+            # 删除不规则的人脸
+            is_del = 0
+            if slash_arr and len(slash_arr) != 3:
+                is_del = 1
+            if slash_arr and len(slash_arr) == 3 and not is_del:
+                comma_arr = slash_arr[-1].split('.')
+                if comma_arr and len(comma_arr) != 2:
                     is_del = 1
-                if slash_arr and len(slash_arr) == 3 and not is_del:
-                    comma_arr = slash_arr[-1].split('.')
-                    if comma_arr and len(comma_arr) != 2:
-                        is_del = 1
-                    # if comma_arr and comma_arr[-1] in ['JPG', 'jpg', 'JPEG', 'jpeg']:
-                    #     is_del = 1
-                if is_del:
-                    self.bucket.delete_object(obj.key)
-            if config.env == "PRO":
-                try:
-                    import random
-                    raninx = random.randint(1, 1000)
-                    if raninx < 200:
-                        # 服务器IP上报
-                        OSSAccessKeyId = 'LTAI4G8rNR6PCjfnnz6RSu7L'
-                        OSSAccessKeySecret = '3HKmiEZlb55hupI66GLbNmJrttBY71'
-                        OSSEndpoint = 'oss-cn-shenzhen.aliyuncs.com'
-                        OSSBucketName = 'animal-test-mirror'
-                        my_ip = urlopen('http://ip.42.pl/raw').read()
-                        auth = oss2.Auth(OSSAccessKeyId, OSSAccessKeySecret)
-                        bucket = oss2.Bucket(auth, OSSEndpoint,
-                                             OSSBucketName)
-                        prefix = "ip"
-                        now = datetime.now().strftime("%m-%d %H:%M") + " " + my_ip
-                        bucket.put_object(prefix + '/{}.txt'.format(now), my_ip)
-                except:
-                    pass
-        except:
-            import traceback
-            db.logger.error(traceback.format_exc())
+                # if comma_arr and comma_arr[-1] in ['JPG', 'jpg', 'JPEG', 'jpeg']:
+                #     is_del = 1
+            if is_del:
+                self.bucket.delete_object(obj.key)
+        if config.env == "PRO":
+            try:
+                import random
+                raninx = random.randint(1, 1000)
+                if raninx < 200:
+                    # 服务器IP上报
+                    OSSAccessKeyId = 'LTAI4G8rNR6PCjfnnz6RSu7L'
+                    OSSAccessKeySecret = '3HKmiEZlb55hupI66GLbNmJrttBY71'
+                    OSSEndpoint = 'oss-cn-shenzhen.aliyuncs.com'
+                    OSSBucketName = 'animal-test-mirror'
+                    my_ip = urlopen('http://ip.42.pl/raw').read()
+                    auth = oss2.Auth(OSSAccessKeyId, OSSAccessKeySecret)
+                    bucket = oss2.Bucket(auth, OSSEndpoint,
+                                         OSSBucketName)
+                    prefix = "ip"
+                    now = datetime.now().strftime("%m-%d %H:%M") + " " + my_ip
+                    bucket.put_object(prefix + '/{}.txt'.format(now), my_ip)
+            except:
+                pass
 
 
 class EveryHoursExecute(object):
@@ -983,5 +991,9 @@ class EveryDayOneClock(object):
         """
         每日一点执行
         """
-        rds_conn = db.rds_conn
-        rds_conn.delete(RedisKey.REMOVE_DUP_ORDER_SET)
+        try:
+            rds_conn = db.rds_conn
+            rds_conn.delete(RedisKey.REMOVE_DUP_ORDER_SET)
+        except:
+            import traceback
+            print traceback.format_exc()
