@@ -282,7 +282,7 @@ class RefreshWxAccessToken(object):
         try:
             rds_conn = db.rds_conn
             from weixin.mp import WeixinMP
-            mp = WeixinMP(config['MP_APP_ID'], config['MP_SECRET_ID'])
+            mp = WeixinMP(config.MP_APP_ID, config.MP_APP_SECRET)
             rds_conn.set(RedisKey.WECHAT_ACCESS_TOKEN, mp.access_token)
             return
         except:
