@@ -176,6 +176,10 @@ class StudentService(object):
                 face_status = 3
             else:
                 face_status = 1
+                if face.status == 1:
+                    face_status = -1
+                if face.status == 2:
+                    face_status = 1
 
             data.append({
                 'id': student.id,
