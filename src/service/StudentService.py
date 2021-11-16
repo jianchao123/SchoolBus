@@ -410,6 +410,170 @@ class StudentService(object):
             db.session.close()
 
     @staticmethod
+    def bulk_update_student(excel_file):
+        db.session.commit() # SELECT
+        data = xlrd.open_workbook(file_contents=excel_file.read())
+        table = data.sheet_by_index(0)
+
+        if table.nrows > 10000:
+            return {"c": 1, "msg": u"excel数据最大10000条"}
+
+        stu_no_list = []
+        results = db.session.query(Student).filter(Student.status == 1).all()
+        for row in results:
+            stu_no_list.append(row.stu_no)
+
+        # 查询所有学校
+        school_dict = {}
+        results = db.session.query(School).all()
+        for row in results:
+            school_dict[row.school_name] = row.id
+
+        # 查询所有车辆
+        car_dict = {}
+        results = db.session.query(Car).filter(Car.status == 1).all()
+        for row in results:
+            car_dict[row.license_plate_number] = row.id
+        print car_dict
+        error_msg_list = []
+        for index in range(1, table.nrows):
+            is_err = 0
+
+            row_data = table.row_values(index)
+            stu_no = str(row_data[0]).strip()
+            nickname = str(row_data[1]).strip()
+            gender_name = str(row_data[2]).strip()
+            parents_1 = str(row_data[3]).strip()
+            mobile_1 = str(row_data[4]).strip()
+            parents_2 = str(row_data[5]).strip()
+            mobile_2 = str(row_data[6]).strip()
+            address = str(row_data[7]).strip()
+            remarks = str(row_data[8]).strip()
+            school_name = str(row_data[9]).strip()
+            grade_name = str(row_data[10]).strip()
+            class_name = str(row_data[11]).strip()
+            end_time = str(row_data[12]).strip()
+            license_plate_number = str(row_data[13]).strip()
+
+            err_str = u"\n第{}行,".format(index + 1)
+            # 先检查是否为空
+            if not stu_no:
+                err_str += u"身份证为空,"
+                is_err = 1
+            if not nickname:
+                err_str += u"姓名为空,"
+                is_err = 1
+            if not gender_name:
+                err_str += u"性别为空,"
+                is_err = 1
+            if not parents_1:
+                err_str += u"家长1名字为空,"
+                is_err = 1
+            if not mobile_1:
+                err_str += u"家长1手机号为空,"
+                is_err = 1
+
+            if not address:
+                err_str += u"地址为空,"
+                is_err = 1
+            if not school_name:
+                err_str += u"学校为空,"
+                is_err = 1
+            if not grade_name:
+                err_str += u"年纪为空,"
+                is_err = 1
+            if not class_name:
+                err_str += u"班级为空,"
+                is_err = 1
+            if not end_time:
+                err_str += u"截至日期为空,"
+                is_err = 1
+            if not license_plate_number:
+                err_str += u"车牌号为空,"
+                is_err = 1
+
+            # 检查格式
+            if gender_name not in gender:
+                err_str += u"性别只有'男'或'女'"
+                is_err = 1
+            if school_name not in school_dict.keys():
+                err_str += u"未知的学校名字"
+                is_err = 1
+            if grade_name not in grade:
+                err_str += u"未知的年纪名字"
+                is_err = 1
+            if class_name not in classes:
+                err_str += u"未知的班级名字"
+                is_err = 1
+            print license_plate_number
+            if license_plate_number.decode('utf8') not in car_dict:
+                err_str += u"未知的车牌"
+                is_err = 1
+
+            if end_time:
+                try:
+                    datetime.strptime(end_time, '%Y-%m-%d')
+                except ValueError:
+                    err_str += u"有效期格式错误"
+                    is_err = 1
+                except:
+                    err_str += u"不支持公式"
+                    is_err = 1
+            # 检查重复
+            if stu_no not in stu_no_list:
+                err_str += u"身份证号{}不在系统里".format(stu_no)
+                is_err = 1
+
+            if err_str:
+                err_str += "\n"
+
+            if is_err:
+                error_msg_list.append(err_str)
+        if error_msg_list:
+            return {"c": 1, "msg": "\n".join(error_msg_list)}
+
+        print grade, classes
+        student_list = []
+        for index in range(1, table.nrows):
+            row_data = table.row_values(index)
+            stu_no = str(row_data[0]).strip()
+            nickname = str(row_data[1]).strip()
+            gender_name = str(row_data[2]).strip()
+            parents_1 = str(row_data[3]).strip()
+            mobile_1 = str(row_data[4]).strip()
+            parents_2 = str(row_data[5]).strip()
+            mobile_2 = str(row_data[6]).strip()
+            address = str(row_data[7]).strip()
+            remarks = str(row_data[8]).strip()
+            school_name = str(row_data[9]).strip()
+            grade_name = str(row_data[10]).strip()
+            class_name = str(row_data[11]).strip()
+            end_time = str(row_data[12]).strip()
+            license_plate_number = str(row_data[13]).strip()
+
+            student_list.append([
+                stu_no, nickname.encode('utf8'),
+                gender.index(gender_name),
+                parents_1.encode('utf8'), mobile_1,
+                parents_2.encode('utf8'), mobile_2,
+                address.encode('utf8'),
+                remarks.encode('utf8'),
+                school_dict[school_name.decode('utf8')],
+                grade.index(grade_name.decode('utf8')),
+                classes.index(class_name.decode('utf8')), end_time,
+                car_dict[license_plate_number.decode('utf8')],
+                license_plate_number.encode('utf8')])
+        # 发送消息
+        print student_list
+        start = 0
+        end = 1000
+        send_list = student_list[start: end]
+        while send_list:
+            producer.bulk_update_student(send_list)
+            send_list = student_list[start + 1000: end + 1000]
+        return {"c": 0, 'msg': ''}
+
+    @staticmethod
     def batch_add_student(excel_file):
         db.session.commit() # SELECT
         data = xlrd.open_workbook(file_contents=excel_file.read())

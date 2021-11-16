@@ -432,6 +432,58 @@ def student_batch_add(user_id, data):
     return data
 
 
+@bp.route('/bulk/update', methods=['POST'])
+@form_none_param_with_permissions()
+def student_bulk_update(user_id, data):
+    """
+    批量更新学生
+    批量更新学生，需要先登录
+    ---
+    tags:
+      - 学生
+    parameters:
+      - name: token
+        in: header
+        type: string
+        required: true
+        description: TOKEN
+      - name: fd
+        in: formData
+        type: file
+        required: true
+        description: excel文件
+    responses:
+      200:
+        description: 正常返回http code 200
+        schema:
+          properties:
+            msg:
+              type: string
+              description: 错误消息
+            status:
+              type: integer
+              description: 状态
+            data:
+              type: object
+              properties:
+                c:
+                  type: integer
+                  description: 1错误 0正常
+                msg:
+                  type: string
+                  description: 错误信息,需要显示给用户
+    """
+    from flask import request
+
+    fd = request.files['fd']
+
+    # "c": 1, "msg": err_str}
+    data = StudentService.bulk_update_student(fd)
+    if data == -10:
+        raise AppError(*SubErrorCode.TASK_EXECUTING)
+    return data
+
+
 @bp.route('/bulk/update/audio', methods=['POST'])
 @post_require_check_with_user([])
 def bulk_update_audio(user_id, data):

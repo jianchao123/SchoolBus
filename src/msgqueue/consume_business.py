@@ -157,6 +157,8 @@ class StudentConsumer(object):
                 self.student_business.create_video(data)
             if routing_suffix == 'bulkupdateface':
                 self.student_business.bulk_update_face(data)
+            if routing_suffix == 'bulkupdate':
+                self.student_business.bulk_update_student(data)
         finally:
             ch.basic_ack(delivery_tag=method.delivery_tag)
 
@@ -183,6 +185,95 @@ class StudentBusiness(object):
         }
         pgsql_db.update(pgsql_cur, data, table_name='face')
         print "============================="
+
+    @transaction(is_commit=True)
+    def bulk_update_student(self, pgsql_cur, data):
+        """批量更新"""
+        pgsql_db = PgsqlDbUtil
+        stu_sql = "SELECT id,mobile_1,mobile_2 FROM student " \
+                  "WHERE stu_no='{}' LIMIT 1"
+        face_sql = "SELECT id,status FROM face WHERE stu_id={}"
+        audio_sql = "SELECT id FROM audio WHERE face_id={}"
+        for row in data:
+            stu_no = row[0]
+            nickname = row[1]
+            gender_id = row[2]
+            parents1_name = row[3]
+            parents1_mobile = row[4]
+            parents2_name = row[5]
+            parents2_mobile = row[6]
+            address = row[7]
+            remarks = row[8]
+            school_id = row[9]
+            grade_id = row[10]
+            classes_id = row[11]
+            end_time = row[12]
+            car_id = row[13]
+            license_plate_number = row[14]
+
+            parents1_mobile = str(int(float(parents1_mobile)))
+            if parents2_mobile:
+                parents2_mobile = str(int(float(parents2_mobile)))
+
+            student = pgsql_db.get(pgsql_cur, stu_sql.format(stu_no))
+            d = {
+                'nickname': nickname,
+                'gender': gender_id,
+                'parents_1': parents1_name,
+                'mobile_1': parents1_mobile,
+                'parents_2': parents2_name if parents2_name else 'NULL',
+                'mobile_2': parents2_mobile if parents2_mobile else 'NULL',
+                'address': address,
+                'remarks': remarks if remarks else 'NULL',
+                'school_id': school_id,
+                'grade_id': grade_id,
+                'class_id': classes_id,
+                'end_time': "TO_DATE('{}', 'yyyy-MM-dd')".format(end_time),
+                'car_id': car_id,
+                'license_plate_number': license_plate_number
+            }
+
+            if student:
+                student_pk = student[0]
+
+                d['id'] = student_pk
+                # student[1] mobile_1 student[2] mobile_2
+                if student[1] and student[1] != parents1_mobile:
+                    d['open_id_1'] = 'NULL'
+                if student[2] and student[2] != parents2_mobile:
+                    d['open_id_2'] = 'NULL'
+                # 家长1手机号为空直接不更新
+                if not parents1_mobile:
+                    continue
+                if not parents2_mobile:
+                    d['open_id_2'] = 'NULL'
+                pgsql_db.update(pgsql_cur, d, 'student')
+
+                # 其他的数据全部更新一遍
+                face_object = pgsql_db.get(pgsql_cur, face_sql.format(student_pk))
+                face_pk = face_object[0]
+                face_status = face_object[1]
+
+                audio_object = pgsql_db.get(pgsql_cur, audio_sql.format(face_pk))
+                # 音频记录
+                audio_d = {
+                    'id': audio_object[0],
+                    'status': 1,
+                    'nickname': nickname
+                }
+                pgsql_db.update(pgsql_cur, audio_d, table_name='audio')
+                # 人脸
+                face_d = {
+                    'id': face_pk,
+                    'nickname': nickname,
+                    'update_time': 'now()',
+                    'end_timestamp': int(time.mktime(
+                        datetime.strptime(end_time, '%Y-%m-%d').timetuple())),
+                    'school_id': school_id
+                }
+                if face_status in (3, 4, 5):
+                    face_d['status'] = 2    # 等待处理
+                pgsql_db.update(pgsql_cur, face_d, 'face')
 
     @transaction(is_commit=True)
     def batch_add_student(self, pgsql_cur, data):

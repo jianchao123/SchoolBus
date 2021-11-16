@@ -86,6 +86,12 @@ def export_alert_info_msg(status, start_date, end_date,
     _publish_msg('excel_exchange', 'excel.exportalertinfo', json.dumps(data))
 
 
+def bulk_update_student(data):
+    """批量更新学生"""
+    _publish_msg('student_exchange', 'student.bulkupdate',
+                 json.dumps(data))
+
+
 def batch_add_student(data):
     """批量添加学生"""
     _publish_msg('student_exchange', 'student.batchaddstudent',
