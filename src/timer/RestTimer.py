@@ -12,6 +12,7 @@ from datetime import datetime, timedelta
 from urllib2 import urlopen
 
 from aliyunsdkcore.client import AcsClient
+from weixin.mp import WeixinMP
 from aliyunsdkiot.request.v20180120.PubRequest import PubRequest
 from msgqueue import producer
 
@@ -277,13 +278,14 @@ class CheckAccClose(object):
 class RefreshWxAccessToken(object):
     """刷新微信token 30s"""
 
-    @staticmethod
-    def refresh_wechat_token():
+    def __init__(self):
+        self.mp = WeixinMP(config.MP_APP_ID, config.MP_APP_SECRET,
+                           ac_path=config.project_dir + "/ac_path")
+
+    def refresh_wechat_token(self):
         try:
             rds_conn = db.rds_conn
-            from weixin.mp import WeixinMP
-            mp = WeixinMP(config.MP_APP_ID, config.MP_APP_SECRET)
-            rds_conn.set(RedisKey.WECHAT_ACCESS_TOKEN, mp.access_token)
+            rds_conn.set(RedisKey.WECHAT_ACCESS_TOKEN, self.mp.access_token)
             return
         except:
             import traceback
