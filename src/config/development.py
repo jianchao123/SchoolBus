@@ -22,8 +22,8 @@ class DevelopmentConfig(Config):
     OSS_BUCKET = "cdbus-dev"
     OSS_REGION = "oss-cn-shanghai"
     OSS_POINT = "oss-cn-shanghai.aliyuncs.com"
-    OSS_ALL_KEY = "LTAIWE5CGeOiozf7"
-    OSS_ALL_SECRET = "IGuoRIxwMlPQqJ9ujWyTvSq2em4RDj"
+    OSS_ALL_KEY = "LTAI5tHYr3CZ59HCRLEocbDG"
+    OSS_ALL_SECRET = "BMRI8WzUVMRbS6LHPM3bIiadWIPE8c"
 
     # 微信公众号
     MP_ID = 'gh_949a03d359ca'

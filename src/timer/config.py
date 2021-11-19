@@ -16,15 +16,15 @@ if env == "TEST":
 
     # OSS
     OSSDomain = 'cdbus-dev.oss-cn-shanghai.aliyuncs.com'
-    OSSAccessKeyId = 'LTAIWE5CGeOiozf7'
-    OSSAccessKeySecret = 'IGuoRIxwMlPQqJ9ujWyTvSq2em4RDj'
+    OSSAccessKeyId = 'LTAI5tHYr3CZ59HCRLEocbDG'
+    OSSAccessKeySecret = 'BMRI8WzUVMRbS6LHPM3bIiadWIPE8c'
     OSSEndpoint = ''
     OSSBucketName = ''
 
     # MNS
     MNSEndpoint = 'http://1162097573951650.mns.cn-shanghai.aliyuncs.com/'
-    MNSAccessKeyId = 'LTAI4GL6gtEc4bnmj82yQ9wc'
-    MNSAccessKeySecret = 'vhuBLJpqlOsSisnuUQ1xvE02GCXhIC'
+    MNSAccessKeyId = 'LTAI5tLzBs74j8dEX4A8TPy6'
+    MNSAccessKeySecret = 'uLU5qLEdxet7IZ6w7uB3t7U5PVo15F'
 
     # LOG
     log_path = "/data/logs/{}/timer".format(project_name)
@@ -62,16 +62,16 @@ elif env == "PRO":
 
     # OSS
     OSSDomain = 'cdbus-pro.oss-cn-shanghai.aliyuncs.com'
-    OSSAccessKeyId = 'LTAIWE5CGeOiozf7'
-    OSSAccessKeySecret = 'IGuoRIxwMlPQqJ9ujWyTvSq2em4RDj'
+    OSSAccessKeyId = 'LTAI5tHYr3CZ59HCRLEocbDG'
+    OSSAccessKeySecret = 'BMRI8WzUVMRbS6LHPM3bIiadWIPE8c'
     OSSEndpoint = 'http://oss-cn-shanghai.aliyuncs.com'
     OSSEndpointInternal = 'http://oss-cn-shanghai-internal.aliyuncs.com'
     OSSBucketName = 'cdbus-pro'
 
     # MNS
     MNSEndpoint = 'http://1162097573951650.mns.cn-shanghai-internal.aliyuncs.com/'
-    MNSAccessKeyId = 'LTAI4GL6gtEc4bnmj82yQ9wc'
-    MNSAccessKeySecret = 'vhuBLJpqlOsSisnuUQ1xvE02GCXhIC'
+    MNSAccessKeyId = 'LTAI5tLzBs74j8dEX4A8TPy6'
+    MNSAccessKeySecret = 'uLU5qLEdxet7IZ6w7uB3t7U5PVo15F'
 
     # LOG
     log_path = "/data/logs/{}/timer".format(project_name)
@@ -122,13 +122,13 @@ else:
     OSSEndpoint = 'http://oss-cn-shanghai.aliyuncs.com'
     OSSEndpointInternal = 'http://oss-cn-shanghai-internal.aliyuncs.com'
     OSSBucketName = 'cdbus-dev'
-    OSSAccessKeyId = 'LTAIWE5CGeOiozf7'
-    OSSAccessKeySecret = 'IGuoRIxwMlPQqJ9ujWyTvSq2em4RDj'
+    OSSAccessKeyId = 'LTAI5tHYr3CZ59HCRLEocbDG'
+    OSSAccessKeySecret = 'BMRI8WzUVMRbS6LHPM3bIiadWIPE8c'
 
     # MNS
     MNSEndpoint = 'http://1162097573951650.mns.cn-shanghai.aliyuncs.com/'
-    MNSAccessKeyId = 'LTAI4GL6gtEc4bnmj82yQ9wc'
-    MNSAccessKeySecret = 'vhuBLJpqlOsSisnuUQ1xvE02GCXhIC'
+    MNSAccessKeyId = 'LTAI5tLzBs74j8dEX4A8TPy6'
+    MNSAccessKeySecret = 'uLU5qLEdxet7IZ6w7uB3t7U5PVo15F'
 
     # LOG
     log_path = project_dir + "/logs/timer"
