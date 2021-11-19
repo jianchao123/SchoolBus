@@ -159,6 +159,8 @@ class StudentConsumer(object):
                 self.student_business.bulk_update_face(data)
             if routing_suffix == 'bulkupdate':
                 self.student_business.bulk_update_student(data)
+            if routing_suffix == 'import_payment_info':
+                self.student_business.import_payment_info(data)
         finally:
             ch.basic_ack(delivery_tag=method.delivery_tag)
 
@@ -516,6 +518,46 @@ class StudentBusiness(object):
                         'status': 2  # 未处理
                     }
                     pgsql_db.update(pgsql_cur, face_d, table_name='face')
+
+    @transaction(is_commit=True)
+    def import_payment_info(self, pgsql_cur, data):
+        """导入缴费信息"""
+        pgsql_db = PgsqlDbUtil
+
+        pay_sql = "SELECT id FROM push_list WHERE pay_mobile='{}'"
+        stu_sql = "SELECT id,school_id,mobile_1,mobile_2,nickname " \
+                  "FROM student WHERE mobile_1='{}' or mobile_2='{}'"
+        school_sql = "SELECT school_name FROM school WHERE id={} LIMIT 1"
+        face_sql = "SELECT oss_url FROM face WHERE stu_id='{}' LIMIT 1"
+        for row in data:
+            mobile = row['mobile']
+            end_date = row['end_date']
+            pays = pgsql_db.query(pgsql_cur, pay_sql.format(mobile))
+            if not len(pays):
+                students = pgsql_db.query(pgsql_cur,
+                                          stu_sql.format(mobile, mobile))
+                for stu_row in students:
+                    stu_pk = stu_row[0]
+                    school_id = stu_row[1]
+                    mobile_1 = stu_row[2]
+                    mobile_2 = stu_row[3]
+                    nickname = stu_row[4]
+                    school_name = \
+                    pgsql_db.get(pgsql_cur, school_sql.format(school_id))[0]
+                    oss_url = pgsql_db.get(pgsql_cur, face_sql.format(stu_pk))[
+                        0]
+                    d = {
+                        'stu_id': stu_pk,
+                        'school_id': school_id,
+                        'school_name': school_name,
+                        'pay_mobile': mobile_1 if mobile == mobile_1 else mobile_2,
+                        'nickname': nickname,
+                        'oss_url': oss_url,
+                        'end_date': "TO_DATE('{}', 'yyyy-MM-dd')".format(
+                            end_date),
+                        'status': 1
+                    }
+                    pgsql_db.insert(pgsql_cur, d, table_name='push_list')
 
 
 class DeviceConsumer(object):

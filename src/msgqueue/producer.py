@@ -233,6 +233,11 @@ def bulk_update_face(zip_url):
     _publish_msg('student_exchange', 'student.bulkupdateface', json.dumps(data))
 
 
+def import_payment_info(data):
+    """导入支付信息"""
+    _publish_msg('student_exchange', 'student.importpayinfo', json.dumps(data))
+
+
 # 测试用户创建
 if __name__ == "__main__":
     # generate_create_student_msg(12)

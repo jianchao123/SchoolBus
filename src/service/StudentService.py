@@ -1072,3 +1072,72 @@ class StudentService(object):
         os.remove(local_zip_path)
         shutil.rmtree(image_path)
         return {'excel_err': 0, 'url': zip_url}
+
+    @staticmethod
+    def import_payment_list(excel_file):
+        """导入缴费信息"""
+        import xlrd
+        from msgqueue import producer
+        from database.Student import Student
+
+        db.session.commit()  # SELECT
+        data = xlrd.open_workbook(file_contents=excel_file.read())
+        table = data.sheet_by_index(0)
+
+        if table.nrows > 10000:
+            return {"c": 1, "msg": u"excel数据最大10000条"}
+
+        error_msg_list = []
+        for index in range(1, table.nrows):
+            is_err = 0
+
+            row_data = table.row_values(index)
+            pay_mobile = str(row_data[0]).strip()
+            end_date = str(row_data[1].strip())
+
+            err_str = u"\n第{}行,".format(index + 1)
+            # 先检查是否为空
+            if not pay_mobile:
+                err_str += u"号码为空,"
+                is_err = 1
+
+            # 检查格式
+            if len(pay_mobile) != 11:
+                err_str += u"家长号码长度错误"
+                is_err = 1
+
+            # 是否能找到这个家长手机号
+            count = db.session.query(Student).filter(
+                or_(Student.mobile_1 == pay_mobile,
+                    Student.mobile_2 == pay_mobile)).count()
+            if not count:
+                err_str += u"未在系统里找到该家长手机号"
+                is_err = 1
+
+            try:
+                datetime.strptime(end_date, '%Y-%m-%d')
+            except:
+                err_str += u"截至时间错误"
+                is_err = 1
+
+            if err_str:
+                err_str += "\n"
+
+            if is_err:
+                error_msg_list.append(err_str)
+        if error_msg_list:
+            return {"c": 1, "msg": "\n".join(error_msg_list)}
+
+        data_list = []
+        for index in range(1, table.nrows):
+            row_data = table.row_values(index)
+            data_list.append({'mobile': str(row_data[0]).strip(),
+                              'end_date': str(row_data[1]).strip()})
+
+        start = 0
+        end = 1000
+        send_list = data_list[start: end]
+        while send_list:
+            producer.import_payment_info(send_list)
+            send_list = data_list[start + 1000: end + 1000]
+        return {"c": 0, 'msg': ''}

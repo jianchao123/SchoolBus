@@ -76,6 +76,7 @@ class CarService(object):
                 Worker.status == 1).group_by(Worker.car_id).having(
                 func.count(Worker.id) > 1).all()
             scheduling_cars = [row[0] for row in worker_group]
+            print scheduling_cars
             if int(scheduling) == 1:
                 query = query.filter(Car.id.in_(scheduling_cars))
             if int(scheduling) == 2:
@@ -96,7 +97,7 @@ class CarService(object):
                     Device.car_id.isnot(None)).all()
                 for row in devices:
                     carids.append(row.car_id)
-                query = query.filter(Car.id.notin_(carids))
+                query = query.filter(~Car.id.in_(carids))
 
         query = query.filter(Car.status == 1)
         count = query.count()
