@@ -72,7 +72,7 @@ class CarService(object):
             query = query.filter(Car.id.in_(car_ids))
         if scheduling:
             worker_group = db.session.query(
-                Worker.car_id, func.count(Worker.id)).filter(
+                Worker.car_id).filter(
                 Worker.status == 1).group_by(Worker.car_id).having(
                 func.count(Worker.id) > 1).all()
             scheduling_cars = [row[0] for row in worker_group]
