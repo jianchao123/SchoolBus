@@ -77,6 +77,7 @@ class CarService(object):
                 func.count(Worker.id) > 1).all()
             scheduling_cars = [row[0] for row in worker_group]
             print scheduling_cars
+            scheduling_cars = [row for row in scheduling_cars if row]
             if int(scheduling) == 1:
                 query = query.filter(Car.id.in_(scheduling_cars))
             if int(scheduling) == 2:
