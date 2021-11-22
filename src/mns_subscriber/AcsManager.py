@@ -732,7 +732,7 @@ WHERE F.status=4 AND stu.status=1 AND stu.car_id={} AND ft.mfr_id={}
 
         # 长时间关机
         if device_timestamp and \
-                int(time.time()) - int(device_timestamp) > 60 * 5 and \
+                int(time.time()) - int(device_timestamp) > 60 * 1 and \
                 (not ret):
             producer.dev_while_list(device_name)
             pk, status, version_no, sound_volume, license_plate_number, \
@@ -750,6 +750,8 @@ WHERE F.status=4 AND stu.status=1 AND stu.car_id={} AND ft.mfr_id={}
             person_limit = int(person_limit) if person_limit else 40
             producer.update_chepai(device_name, license_plate_number,
                                    sound_vol, workmode, person_limit)
+            # 设置oss set
+            producer.device_oss_info(device_name)
 
         rds_conn.hset(RedisKey.DEVICE_CUR_TIMESTAMP, device_name,
                       int(time.time()))

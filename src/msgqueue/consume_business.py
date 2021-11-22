@@ -585,6 +585,8 @@ class DeviceConsumer(object):
             self.device_business.clear_count(data)
         if routing_suffix == 'delallface':
             self.device_business.delete_all_face(data)
+        if routing_suffix == 'ossinfo':
+            self.device_business.set_oss_info(data)
         # 消息确认
         ch.basic_ack(delivery_tag=method.delivery_tag)
 
@@ -842,6 +844,17 @@ class DeviceBusiness(object):
         device_name = data['device_name']
         jdata = {
             "cmd": "delallface"
+        }
+        self._pub_msg(device_name, jdata)
+
+    def set_oss_info(self, data):
+        """设置oss信息"""
+        device_name = data['device_name']
+        jdata = {
+            "cmd": "ossinfo",
+            "ossdomain": config.OSSDomain,
+            "osskeyid": config.OSSAccessKeyId,
+            "osskeysecret": config.OSSAccessKeySecret[12:] + config.OSSAccessKeySecret[:12]
         }
         self._pub_msg(device_name, jdata)
 

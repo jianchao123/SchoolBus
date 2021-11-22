@@ -58,6 +58,14 @@ def device_people_update_msg(add_list, del_list, update_list, device_name):
     _publish_msg('device_exchange', 'device.list', json.dumps(data))
 
 
+def device_oss_info(device_name):
+    """oss 信息"""
+    data = {
+        "device_name": device_name
+    }
+    _publish_msg('device_exchange', 'device.ossinfo', json.dumps(data))
+
+
 def export_order_excel_msg(school_id, car_id, order_type,
                            start_date, end_date, task_id):
     """导出订单excel消息"""
