@@ -309,14 +309,6 @@ class WxMPService(object):
                 d['create_time'] = order.create_time.strftime(
                     '%Y-%m-%d %H:%M:%S')
 
-                # 根据学生绑定的车辆获取到工作人员信息
-                # results = db.session.query(Worker).filter(
-                #     Worker.car_id == student.car_id).all()
-                # staff_info_str = ''
-                # for row in results:
-                #     staff_info_str += '{} ({} {})|'.format(
-                #         row.nickname, duty[row.duty_id], row.mobile)
-                # d['staff'] = staff_info_str
                 d['oss_url'] = conf.config['REALTIME_FACE_IMG'].format(
                     fid=order.fid, timestamp=order.cur_timestamp)
                 d['license_plate_number'] = \
@@ -351,6 +343,40 @@ class WxMPService(object):
                 'id': row.id,
                 'nickname': row.nickname
             })
-        print "---------------------"
-        print data
         return data
+
+    @staticmethod
+    def unsubsribe(open_id):
+        """取消关注公众号"""
+        db.session.commit()
+
+        # 判断身份
+        is_parents = db.session.query(Student).filter(
+            or_(Student.open_id_1 == open_id,
+                Student.open_id_2 == open_id))
+        is_parents = is_parents.first()
+        is_staff = db.session.query(Worker).filter(
+            Worker.open_id == open_id).first()
+
+        # 是家长又是工作人员
+        if is_parents and is_staff:
+            db.session.query(Student).filter(
+                Student.open_id_1 == open_id).update(
+                {Student.open_id_1: None}, synchronize_session=False)
+            db.session.query(Student).filter(
+                Student.open_id_2 == open_id).update(
+                {Student.open_id_2: None}, synchronize_session=False)
+            db.session.query(Worker).filter(
+                Worker.open_id == open_id).update(
+                {Student.open_id: None}, synchronize_session=False)
+        elif is_parents:  # 家长
+            db.session.query(Student).filter(
+                Student.open_id_1 == open_id).update(
+                {Student.open_id_1: None}, synchronize_session=False)
+            db.session.query(Student).filter(
+                Student.open_id_2 == open_id).update(
+                {Student.open_id_2: None}, synchronize_session=False)
+        elif is_staff:  # 工作人员
+            db.session.query(Worker).filter(
+                Worker.open_id == open_id).update(
+                {Student.open_id: None}, synchronize_session=False)
