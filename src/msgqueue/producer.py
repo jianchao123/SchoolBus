@@ -246,6 +246,12 @@ def import_payment_info(data):
     _publish_msg('student_exchange', 'student.importpayinfo', json.dumps(data))
 
 
+def mpsubscribe(openid):
+    """微信公众号取关"""
+    data = {'open_id': openid}
+    _publish_msg('student_exchange', 'student.mpsubscribe', json.dumps(data))
+
+
 # 测试用户创建
 if __name__ == "__main__":
     # generate_create_student_msg(12)

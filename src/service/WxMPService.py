@@ -198,8 +198,10 @@ class WxMPService(object):
             Worker.open_id == open_id).all()
         if students:
             for row in students:
-                row.open_id_1 = None
-                row.open_id_2 = None
+                if row.open_id_1 == open_id:
+                    row.open_id_1 = None
+                if row.open_id_2 == open_id:
+                    row.open_id_2 = None
         if workers:
             for row in workers:
                 row.open_id = None
@@ -345,38 +347,38 @@ class WxMPService(object):
             })
         return data
 
-    @staticmethod
-    def unsubsribe(open_id):
-        """取消关注公众号"""
-        db.session.commit()
-
-        # 判断身份
-        is_parents = db.session.query(Student).filter(
-            or_(Student.open_id_1 == open_id,
-                Student.open_id_2 == open_id))
-        is_parents = is_parents.first()
-        is_staff = db.session.query(Worker).filter(
-            Worker.open_id == open_id).first()
-
-        # 是家长又是工作人员
-        if is_parents and is_staff:
-            db.session.query(Student).filter(
-                Student.open_id_1 == open_id).update(
-                {Student.open_id_1: None}, synchronize_session=False)
-            db.session.query(Student).filter(
-                Student.open_id_2 == open_id).update(
-                {Student.open_id_2: None}, synchronize_session=False)
-            db.session.query(Worker).filter(
-                Worker.open_id == open_id).update(
-                {Student.open_id: None}, synchronize_session=False)
-        elif is_parents:  # 家长
-            db.session.query(Student).filter(
-                Student.open_id_1 == open_id).update(
-                {Student.open_id_1: None}, synchronize_session=False)
-            db.session.query(Student).filter(
-                Student.open_id_2 == open_id).update(
-                {Student.open_id_2: None}, synchronize_session=False)
-        elif is_staff:  # 工作人员
-            db.session.query(Worker).filter(
-                Worker.open_id == open_id).update(
-                {Student.open_id: None}, synchronize_session=False)
+    # @staticmethod
+    # def unsubsribe(open_id):
+    #     """取消关注公众号"""
+    #     db.session.commit()
+    #
+    #     # 判断身份
+    #     is_parents = db.session.query(Student).filter(
+    #         or_(Student.open_id_1 == open_id,
+    #             Student.open_id_2 == open_id))
+    #     is_parents = is_parents.first()
+    #     is_staff = db.session.query(Worker).filter(
+    #         Worker.open_id == open_id).first()
+    #
+    #     # 是家长又是工作人员
+    #     if is_parents and is_staff:
+    #         db.session.query(Student).filter(
+    #             Student.open_id_1 == open_id).update(
+    #             {Student.open_id_1: None}, synchronize_session=False)
+    #         db.session.query(Student).filter(
+    #             Student.open_id_2 == open_id).update(
+    #             {Student.open_id_2: None}, synchronize_session=False)
+    #         db.session.query(Worker).filter(
+    #             Worker.open_id == open_id).update(
+    #             {Student.open_id: None}, synchronize_session=False)
+    #     elif is_parents:  # 家长
+    #         db.session.query(Student).filter(
+    #             Student.open_id_1 == open_id).update(
+    #             {Student.open_id_1: None}, synchronize_session=False)
+    #         db.session.query(Student).filter(
+    #             Student.open_id_2 == open_id).update(
+    #             {Student.open_id_2: None}, synchronize_session=False)
+    #     elif is_staff:  # 工作人员
+    #         db.session.query(Worker).filter(
+    #             Worker.open_id == open_id).update(
+    #             {Student.open_id: None}, synchronize_session=False)

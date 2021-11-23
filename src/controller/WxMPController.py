@@ -509,6 +509,7 @@ wx_msg = WeixinMsg(conf.config['MP_TOKEN'])
 
 @bp.route('/callback', methods=['POST', 'GET'])
 def wx_callback_list():
+    """启用微信公众号的服务器配置会自动关注自定义菜单和自动回复"""
     try:
         if request.method == 'GET':
             data = request.values.to_dict()
@@ -557,7 +558,8 @@ def wx_callback_list():
                     return wx_msg.reply(sender, 'text', conf.config['MP_ID'],
                                         content=u'谢谢关注,请匹配您的信息以关注您的孩子顺利到站消息')
                 if ret['event'] == 'unsubsribe':
-                    WxMPService.unsubsribe(ret['sender'])
+                    print 'unsubsribe'
+                    #WxMPService.unsubsribe(ret['sender'])
             return wx_msg.reply(
                 sender, 'text', conf.config['MP_ID'], content='hello')
     except:

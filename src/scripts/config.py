@@ -1,85 +1,56 @@
-# coding=utf-8
+# coding:utf-8
+import os
+import configparser
 
+project_name = "school_bus"
+project_dir = os.path.dirname(os.path.dirname(
+    os.path.dirname(os.path.realpath(__file__))))
+env_dist = os.environ
 env = "PRO"
 if env == "TEST":
-    # 物联网
-    Productkey = 'a1vperyb2Cg'
-    ProductHost = 'a1vperyb2Cg.iot-as-mqtt.cn-shanghai.aliyuncs.com'
-    ProductSecret = 'jqSbrJZ11baH1aAH'
-    DeviceSecret = 'bmq66tsx0OGju0CGqeYjzCTYlwA454j0'
-
-    # OSS
-    OSSDomain = 'cdbus-dev.oss-cn-shanghai.aliyuncs.com'
-    OSSAccessKeyId = 'LTAI5tHYr3CZ59HCRLEocbDG'
-    OSSAccessKeySecret = 'BMRI8WzUVMRbS6LHPM3bIiadWIPE8c'
-
-    # MNS
-    MNSEndpoint = 'http://1162097573951650.mns.cn-shanghai.aliyuncs.com/'
-    MNSAccessKeyId = 'LTAI5tLzBs74j8dEX4A8TPy6'
-    MNSAccessKeySecret = 'uLU5qLEdxet7IZ6w7uB3t7U5PVo15F'
-
-
-    # PGSQL
-    pgsql_host = '127.0.0.1'
-    pgsql_db = "postgres"
-    pgsql_port = 5432
-    pgsql_user = "postgres"
-    pgsql_passwd = "kIhHAWexFy7pU8qM"
-
-elif env == "PRO":
-    # 物联网
-    Productkey = 'a1nppCCo0Y2'
-    ProductHost = 'a1nppCCo0Y2.iot-as-mqtt.cn-shanghai.aliyuncs.com'
-    ProductSecret = 'VYMQSqHamIQgREVi'
-    DeviceSecret = 'e2245121d52abc850b2fc220f937f512'
-
-    # OSS
-    OSSDomain = 'cdbus-pro.oss-cn-shanghai.aliyuncs.com'
-    OSSAccessKeyId = 'LTAI5tHYr3CZ59HCRLEocbDG'
-    OSSAccessKeySecret = 'BMRI8WzUVMRbS6LHPM3bIiadWIPE8c'
-    OSSEndpoint = 'http://oss-cn-shanghai.aliyuncs.com'
-    OSSBucketName = 'cdbus-pro'
-
-    # MNS
-    MNSEndpoint = 'http://1162097573951650.mns.cn-shanghai.aliyuncs.com/'
-    MNSAccessKeyId = 'LTAI5tLzBs74j8dEX4A8TPy6'
-    MNSAccessKeySecret = 'uLU5qLEdxet7IZ6w7uB3t7U5PVo15F'
-
-    # PGSQL
-    pgsql_host = '127.0.0.1'
-    pgsql_db = "postgres"
-    pgsql_port = 5432
-    pgsql_user = "postgres"
-    pgsql_passwd = "kIhHAWexFy7pU8qM"
-
+    log_path = "/data/logs/{}/mns".format(project_name)
+elif env == 'PRO':
+    log_path = "/data/logs/{}/mns".format(project_name)
 else:
-    # 物联网
-    Productkey = 'a1vperyb2Cg'
-    ProductHost = 'a1vperyb2Cg.iot-as-mqtt.cn-shanghai.aliyuncs.com'
-    ProductSecret = 'jqSbrJZ11baH1aAH'
-    DeviceSecret = 'bmq66tsx0OGju0CGqeYjzCTYlwA454j0'
+    log_path = project_dir + "/logs/mns"
 
-    # OSS
-    OSSDomain = 'cdbus-dev.oss-cn-shanghai.aliyuncs.com'
-    OSSAccessKeyId = 'LTAI5tHYr3CZ59HCRLEocbDG'
-    OSSAccessKeySecret = 'BMRI8WzUVMRbS6LHPM3bIiadWIPE8c'
-    OSSEndpoint = 'http://oss-cn-shanghai.aliyuncs.com'
-    OSSBucketName = 'cdbus-dev'
 
-    # MNS
-    MNSEndpoint = 'http://1162097573951650.mns.cn-shanghai.aliyuncs.com/'
-    MNSAccessKeyId = 'LTAI5tLzBs74j8dEX4A8TPy6'
-    MNSAccessKeySecret = 'uLU5qLEdxet7IZ6w7uB3t7U5PVo15F'
+config_name = os.environ.get('BUS_ENV', 'DEV')
+if config_name == 'PRO':
+    setting_file = 'setting_pro.ini'
+elif config_name == 'TEST':
+    setting_file = 'setting_test.ini'
+else:
+    setting_file = 'setting_dev.ini'
 
-    # PGSQL
-    pgsql_host = '127.0.0.1'
-    pgsql_db = "postgres"
-    pgsql_port = 5432
-    pgsql_user = "postgres"
-    pgsql_passwd = "kIhHAWexFy7pU8qM"
 
+class MyConfigParser(configparser.ConfigParser):
+
+    def __init__(self, defaults=None):
+        configparser.ConfigParser.__init__(self, defaults=defaults)
+
+    # 这里重写了optionxform方法，直接返回选项名
+    def optionxform(self, optionstr):
+        return optionstr
+
+
+config = MyConfigParser()
+real_path = os.path.join(
+    os.path.dirname(os.path.realpath(__file__)), setting_file)
+config.read(real_path, encoding='utf-8')
+secs = config.sections()
+for section in secs:
+    kvs = config[section].items()
+    globals().update(kvs)
+    # for k, v in kvs:
+    #     print k, v
+
+config_namespace = globals()
 redis_conf = dict(host="127.0.0.1", port=6379, db=0, decode_responses=True)
-pgsql_conf = dict(host=pgsql_host, database=pgsql_db, port=pgsql_port,
-                  user=pgsql_user, password=pgsql_passwd)
+pgsql_conf = dict(host=config_namespace['pgsql_host'],
+                  database=config_namespace['pgsql_db'],
+                  port=config_namespace['pgsql_port'],
+                  user=config_namespace['pgsql_user'],
+                  password=config_namespace['pgsql_passwd'])
 
 print env

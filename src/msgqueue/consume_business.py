@@ -6,6 +6,8 @@ import base64
 import shutil
 import struct
 from datetime import datetime
+from weixin import WeixinError
+
 from msgqueue.db import transaction, PgsqlDbUtil, rds_conn, wx_mp
 from msgqueue import config
 from msgqueue import utils
@@ -159,8 +161,10 @@ class StudentConsumer(object):
                 self.student_business.bulk_update_face(data)
             if routing_suffix == 'bulkupdate':
                 self.student_business.bulk_update_student(data)
-            if routing_suffix == 'import_payment_info':
+            if routing_suffix == 'importpayinfo':
                 self.student_business.import_payment_info(data)
+            if routing_suffix == 'mpsubscribe':
+                self.student_business.mp_subscribe(data)
         finally:
             ch.basic_ack(delivery_tag=method.delivery_tag)
 
@@ -169,6 +173,35 @@ class StudentBusiness(object):
 
     def __init__(self, logger):
         self.logger = logger
+
+    @transaction(is_commit=True)
+    def mp_subscribe(self, pgsql_cur, data):
+        """微信号取消关注"""
+        pgsql_db = PgsqlDbUtil
+        open_id = data['open_id']
+        stu_sql = "SELECT id FROM student WHERE {}='{}'"
+        stuff_sql = "SELECT id FROM worker WHERE open_id='{}'"
+        students = pgsql_db.query(pgsql_cur, stu_sql.format('open_id_1', open_id))
+        for row in students:
+            d = {
+                'id': row[0],
+                'open_id_1': 'NULL'
+            }
+            pgsql_db.update(pgsql_cur, d, table_name='student')
+        students = pgsql_db.query(pgsql_cur, stu_sql.format('open_id_2', open_id))
+        for row in students:
+            d = {
+                'id': row[0],
+                'open_id_2': 'NULL'
+            }
+            pgsql_db.update(pgsql_cur, d, table_name='student')
+        stuffs = pgsql_db.query(pgsql_cur, stuff_sql.format(open_id))
+        for row in stuffs:
+            d = {
+                'id': row[0],
+                'open_id': 'NULL'
+            }
+            pgsql_db.update(pgsql_cur, d, table_name='worker')
 
     @transaction(is_commit=True)
     def create_video(self, pgsql_cur, data):
@@ -1129,11 +1162,16 @@ class MpMsgBusiness(object):
                 "color": "#173177"
             }
         }
+
         try:
             wx_mp.template_send(
                 config.MP_PARENTS_TEMPLATE_ID, open_id, d,
                 url=config.MP_PARENTS_REDIRECT_URL.format(order_id))
-        except:
+        except WeixinError as wxe:
+            print wxe.args
+            if '43004' in wxe.message:
+                import producer
+                producer.mpsubscribe(open_id)
             import traceback
             self.logger.error(traceback.format_exc())
 
@@ -1177,6 +1215,14 @@ class MpMsgBusiness(object):
                 "color": "#FF0000"
             }
         }
-        wx_mp.template_send(
-            config.MP_STAFF_TEMP_ID, open_id, d,
-            url=config.MP_STAFF_REDIRECT_URL.format(periods))
+        try:
+            wx_mp.template_send(
+                config.MP_STAFF_TEMP_ID, open_id, d,
+                url=config.MP_STAFF_REDIRECT_URL.format(periods))
+        except WeixinError as wxe:
+            print wxe.args
+            if '43004' in wxe.message:
+                import producer
+                producer.mpsubscribe(open_id)
+            import traceback
+            self.logger.error(traceback.format_exc())

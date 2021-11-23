@@ -26,6 +26,11 @@ class DevelopmentConfig(Config):
     OSS_ALL_SECRET = "BMRI8WzUVMRbS6LHPM3bIiadWIPE8c"
 
     # 微信公众号
+    # MP_ID = 'gh_4af7ffea23bf'
+    # MP_APP_ID = 'wxc4a0aec4b79dd568'
+    # MP_APP_SECRET = '786b35eb993cec74a73e423f61cd3c63'
+    # MP_TOKEN = '5Yt1r5XfFMs8ncVTIOWGQNNPW3PLnTZz'
+    # MP_ENCODING_AES_KEY = 'HHPL5pzFm1AqUlUk3M25LsyuoYfgfIBi1dHcPQQmme6'
     MP_ID = 'gh_949a03d359ca'
     MP_APP_ID = 'wxfe59baf99b8ff1d4'
     MP_APP_SECRET = 'bf3e50ed4b549fc007d5ad39634cdc4d'
