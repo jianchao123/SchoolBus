@@ -283,8 +283,11 @@ class RefreshWxAccessToken(object):
                            ac_path=config.project_dir + "/ac_path")
 
     def refresh_wechat_token(self):
+        """只能正式环境调用,开发环境调用会导致access_token失效
+        解决办法是是吧开发环境的.access_token文件最后修改时间改为2022年
+        """
+        rds_conn = db.rds_conn
         try:
-            rds_conn = db.rds_conn
             rds_conn.set(RedisKey.WECHAT_ACCESS_TOKEN, self.mp.access_token)
             return
         except:
@@ -989,13 +992,23 @@ class UploadAlarmData(object):
 
 class EveryDayOneClock(object):
 
-    def everyday_one_clock(self):
+    @db.transaction(is_commit=True)
+    def everyday_one_clock(self, pgsql_cur):
         """
         每日一点执行
         """
-        try:
-            rds_conn = db.rds_conn
-            rds_conn.delete(RedisKey.REMOVE_DUP_ORDER_SET)
-        except:
-            import traceback
-            print traceback.format_exc()
+
+        rds_conn = db.rds_conn
+        sql_db = db.PgsqlDbUtil
+
+        rds_conn.delete(RedisKey.REMOVE_DUP_ORDER_SET)
+        deadline = datetime.now().strftime('%Y-%m-%d')
+        sql = "SELECT id FROM push_list WHERE end_date >= " \
+              "TO_DATE('{}', 'yyyy-MM-dd')"
+        results = sql_db.query(pgsql_cur, sql.format(deadline))
+        for row in results:
+            d = {
+                'id': row[0],
+                'status': 2
+            }
+            sql_db.update(pgsql_cur, d, table_name='push_list')

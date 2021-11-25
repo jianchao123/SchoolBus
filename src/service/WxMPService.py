@@ -120,14 +120,22 @@ class WxMPService(object):
         db.session.commit() # SELECT
         order = db.session.query(Order).filter(
             Order.id == order_id).first()
-        take_bus_time = order.create_time.strftime('%Y-%m-%d %H:%M:%S')
-        d = {
-            'id': order.id,
-            'gps': order.gps,
-            'time': take_bus_time,
-            'url': conf.config['REALTIME_FACE_IMG'].format(
-                fid=order.fid, timestamp=order.cur_timestamp)
-        }
+        if order:
+            take_bus_time = order.create_time.strftime('%Y-%m-%d %H:%M:%S')
+            d = {
+                'id': order.id,
+                'gps': order.gps,
+                'time': take_bus_time,
+                'url': conf.config['REALTIME_FACE_IMG'].format(
+                    fid=order.fid, timestamp=order.cur_timestamp)
+            }
+        else:
+            d = {
+                'id': -1,
+                'gps': '',
+                'time': '',
+                'url': ''
+            }
         return d
 
     @staticmethod

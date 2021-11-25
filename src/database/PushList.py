@@ -7,6 +7,7 @@ class PushList(db.Model):
 
     id = db.Column(db.BigInteger, primary_key=True)
     stu_id = db.Column(db.Integer)
+    stu_no = db.Column(db.String(32))
     school_id = db.Column(db.Integer)
     school_name = db.Column(db.String(16))
     pay_mobile = db.Column(db.String(16))   # 缴费手机号

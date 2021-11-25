@@ -726,3 +726,46 @@ def convert_excel(user_id, data):
     fd = request.files['fd']
     data = StudentService.convert_excel(fd)
     return data
+
+
+@bp.route('/paymentlist', methods=['POST'])
+@form_none_param_with_permissions()
+def import_payment_info(user_id, data):
+    """
+    支付清单
+    支付清单，无需登录
+    ---
+    tags:
+      - 学生
+    parameters:
+      - name: fd
+        in: formData
+        type: file
+        required: true
+        description: excel文件
+    responses:
+      200:
+        description: 正常返回http code 200
+        schema:
+          properties:
+            msg:
+              type: string
+              description: 错误消息
+            status:
+              type: integer
+              description: 状态
+            data:
+              type: object
+              properties:
+                c:
+                  type: integer
+                  description: 1错误 0正常
+                msg:
+                  type: string
+                  description: 错误信息,需要显示给用户
+    """
+    from flask import request
+    print request.files
+    fd = request.files['fd']
+    data = StudentService.import_payment_list(fd)
+    return data

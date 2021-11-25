@@ -1081,6 +1081,12 @@ class StudentService(object):
         from database.Student import Student
 
         db.session.commit()  # SELECT
+
+        stu_no_list = []
+        results = db.session.query(Student).filter(Student.status == 1).all()
+        for row in results:
+            stu_no_list.append(row.stu_no)
+
         data = xlrd.open_workbook(file_contents=excel_file.read())
         table = data.sheet_by_index(0)
 
@@ -1093,7 +1099,8 @@ class StudentService(object):
 
             row_data = table.row_values(index)
             pay_mobile = str(row_data[0]).strip()
-            end_date = str(row_data[1].strip())
+            stu_no = str(row_data[1]).strip()
+            end_date = str(row_data[3].strip())
 
             err_str = u"\n第{}行,".format(index + 1)
             # 先检查是否为空
@@ -1101,9 +1108,16 @@ class StudentService(object):
                 err_str += u"号码为空,"
                 is_err = 1
 
+            if not stu_no:
+                err_str += u"身份证号码为空"
+                is_err = 1
+
             # 检查格式
             if len(pay_mobile) != 11:
                 err_str += u"家长号码长度错误"
+                is_err = 1
+            if len(stu_no) > 20:
+                err_str += u"身份号码长度错误"
                 is_err = 1
 
             # 是否能找到这个家长手机号
@@ -1112,6 +1126,18 @@ class StudentService(object):
                     Student.mobile_2 == pay_mobile)).count()
             if not count:
                 err_str += u"未在系统里找到该家长手机号"
+                is_err = 1
+
+            if stu_no not in stu_no_list:
+                err_str += u"未在系统里找到该身份号"
+                is_err = 1
+            # 缴费号码和身份号码是否匹配
+            count = db.session.query(Student).filter(
+                or_(Student.mobile_1 == pay_mobile,
+                    Student.mobile_2 == pay_mobile)).filter(
+                Student.stu_no == stu_no).count()
+            if not count:
+                err_str += u"缴费号码和身份证号码不匹配"
                 is_err = 1
 
             try:
@@ -1132,7 +1158,8 @@ class StudentService(object):
         for index in range(1, table.nrows):
             row_data = table.row_values(index)
             data_list.append({'mobile': str(row_data[0]).strip(),
-                              'end_date': str(row_data[1]).strip()})
+                              'stu_no': str(row_data[1]).strip(),
+                              'end_date': str(row_data[3]).strip()})
 
         start = 0
         end = 1000

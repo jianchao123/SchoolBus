@@ -554,43 +554,63 @@ class StudentBusiness(object):
 
     @transaction(is_commit=True)
     def import_payment_info(self, pgsql_cur, data):
-        """导入缴费信息"""
+        """导入缴费信息
+        mobile已经被验证过是否存在于系统里
+        """
         pgsql_db = PgsqlDbUtil
 
-        pay_sql = "SELECT id FROM push_list WHERE pay_mobile='{}'"
+        pay_sql = "SELECT id,status FROM push_list WHERE stu_no='{}' "
+        # stu_sql = "SELECT id,school_id,mobile_1,mobile_2,nickname " \
+        #           "FROM student WHERE mobile_1='{}' or mobile_2='{}'"
         stu_sql = "SELECT id,school_id,mobile_1,mobile_2,nickname " \
-                  "FROM student WHERE mobile_1='{}' or mobile_2='{}'"
+                  "FROM student WHERE stu_no='{}'"
         school_sql = "SELECT school_name FROM school WHERE id={} LIMIT 1"
         face_sql = "SELECT oss_url FROM face WHERE stu_id='{}' LIMIT 1"
         for row in data:
             mobile = row['mobile']
+            stu_no = row['stu_no']
             end_date = row['end_date']
-            pays = pgsql_db.query(pgsql_cur, pay_sql.format(mobile))
+            pays = pgsql_db.query(pgsql_cur, pay_sql.format(stu_no))
+            # 不存在push_list表
             if not len(pays):
-                students = pgsql_db.query(pgsql_cur,
-                                          stu_sql.format(mobile, mobile))
-                for stu_row in students:
-                    stu_pk = stu_row[0]
-                    school_id = stu_row[1]
-                    mobile_1 = stu_row[2]
-                    mobile_2 = stu_row[3]
-                    nickname = stu_row[4]
-                    school_name = \
+                student = pgsql_db.get(pgsql_cur, stu_sql.format(stu_no))
+                stu_pk = student[0]
+                school_id = student[1]
+                mobile_1 = student[2]
+                mobile_2 = student[3]
+                nickname = student[4]
+                school_name = \
                     pgsql_db.get(pgsql_cur, school_sql.format(school_id))[0]
-                    oss_url = pgsql_db.get(pgsql_cur, face_sql.format(stu_pk))[
-                        0]
-                    d = {
-                        'stu_id': stu_pk,
-                        'school_id': school_id,
-                        'school_name': school_name,
-                        'pay_mobile': mobile_1 if mobile == mobile_1 else mobile_2,
-                        'nickname': nickname,
-                        'oss_url': oss_url,
-                        'end_date': "TO_DATE('{}', 'yyyy-MM-dd')".format(
-                            end_date),
-                        'status': 1
-                    }
-                    pgsql_db.insert(pgsql_cur, d, table_name='push_list')
+                oss_url = pgsql_db.get(pgsql_cur, face_sql.format(stu_pk))[
+                    0]
+                d = {
+                    'stu_id': stu_pk,
+                    'stu_no': stu_no,
+                    'school_id': school_id,
+                    'school_name': school_name,
+                    'pay_mobile': mobile,
+                    'nickname': nickname,
+                    'oss_url': oss_url,
+                    'end_date': "TO_DATE('{}', 'yyyy-MM-dd')".format(
+                        end_date),
+                    'status': 1
+                }
+                pgsql_db.insert(pgsql_cur, d, table_name='push_list')
+            else:
+                push_list = pays[0]
+                pk = push_list[0]
+                status = push_list[1]
+
+                d = {
+                    'id': pk,
+                    'end_date': "TO_DATE('{}', 'yyyy-MM-dd')".format(
+                        end_date)
+                }
+                # 要修改的时间大于当前时间且它以前的状态为已过期 则改为有效状态
+                if datetime.strptime(end_date, '%Y-%m-%d') > datetime.now() \
+                        and status == 2:
+                    d['status'] = 1
+                pgsql_db.update(pgsql_cur, d, table_name='push_list')
 
 
 class DeviceConsumer(object):
@@ -1127,53 +1147,60 @@ class MpMsgBusiness(object):
     def __init__(self, logger):
         self.logger = logger
 
-    def parents_mp_msg(self, data):
-        """家长消息"""
+    @transaction(is_commit=False)
+    def parents_mp_msg(self, pgsql_cur, data):
+        """家长消息
+        """
+        pgsql_db = PgsqlDbUtil
         open_id = data['open_id']
         order_id = data['order_id']
         nickname = data['nickname']
         order_type_name = data['order_type_name']
         up_time = data['up_time']
         license_plate_number = data['license_plate_number']
-
-        d = {
-            "first": {
-                "value": "乘车刷脸成功提醒！",
-                "color": "#173177"
-            },
-            "keyword1": {
-                "value": nickname,
-                "color": "#173177"
-            },
-            "keyword2": {
-                "value": order_type_name,
-                "color": "#173177"
-            },
-            "keyword3": {
-                "value": up_time,
-                "color": "#173177"
-            },
-            "keyword4": {
-                "value": license_plate_number,
-                "color": "#173177"
-            },
-            "remark": {
-                "value": "点击详情,查看更多！",
-                "color": "#173177"
+        stu_no = data['stu_no']
+        sql = "SELECT id FROM push_list WHERE stu_no='{}' AND status=1"
+        results = pgsql_db.query(pgsql_cur, sql.format(stu_no))
+        print results
+        if results:
+            d = {
+                "first": {
+                    "value": "乘车刷脸成功提醒！",
+                    "color": "#173177"
+                },
+                "keyword1": {
+                    "value": nickname,
+                    "color": "#173177"
+                },
+                "keyword2": {
+                    "value": order_type_name,
+                    "color": "#173177"
+                },
+                "keyword3": {
+                    "value": up_time,
+                    "color": "#173177"
+                },
+                "keyword4": {
+                    "value": license_plate_number,
+                    "color": "#173177"
+                },
+                "remark": {
+                    "value": "点击详情,查看更多！",
+                    "color": "#173177"
+                }
             }
-        }
 
-        try:
-            wx_mp.template_send(
-                config.MP_PARENTS_TEMPLATE_ID, open_id, d,
-                url=config.MP_PARENTS_REDIRECT_URL.format(order_id))
-        except WeixinError as wxe:
-            print wxe.args
-            if '43004' in wxe.message:
-                import producer
-                producer.mpsubscribe(open_id)
-            import traceback
-            self.logger.error(traceback.format_exc())
+            try:
+                wx_mp.template_send(
+                    config.MP_PARENTS_TEMPLATE_ID, open_id, d,
+                    url=config.MP_PARENTS_REDIRECT_URL.format(order_id))
+            except WeixinError as wxe:
+                print wxe.args
+                if '43004' in wxe.message:
+                    import producer
+                    producer.mpsubscribe(open_id)
+                import traceback
+                self.logger.error(traceback.format_exc())
 
     def staff_mp_msg(self, data):
         """工作人员模板消息"""

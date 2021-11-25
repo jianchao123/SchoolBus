@@ -190,7 +190,7 @@ def dev_while_list(device_name):
 
 def send_parents_template_message(
         open_id, order_id, nickname, order_type_name,
-        up_time, license_plate_number):
+        up_time, license_plate_number, stu_no):
     """发送家长模板消息"""
     data = defaultdict()
     data['open_id'] = open_id
@@ -199,6 +199,7 @@ def send_parents_template_message(
     data['order_type_name'] = order_type_name
     data['up_time'] = up_time
     data['license_plate_number'] = license_plate_number
+    data['stu_no'] = stu_no
     _publish_msg('mpmsg_exchange', 'mpmsg.parents', json.dumps(data))
 
 

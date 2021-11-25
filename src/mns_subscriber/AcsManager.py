@@ -337,11 +337,11 @@ class AcsManager(object):
         if open_id_1:
             producer.send_parents_template_message(
                 open_id_1, d['id'], stu_nickname,
-                order_type_name, up_time_str, license_plate_number)
+                order_type_name, up_time_str, license_plate_number, stu_no)
         if open_id_2:
             producer.send_parents_template_message(
                 open_id_2, d['id'], stu_nickname,
-                order_type_name, up_time_str, license_plate_number)
+                order_type_name, up_time_str, license_plate_number, stu_no)
         # 监控中心队列
         try:
             # 默认的
