@@ -134,13 +134,12 @@ def get_location(longitude, latitude):
             poi['address'].encode('utf8'))
     return None
 
-from timer.config import project_dir
-
 
 def aip_word_to_audio(text, oss_key):
     """文字转语音"""
     import os
     import time
+    from timer.config import project_dir
 
     result = aip_client.synthesis(text, 'zh', 1, {
         'vol': 5,
