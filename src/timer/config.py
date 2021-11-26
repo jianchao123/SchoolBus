@@ -1,164 +1,58 @@
 # coding:utf-8
 import os
+import configparser
+from utils import get_logger
 
 project_name = "school_bus"
 project_dir = os.path.dirname(os.path.dirname(
     os.path.dirname(os.path.realpath(__file__))))
 env_dist = os.environ
 env = env_dist.get('BUS_ENV')
-
 if env == "TEST":
-    # 物联网
-    Productkey = 'a1vperyb2Cg'
-    ProductHost = 'a1vperyb2Cg.iot-as-mqtt.cn-shanghai.aliyuncs.com'
-    ProductSecret = 'jqSbrJZ11baH1aAH'
-    DeviceSecret = 'bmq66tsx0OGju0CGqeYjzCTYlwA454j0'
-
-    # OSS
-    OSSDomain = 'cdbus-dev.oss-cn-shanghai.aliyuncs.com'
-    OSSAccessKeyId = 'LTAI5tHYr3CZ59HCRLEocbDG'
-    OSSAccessKeySecret = 'BMRI8WzUVMRbS6LHPM3bIiadWIPE8c'
-    OSSEndpoint = ''
-    OSSBucketName = ''
-
-    # MNS
-    MNSEndpoint = 'http://1162097573951650.mns.cn-shanghai.aliyuncs.com/'
-    MNSAccessKeyId = 'LTAI5tLzBs74j8dEX4A8TPy6'
-    MNSAccessKeySecret = 'uLU5qLEdxet7IZ6w7uB3t7U5PVo15F'
-
-    # LOG
     log_path = "/data/logs/{}/timer".format(project_name)
-
-    # PGSQL
-    pgsql_host = '127.0.0.1'
-    pgsql_db = "postgres"
-    pgsql_port = 5432
-    pgsql_user = "postgres"
-    pgsql_passwd = "kIhHAWexFy7pU8qM"
-
-    # 高德
-    GD_AK = "7db32e8af1a361c8f86e10b58ad7a08e"
-
-    # 百度音频转换
-    BAIDU_APP_ID = '23117459'
-    BAIDU_API_KEY = 'e8ZnYfnzvlptbcxdAYcYtTVI'
-    BAIDU_SECRET_KEY = 'l8bkk6odc03fXgnLDxrYQuRwe62yFsQ2'
-
-    # 微信公众号
-    MP_ID = 'gh_949a03d359ca'
-    MP_APP_ID = 'wxfe59baf99b8ff1d4'
-    MP_APP_SECRET = 'bf3e50ed4b549fc007d5ad39634cdc4d'
-    MP_TOKEN = 'gK9gY3cV2bM6pH9gF7vJ5uC8vN9cI0cL'
-    MP_ENCODING_AES_KEY = 'CAmGrrm1rJ0HqgcbIBQbhKAHLUKGGbv3RJTTFnixTaC'
-
-
-elif env == "PRO":
-
-    # 物联网
-    Productkey = 'a1nppCCo0Y2'
-    ProductHost = 'a1nppCCo0Y2.iot-as-mqtt.cn-shanghai.aliyuncs.com'
-    ProductSecret = 'VYMQSqHamIQgREVi'
-    DeviceSecret = 'e2245121d52abc850b2fc220f937f512'
-
-    # OSS
-    OSSDomain = 'cdbus-pro.oss-cn-shanghai.aliyuncs.com'
-    OSSAccessKeyId = 'LTAI5tHYr3CZ59HCRLEocbDG'
-    OSSAccessKeySecret = 'BMRI8WzUVMRbS6LHPM3bIiadWIPE8c'
-    OSSEndpoint = 'http://oss-cn-shanghai.aliyuncs.com'
-    OSSEndpointInternal = 'http://oss-cn-shanghai-internal.aliyuncs.com'
-    OSSBucketName = 'cdbus-pro'
-
-    # MNS
-    MNSEndpoint = 'http://1162097573951650.mns.cn-shanghai-internal.aliyuncs.com/'
-    MNSAccessKeyId = 'LTAI5tLzBs74j8dEX4A8TPy6'
-    MNSAccessKeySecret = 'uLU5qLEdxet7IZ6w7uB3t7U5PVo15F'
-
-    # LOG
+elif env == 'PRO':
     log_path = "/data/logs/{}/timer".format(project_name)
-
-    # PGSQL
-    pgsql_host = '127.0.0.1'
-    pgsql_db = "postgres"
-    pgsql_port = 5432
-    pgsql_user = "postgres"
-    pgsql_passwd = "kIhHAWexFy7pU8qM"
-
-    # 高德
-    GD_AK = "7db32e8af1a361c8f86e10b58ad7a08e"
-
-    # 百度音频转换
-    BAIDU_APP_ID = '23117459'
-    BAIDU_API_KEY = 'e8ZnYfnzvlptbcxdAYcYtTVI'
-    BAIDU_SECRET_KEY = 'l8bkk6odc03fXgnLDxrYQuRwe62yFsQ2'
-
-    # 微信公众号
-    MP_ID = 'gh_949a03d359ca'
-    MP_APP_ID = 'wxfe59baf99b8ff1d4'
-    MP_APP_SECRET = 'bf3e50ed4b549fc007d5ad39634cdc4d'
-    MP_TOKEN = 'gK9gY3cV2bM6pH9gF7vJ5uC8vN9cI0cL'
-    MP_ENCODING_AES_KEY = 'CAmGrrm1rJ0HqgcbIBQbhKAHLUKGGbv3RJTTFnixTaC'
-
-    MP_PARENTS_TEMPLATE_ID = "aRznTze3zLqP9mSoOh45DhrAgL-OOz3ut2bE0c5TwpM"
-    MP_STAFF_TEMP_ID = "NlJspxFFiPl4lH8gjf-pKU-dZiMuFYgdSJ4wSpmEesg"
-
-    # 监控中心
-    SC_URL = "https://car.vcolco.com/api/paas-trans-school-bus/school/bus/report"
-
-    # MP_PARENTS_REDIRECT_URL = \
-    #     "http://cdmp.wgxing.com/static/push.html?order_id={}"
-    # MP_STAFF_REDIRECT_URL = \
-    #     "http://cdmp.wgxing.com/static/alert.html?periods={}"
-
 else:
-    # # 物联网
-    Productkey = 'a1vperyb2Cg'
-    ProductHost = 'a1vperyb2Cg.iot-as-mqtt.cn-shanghai.aliyuncs.com'
-    ProductSecret = 'jqSbrJZ11baH1aAH'
-    DeviceSecret = 'bmq66tsx0OGju0CGqeYjzCTYlwA454j0'
-
-
-    # OSS
-    OSSDomain = 'cdbus-dev.oss-cn-shanghai.aliyuncs.com'
-    OSSEndpoint = 'http://oss-cn-shanghai.aliyuncs.com'
-    OSSEndpointInternal = 'http://oss-cn-shanghai-internal.aliyuncs.com'
-    OSSBucketName = 'cdbus-dev'
-    OSSAccessKeyId = 'LTAI5tHYr3CZ59HCRLEocbDG'
-    OSSAccessKeySecret = 'BMRI8WzUVMRbS6LHPM3bIiadWIPE8c'
-
-    # MNS
-    MNSEndpoint = 'http://1162097573951650.mns.cn-shanghai.aliyuncs.com/'
-    MNSAccessKeyId = 'LTAI5tLzBs74j8dEX4A8TPy6'
-    MNSAccessKeySecret = 'uLU5qLEdxet7IZ6w7uB3t7U5PVo15F'
-
-    # LOG
     log_path = project_dir + "/logs/timer"
 
-    # PGSQL
-    pgsql_host = '127.0.0.1'
-    pgsql_db = "postgres"
-    pgsql_port = 5432
-    pgsql_user = "postgres"
-    pgsql_passwd = "kIhHAWexFy7pU8qM"
+config_name = os.environ.get('BUS_ENV', 'DEV')
+if config_name == 'PRO':
+    setting_file = 'setting_pro.ini'
+elif config_name == 'TEST':
+    setting_file = 'setting_test.ini'
+else:
+    setting_file = 'setting_dev.ini'
 
-    # 高德
-    GD_AK = "7db32e8af1a361c8f86e10b58ad7a08e"
 
-    # 百度音频转换
-    BAIDU_APP_ID = '23117459'
-    BAIDU_API_KEY = 'e8ZnYfnzvlptbcxdAYcYtTVI'
-    BAIDU_SECRET_KEY = 'l8bkk6odc03fXgnLDxrYQuRwe62yFsQ2'
+class MyConfigParser(configparser.ConfigParser):
 
-    # 微信公众号
-    MP_ID = 'gh_949a03d359ca'
-    MP_APP_ID = 'wxfe59baf99b8ff1d4'
-    MP_APP_SECRET = 'bf3e50ed4b549fc007d5ad39634cdc4d'
-    MP_TOKEN = 'gK9gY3cV2bM6pH9gF7vJ5uC8vN9cI0cL'
-    MP_ENCODING_AES_KEY = 'CAmGrrm1rJ0HqgcbIBQbhKAHLUKGGbv3RJTTFnixTaC'
+    def __init__(self, defaults=None):
+        configparser.ConfigParser.__init__(self, defaults=defaults)
 
-    # 监控中心
-    SC_URL = ""
+    # 这里重写了optionxform方法，直接返回选项名
+    def optionxform(self, optionstr):
+        return optionstr
 
+
+config = MyConfigParser()
+real_path = os.path.join(
+    os.path.dirname(os.path.realpath(__file__)), setting_file)
+config.read(real_path, encoding='utf-8')
+secs = config.sections()
+for section in secs:
+    kvs = config[section].items()
+    globals().update(kvs)
+    # for k, v in kvs:
+    #     print k, v
+
+config_namespace = globals()
 redis_conf = dict(host="127.0.0.1", port=6379, db=0, decode_responses=True)
-pgsql_conf = dict(host=pgsql_host, database=pgsql_db, port=pgsql_port,
-                  user=pgsql_user, password=pgsql_passwd)
+pgsql_conf = dict(host=config_namespace['pgsql_host'],
+                  database=config_namespace['pgsql_db'],
+                  port=config_namespace['pgsql_port'],
+                  user=config_namespace['pgsql_user'],
+                  password=config_namespace['pgsql_passwd'])
+
+logger = get_logger(log_path)
+logger.info('--------ENV={}---------------'.format(env))
 print env

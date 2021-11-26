@@ -6,7 +6,7 @@ project_name = "school_bus"
 project_dir = os.path.dirname(os.path.dirname(
     os.path.dirname(os.path.realpath(__file__))))
 env_dist = os.environ
-env = "PRO"
+env = "DEV"
 if env == "TEST":
     log_path = "/data/logs/{}/mns".format(project_name)
 elif env == 'PRO':
