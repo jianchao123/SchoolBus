@@ -345,7 +345,7 @@ class AcsManager(object):
         # 监控中心队列
         try:
             # 默认的
-            if gps_str == "116.290435,40.032377":
+            if not gps_str:
                 longitude = 0
                 latitude = 0
             else:
@@ -372,6 +372,7 @@ class AcsManager(object):
         except:
             import traceback
             print traceback.format_exc()
+            print gps_str
 
     @staticmethod
     def _get_created():
