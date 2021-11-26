@@ -370,7 +370,8 @@ class AcsManager(object):
             redis_db.rpush(
                 RedisKey.SC_ORDER_LIST, json.dumps(d, ensure_ascii=False))
         except:
-            pass
+            import traceback
+            print traceback.format_exc()
 
     @staticmethod
     def _get_created():

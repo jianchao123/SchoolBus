@@ -1,7 +1,6 @@
 # coding:utf-8
 import os
 import configparser
-from utils import get_logger
 
 project_name = "school_bus"
 project_dir = os.path.dirname(os.path.dirname(
@@ -53,6 +52,8 @@ pgsql_conf = dict(host=config_namespace['pgsql_host'],
                   user=config_namespace['pgsql_user'],
                   password=config_namespace['pgsql_passwd'])
 
+# 让配置文件先加载
+from utils import get_logger
 logger = get_logger(log_path)
 logger.info('--------ENV={}---------------'.format(env))
 print env
