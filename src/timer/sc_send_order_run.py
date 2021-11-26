@@ -81,7 +81,7 @@ def send_order():
             try:
                 raw_data = raw_data.encode('utf8')
                 res = requests.post(config.SC_URL, raw_data, headers=get_header(raw_data))
-                #db.rds_conn.hset('SC_ORDER_LOG', str(time.time()), str(res.content))
+                db.rds_conn.hset('SC_ORDER_LOG', str(time.time()), str(res.content))
                 if res.status_code == 200:
                     res_data = json.loads(res.content)
                     db.logger.error(json.dumps(res_data, ensure_ascii=False))
