@@ -768,12 +768,12 @@ class DeviceBusiness(object):
 
     def dev_white_list_msg(self, data):
         dev_name = data['dev_name']
-
-        try:
-            rds_conn.delete("{}_pkt_inx".format(dev_name))
-            rds_conn.delete("person_raw_{}".format(dev_name))
-        except:
-            pass
+        #
+        # try:
+        #     rds_conn.delete("{}_pkt_inx".format(dev_name))
+        #     rds_conn.delete("person_raw_{}".format(dev_name))
+        # except:
+        #     pass
         self._publish_dev_white_list(dev_name)
 
     def update_chepai(self, data):
