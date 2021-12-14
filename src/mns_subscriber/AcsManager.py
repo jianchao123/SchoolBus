@@ -821,6 +821,10 @@ WHERE F.status=4 AND stu.status=1 AND stu.car_id={} AND ft.mfr_id={}
         acc关闭
         向redis存入一条acc关闭的数据
         """
+        import time
+        if int(time.time()) - add_time > 60:
+            print "---------不产生key---------"
+            return
         rds_conn = db.rds_conn
         # 取出滞留人员
         face_ids = rds_conn.smembers(RedisKey.STUDENT_SET.format(device_name))
